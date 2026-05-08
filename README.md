@@ -19,4 +19,11 @@ The first product backlog is available in the GitHub Wiki:
 - [Product Backlog](../../wiki/Product-Backlog)
 - [Product Backlog: User Stories](../../wiki/Product-Backlog:-User-Stories)
 
-CI test update.
+## CI/CD
+
+The repository includes a GitHub Actions workflow for backend continuous integration.
+
+Workflow file:
+
+```text
+.github/workflows/backend-ci.yml
