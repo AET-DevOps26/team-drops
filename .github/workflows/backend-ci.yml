@@ -19,6 +19,12 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Make Gradle wrappers executable
+        run: |
+          chmod +x backend/user-service/gradlew
+          chmod +x backend/learning-service/gradlew
+          chmod +x backend/progress-feedback-service/gradlew
+          
       - name: Build user-service
         working-directory: backend/user-service
         run: ./gradlew build -x test
