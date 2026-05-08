@@ -1,0 +1,13 @@
+.gradle/
+build/
+out/
+
+.idea/
+.vscode/
+*.iml
+
+.env
+.env.*
+
+*.log
+*.tmp
