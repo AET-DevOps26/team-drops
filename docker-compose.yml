@@ -74,7 +74,17 @@ services:
     depends_on:
       - mongo
 
-
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-service
+      - learning-service
+      - progress-feedback-service
+      - genai-service
 
 volumes:
   postgres_data:
