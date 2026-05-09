@@ -11,6 +11,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  mongo:
+    image: mongo:7
+    container_name: team-drops-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
   user-service:
     build:
       context: ./backend/user-service
@@ -50,5 +58,24 @@ services:
     depends_on:
       - postgres
 
+  genai-service:
+    build:
+      context: ./genai
+    container_name: genai-service
+    ports:
+      - "8084:8084"
+    environment:
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3}
+      MONGO_URL: mongodb://mongo:27017
+    depends_on:
+      - mongo
+
+
+
 volumes:
   postgres_data:
+  mongo_data:
