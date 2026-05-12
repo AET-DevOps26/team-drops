@@ -19,6 +19,22 @@ The first product backlog is available in the GitHub Wiki:
 - [Product Backlog](../../wiki/Product-Backlog)
 - [Product Backlog: User Stories](../../wiki/Product-Backlog:-User-Stories)
 
+## Project Structure
+
+```text
+team-drops/
+├── backend/
+│   ├── user-service/               # Spring Boot — user registration, login, profiles (port 8081)
+│   ├── learning-service/           # Spring Boot — learning plans, lessons, exercises (port 8082)
+│   └── progress-feedback-service/  # Spring Boot — answers, feedback, progress (port 8083)
+├── frontend/                       # React + TypeScript (Vite) — client UI (port 3000)
+├── genai/                          # Python + FastAPI — LLM-powered generation and feedback (port 8084)
+├── shared/                         # Shared TypeScript types mirroring the backend domain model
+├── docs/                           # Architecture diagrams and project proposal
+├── .env.example                    # Environment variable reference
+└── docker-compose.yml              # Local development setup
+```
+
 ## CI/CD
 
 The repository includes a GitHub Actions workflow for backend continuous integration.
