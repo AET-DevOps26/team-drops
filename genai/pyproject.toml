@@ -1,0 +1,9 @@
+[project]
+name = "genai-service"
+version = "0.1.0"
+description = "GenAI microservice for AI Language Learning"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.136.1",
+    "uvicorn[standard]>=0.46.0",
+]
