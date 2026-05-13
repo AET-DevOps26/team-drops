@@ -280,6 +280,31 @@ h1 {
   line-height: 1;
 }
 
+.topbar-title {
+  position: relative;
+  min-width: 0;
+  padding-left: 0;
+}
+
+.topbar-title .inline-back + h2 {
+  margin-left: 34px;
+}
+
+.inline-back {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--blue-dark);
+  cursor: pointer;
+}
+
 .icon-button {
   display: inline-grid;
   width: 44px;
@@ -473,7 +498,22 @@ h1 {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr) 38px;
   align-items: center;
+  width: 100%;
   gap: 10px;
+}
+
+.progress-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.progress-link:hover .progress-track span {
+  background: #70c947;
 }
 
 .mini-dot {
@@ -489,10 +529,22 @@ h1 {
 
 .progress-row strong {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
   overflow: hidden;
   color: var(--ink);
   font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-row em {
+  display: block;
+  margin-bottom: 6px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 760;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -587,10 +639,55 @@ h1 {
   line-height: 1.28;
 }
 
+.plan-section {
+  display: grid;
+  gap: 10px;
+}
+
+.plan-list {
+  display: grid;
+  gap: 8px;
+}
+
+.plan-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 38px;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  min-height: 78px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.plan-card:hover,
+.plan-card.selected {
+  transform: translateY(-1px);
+  border-color: rgba(25, 103, 210, 0.58);
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(16, 32, 51, 0.1);
+}
+
+.dark-mode .plan-card:hover,
+.dark-mode .plan-card.selected {
+  background: #1d3354;
+}
+
 .lesson-overview {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
   align-items: center;
+  width: 100%;
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--line);
@@ -598,6 +695,47 @@ h1 {
   background:
     linear-gradient(135deg, rgba(25, 103, 210, 0.12), rgba(70, 168, 118, 0.1)),
     var(--surface);
+}
+
+.plan-overview-button {
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.plan-overview-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(25, 103, 210, 0.58);
+  box-shadow: 0 12px 28px rgba(16, 32, 51, 0.1);
+}
+
+.plan-detail {
+  display: grid;
+  gap: 12px;
+}
+
+.compact-hero {
+  min-height: 136px;
+}
+
+.summary-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.summary-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.42;
 }
 
 .lesson-icon,
@@ -793,6 +931,28 @@ h1 {
   font-size: 0.92rem;
 }
 
+.component-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.component-list span {
+  min-height: 26px;
+  padding: 5px 9px;
+  border: 1px solid rgba(184, 107, 17, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: #8a4f0f;
+  font-size: 0.7rem;
+  font-weight: 820;
+}
+
+.dark-mode .component-list span {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8c16f;
+}
+
 .prompt-list {
   display: grid;
   gap: 8px;
@@ -806,6 +966,33 @@ h1 {
 .prompt-list li::marker {
   color: #b86b11;
   font-weight: 850;
+}
+
+.lesson-detail {
+  align-content: start;
+}
+
+.lesson-topic {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 780;
+  line-height: 1.4;
+}
+
+.lesson-text {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(184, 107, 17, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--ink);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.dark-mode .lesson-text {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .profile-page,

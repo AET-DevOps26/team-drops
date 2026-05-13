@@ -13,9 +13,11 @@ import {
   Languages,
   LogOut,
   Mail,
+  MapPinned,
   MessageSquareText,
   Moon,
   PenLine,
+  Plane,
   Presentation,
   Settings,
   Sparkles,
@@ -33,8 +35,10 @@ function App() {
   const [settingsClosing, setSettingsClosing] = React.useState(false);
   const [darkMode, setDarkMode] = React.useState(false);
   const [language, setLanguage] = React.useState('English');
-  const [selectedExercise, setSelectedExercise] = React.useState(0);
+  const [selectedPlan, setSelectedPlan] = React.useState(0);
+  const [selectedLesson, setSelectedLesson] = React.useState(0);
   const [learningMode, setLearningMode] = React.useState('training');
+  const [learningStep, setLearningStep] = React.useState('plans');
 
   const openSettings = () => {
     setSettingsClosing(false);
@@ -69,13 +73,16 @@ function App() {
   };
 
   const languages = ['English', 'German', 'Spanish', 'French', 'Italian', 'Japanese'];
-  const interviewExercises = [
+  const interviewLessons = [
     {
       title: 'Self Introduction',
       topic: 'Introduce yourself professionally in an interview.',
       icon: MessageSquareText,
       accent: 'blue',
       time: '8 min',
+      progress: 60,
+      components: ['Text guide', 'Speaking exercise', 'Vocabulary upgrade'],
+      text: 'A strong self-introduction is short, professional, and relevant. Start with who you are, mention your field or current role, then connect your experience to the position.',
       exercises: [
         'Tell me about yourself.',
         'Write a short professional introduction.',
@@ -88,6 +95,9 @@ function App() {
       icon: GraduationCap,
       accent: 'green',
       time: '7 min',
+      progress: 20,
+      components: ['Text guide', 'Writing exercise', 'Pronunciation practice'],
+      text: 'When explaining your education, name your degree, university, specialization, and academic focus. Keep the answer clear and connect your studies to your career direction.',
       exercises: [
         'Describe your degree and specialization.',
         'Explain why you chose your field.',
@@ -100,6 +110,9 @@ function App() {
       icon: BriefcaseBusiness,
       accent: 'amber',
       time: '9 min',
+      progress: 0,
+      components: ['Text guide', 'Speaking exercise', 'Reflection'],
+      text: 'Work experience answers should explain the context, your responsibilities, and the result. Use active verbs and mention one concrete thing you learned.',
       exercises: [
         'Describe one internship or work experience.',
         'Explain your responsibilities.',
@@ -112,6 +125,9 @@ function App() {
       icon: Presentation,
       accent: 'violet',
       time: '10 min',
+      progress: 0,
+      components: ['Structure guide', 'Technical explanation', 'Simplification task'],
+      text: 'A good project explanation follows a simple structure: problem, solution, your role, and impact. For non-technical listeners, avoid jargon and explain the value first.',
       exercises: [
         'Describe one project you worked on.',
         'Explain the problem, your solution, and your role.',
@@ -124,6 +140,9 @@ function App() {
       icon: Sparkles,
       accent: 'rose',
       time: '8 min',
+      progress: 0,
+      components: ['Answer framework', 'Writing exercise', 'Improvement task'],
+      text: 'Strengths need short examples. Weaknesses should sound honest but professional: name the weakness, explain what you are doing to improve, and avoid critical job requirements.',
       exercises: [
         'Name two strengths with examples.',
         'Explain one weakness professionally.',
@@ -131,8 +150,106 @@ function App() {
       ],
     },
   ];
-  const activeExercise = interviewExercises[selectedExercise];
-  const ActiveExerciseIcon = activeExercise.icon;
+  const italyLessons = [
+    {
+      title: 'Italian Travel Basics',
+      topic: 'Greet people, introduce yourself, and handle polite travel phrases.',
+      icon: Languages,
+      accent: 'green',
+      time: '12 min',
+      progress: 35,
+      components: ['Phrase list', 'Speaking exercise', 'Mini quiz'],
+      text: 'Start with high-frequency travel phrases. Practice greetings, your name, where you are from, and polite expressions you can reuse in hotels, cafes, and shops.',
+      exercises: [
+        'Introduce yourself as a traveler.',
+        'Say where you are from and how long you will stay.',
+        'Practice polite greetings for hotels and cafes.',
+      ],
+    },
+    {
+      title: 'Ordering Food',
+      topic: 'Order meals, ask about ingredients, and pay at restaurants.',
+      icon: MessageSquareText,
+      accent: 'amber',
+      time: '15 min',
+      progress: 15,
+      components: ['Menu vocabulary', 'Role-play exercise', 'Listening practice'],
+      text: 'Ordering food is about polite requests and useful menu words. Practice asking for items, checking ingredients, and closing the interaction naturally.',
+      exercises: [
+        'Order a coffee and pastry.',
+        'Ask for a vegetarian option.',
+        'Request the bill politely.',
+      ],
+    },
+    {
+      title: 'Asking for Directions',
+      topic: 'Find stations, hotels, landmarks, and basic transport routes.',
+      icon: MapPinned,
+      accent: 'blue',
+      time: '14 min',
+      progress: 0,
+      components: ['Map phrases', 'Speaking exercise', 'Scenario practice'],
+      text: 'Direction practice focuses on a small set of phrases: where something is, how to get there, and whether it is nearby. Learn the response words before long sentences.',
+      exercises: [
+        'Ask how to get to the train station.',
+        'Understand left, right, straight ahead, and nearby.',
+        'Explain that you are lost and need help.',
+      ],
+    },
+    {
+      title: 'Daily Travel Problems',
+      topic: 'Handle simple problems at hotels, shops, and ticket counters.',
+      icon: Plane,
+      accent: 'violet',
+      time: '13 min',
+      progress: 0,
+      components: ['Useful sentences', 'Problem-solving exercise', 'Review quiz'],
+      text: 'Travel problems need calm, simple sentences. Practice saying what happened, what you need, and one clarifying question.',
+      exercises: [
+        'Say that your reservation is under your name.',
+        'Ask for help when a train is delayed.',
+        'Describe a missing item simply.',
+      ],
+    },
+  ];
+  const learningPlans = [
+    {
+      title: 'German Job Interview Preparation',
+      description: 'Personalized plan to help you succeed in German job interviews.',
+      summary:
+        'Build confident answers for common HR and technical interview questions with short text guides, speaking practice, and answer improvement tasks.',
+      language: 'German',
+      goal: 'Professional interview',
+      duration: '4 weeks',
+      progress: 35,
+      lessons: interviewLessons,
+    },
+    {
+      title: 'Italy Travel Survival Plan',
+      description: 'A two-week daily plan for practical Italian before a trip.',
+      summary:
+        'Prepare practical travel language for restaurants, directions, hotels, and simple travel problems with daily short lessons.',
+      language: 'Italian',
+      goal: 'Travel in two weeks',
+      duration: '14 days',
+      progress: 18,
+      lessons: italyLessons,
+    },
+  ];
+  const activePlan = learningPlans[selectedPlan];
+  const activeLesson = activePlan.lessons[selectedLesson] ?? activePlan.lessons[0];
+  const ActiveLessonIcon = activeLesson.icon;
+  const recentLessons = learningPlans
+    .flatMap((plan, planIndex) =>
+      plan.lessons.map((lesson, lessonIndex) => ({
+        ...lesson,
+        planIndex,
+        lessonIndex,
+        planTitle: plan.title,
+      })),
+    )
+    .sort((a, b) => b.progress - a.progress)
+    .slice(0, 3);
   const weeklyPlan = [
     { day: 'M', done: true },
     { day: 'T', done: true },
@@ -142,7 +259,6 @@ function App() {
     { day: 'S', done: false },
     { day: 'S', done: false },
   ];
-  const lessonProgress = [60, 20, 0, 0, 0];
 
   return (
     <main className="phone-stage">
@@ -217,12 +333,15 @@ function App() {
               <div className="dashboard-content">
                 <section className="dashboard-hero" aria-label="Weekly overview">
                   <div>
-                    <p>German Job Interview</p>
-                    <h3>Preparation Plan</h3>
-                    <span>3 lessons scheduled this week</span>
+                    <p>{activePlan.language} plan</p>
+                    <h3>{activePlan.title}</h3>
+                    <span>{activePlan.lessons.length} lessons in progress</span>
                   </div>
-                  <div className="hero-progress" aria-label="Overall progress 35 percent">
-                    <strong>35%</strong>
+                  <div
+                    className="hero-progress"
+                    aria-label={`Overall progress ${activePlan.progress} percent`}
+                  >
+                    <strong>{activePlan.progress}%</strong>
                     <small>Overall</small>
                   </div>
                 </section>
@@ -261,32 +380,44 @@ function App() {
 
                 <section className="lesson-progress-card" aria-label="Lesson progress">
                   <div className="section-heading">
-                    <h3>Lesson progress</h3>
-                    <span>5 lessons</span>
+                    <h3>Recent progress</h3>
+                    <span>Top 3 lessons</span>
                   </div>
-                  {interviewExercises.slice(0, 3).map((exercise, index) => (
-                    <div className="progress-row" key={exercise.title}>
-                      <span className={`mini-dot ${exercise.accent}`}>{index + 1}</span>
+                  {recentLessons.map((lesson, index) => (
+                    <button
+                      className="progress-row progress-link"
+                      key={`${lesson.planTitle}-${lesson.title}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPlan(lesson.planIndex);
+                        setSelectedLesson(lesson.lessonIndex);
+                        setLearningMode('training');
+                        setLearningStep('lesson');
+                        setScreen('learn');
+                      }}
+                    >
+                      <span className={`mini-dot ${lesson.accent}`}>{index + 1}</span>
                       <div>
-                        <strong>{exercise.title}</strong>
+                        <strong>{lesson.title}</strong>
+                        <em>{lesson.planTitle}</em>
                         <div className="progress-track" aria-hidden="true">
-                          <span style={{ width: `${lessonProgress[index]}%` }}></span>
+                          <span style={{ width: `${lesson.progress}%` }}></span>
                         </div>
                       </div>
-                      <small>{lessonProgress[index]}%</small>
-                    </div>
+                      <small>{lesson.progress}%</small>
+                    </button>
                   ))}
                 </section>
               </div>
 
               <nav className="bottom-bar" aria-label="Main navigation">
-                <button className="tab-button active" type="button" onClick={() => setScreen('main')}>
-                  <CalendarDays size={21} aria-hidden="true" />
-                  <span>Overview</span>
-                </button>
                 <button className="tab-button" type="button" onClick={() => setScreen('learn')}>
                   <BookOpen size={21} aria-hidden="true" />
                   <span>Start learning</span>
+                </button>
+                <button className="tab-button active" type="button" onClick={() => setScreen('main')}>
+                  <CalendarDays size={21} aria-hidden="true" />
+                  <span>Overview</span>
                 </button>
                 <button className="tab-button" type="button">
                   <Clock3 size={21} aria-hidden="true" />
@@ -297,9 +428,32 @@ function App() {
           ) : screen === 'learn' ? (
             <section className="main-page" aria-label="Start learning">
               <header className="main-topbar">
-                <div>
-                  <p className="app-label">Start learning</p>
-                  <h2>Learning Hub</h2>
+                <div className="topbar-title">
+                  {learningMode === 'training' && learningStep !== 'plans' && (
+                    <button
+                      className="inline-back"
+                      type="button"
+                      aria-label="Back"
+                      onClick={() =>
+                        setLearningStep(
+                          learningStep === 'lesson' || learningStep === 'planDetail'
+                            ? 'lessons'
+                            : 'plans',
+                        )
+                      }
+                    >
+                      <ChevronLeft size={18} aria-hidden="true" />
+                    </button>
+                  )}
+                  <h2>
+                    {learningStep === 'lesson'
+                      ? activeLesson.title
+                      : learningStep === 'planDetail'
+                        ? 'Plan overview'
+                      : learningStep === 'lessons'
+                        ? activePlan.title
+                        : 'Learning Hub'}
+                  </h2>
                 </div>
                 <button
                   className="icon-button"
@@ -316,7 +470,10 @@ function App() {
                   <button
                     className={`mode-card ${learningMode === 'training' ? 'selected' : ''}`}
                     type="button"
-                    onClick={() => setLearningMode('training')}
+                    onClick={() => {
+                      setLearningMode('training');
+                      setLearningStep('plans');
+                    }}
                   >
                     <BookOpen size={22} aria-hidden="true" />
                     <span>
@@ -327,7 +484,10 @@ function App() {
                   <button
                     className={`mode-card ${learningMode === 'ai' ? 'selected' : ''}`}
                     type="button"
-                    onClick={() => setLearningMode('ai')}
+                    onClick={() => {
+                      setLearningMode('ai');
+                      setLearningStep('plans');
+                    }}
                   >
                     <BrainCircuit size={22} aria-hidden="true" />
                     <span>
@@ -339,55 +499,158 @@ function App() {
 
                 {learningMode === 'training' ? (
                   <>
-                    <section className="lesson-overview" aria-label="Selected lesson">
-                      <div className={`lesson-icon ${activeExercise.accent}`}>
-                        <ActiveExerciseIcon size={24} aria-hidden="true" />
-                      </div>
-                      <div className="lesson-summary">
-                        <p>{activeExercise.time}</p>
-                        <h3>{activeExercise.title}</h3>
-                        <span>{activeExercise.topic}</span>
-                      </div>
-                    </section>
+                    {learningStep === 'plans' && (
+                      <section className="plan-section" aria-label="Suggested learning plans">
+                        <div className="section-heading">
+                          <h3>Suggested learning plans</h3>
+                          <span>{learningPlans.length} plans</span>
+                        </div>
 
-                    <div className="exercise-list" aria-label="Training lessons">
-                      {interviewExercises.map((exercise, index) => {
-                        const ExerciseIcon = exercise.icon;
+                        <div className="plan-list">
+                          {learningPlans.map((plan, planIndex) => {
+                            const firstLesson = plan.lessons[0];
+                            const PlanIcon = firstLesson.icon;
 
-                        return (
-                          <button
-                            className={`exercise-card ${
-                              selectedExercise === index ? 'selected' : ''
-                            }`}
-                            key={exercise.title}
-                            type="button"
-                            onClick={() => setSelectedExercise(index)}
+                            return (
+                              <button
+                                className="plan-card"
+                                key={plan.title}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPlan(planIndex);
+                                  setSelectedLesson(0);
+                                  setLearningStep('lessons');
+                                }}
+                              >
+                                <span className={`module-icon ${firstLesson.accent}`}>
+                                  <PlanIcon size={19} aria-hidden="true" />
+                                </span>
+                                <span className="module-copy">
+                                  <strong>{plan.title}</strong>
+                                  <small>{plan.description}</small>
+                                </span>
+                                <span className="lesson-percent">{plan.progress}%</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    )}
+
+                    {learningStep === 'lessons' && (
+                      <>
+                        <button
+                          className="lesson-overview plan-overview-button"
+                          type="button"
+                          aria-label="Open learning plan overview"
+                          onClick={() => setLearningStep('planDetail')}
+                        >
+                          <div className={`lesson-icon ${activeLesson.accent}`}>
+                            <ActiveLessonIcon size={24} aria-hidden="true" />
+                          </div>
+                          <div className="lesson-summary">
+                            <p>{activePlan.duration}</p>
+                            <h3>{activePlan.title}</h3>
+                            <span>{activePlan.goal}</span>
+                          </div>
+                        </button>
+
+                        <div className="exercise-list" aria-label="Lessons in selected plan">
+                          {activePlan.lessons.map((lesson, index) => {
+                            const LessonIcon = lesson.icon;
+                            return (
+                              <button
+                                className="exercise-card"
+                                key={lesson.title}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedLesson(index);
+                                  setLearningStep('lesson');
+                                }}
+                              >
+                                <span className={`module-icon ${lesson.accent}`}>
+                                  <LessonIcon size={19} aria-hidden="true" />
+                                </span>
+                                <span className="module-copy">
+                                  <strong>{lesson.title}</strong>
+                                  <small>{lesson.topic}</small>
+                                </span>
+                                <span className="lesson-percent">{lesson.progress}%</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+
+                    {learningStep === 'planDetail' && (
+                      <section className="plan-detail" aria-label="Learning plan overview">
+                        <section className="dashboard-hero compact-hero">
+                          <div>
+                            <p>{activePlan.duration}</p>
+                            <h3>{activePlan.title}</h3>
+                            <span>{activePlan.goal}</span>
+                          </div>
+                          <div
+                            className="hero-progress"
+                            aria-label={`Overall progress ${activePlan.progress} percent`}
                           >
-                            <span className={`module-icon ${exercise.accent}`}>
-                              <ExerciseIcon size={19} aria-hidden="true" />
-                            </span>
-                            <span className="module-copy">
-                              <strong>{exercise.title}</strong>
-                              <small>{exercise.topic}</small>
-                            </span>
-                            <span className="lesson-percent">{lessonProgress[index]}%</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                            <strong>{activePlan.progress}%</strong>
+                            <small>Overall</small>
+                          </div>
+                        </section>
 
-                    <section className="prompt-panel" aria-label="Practice prompts">
-                      <div className="prompt-heading">
-                        <PenLine size={18} aria-hidden="true" />
-                        <h3>Practice tasks</h3>
-                      </div>
+                        <div className="overview-grid" aria-label="Learning plan stats">
+                          <section className="stat-card">
+                            <Target size={20} aria-hidden="true" />
+                            <strong>{activePlan.goal}</strong>
+                            <span>Learning target</span>
+                          </section>
+                          <section className="stat-card">
+                            <BookOpen size={20} aria-hidden="true" />
+                            <strong>{activePlan.lessons.length}</strong>
+                            <span>Lessons</span>
+                          </section>
+                          <section className="stat-card">
+                            <CheckCircle2 size={20} aria-hidden="true" />
+                            <strong>{activePlan.progress}%</strong>
+                            <span>Progress</span>
+                          </section>
+                        </div>
 
-                      <ol className="prompt-list">
-                        {activeExercise.exercises.map((exercise) => (
-                          <li key={exercise}>{exercise}</li>
-                        ))}
-                      </ol>
-                    </section>
+                        <section className="summary-card">
+                          <div className="section-heading">
+                            <h3>Learning summary</h3>
+                            <span>{activePlan.language}</span>
+                          </div>
+                          <p>{activePlan.summary}</p>
+                        </section>
+                      </section>
+                    )}
+
+                    {learningStep === 'lesson' && (
+                      <section className="prompt-panel lesson-detail" aria-label="Lesson detail">
+                        <div className="prompt-heading">
+                          <PenLine size={18} aria-hidden="true" />
+                          <h3>{activeLesson.title}</h3>
+                        </div>
+
+                        <p className="lesson-topic">{activeLesson.topic}</p>
+                        <p className="lesson-text">{activeLesson.text}</p>
+
+                        <div className="component-list" aria-label="Lesson components">
+                          {activeLesson.components.map((component) => (
+                            <span key={component}>{component}</span>
+                          ))}
+                        </div>
+
+                        <ol className="prompt-list">
+                          {activeLesson.exercises.map((exercise) => (
+                            <li key={exercise}>{exercise}</li>
+                          ))}
+                        </ol>
+                      </section>
+                    )}
                   </>
                 ) : (
                   <section className="ai-placeholder" aria-label="AI Training placeholder">
@@ -399,13 +662,13 @@ function App() {
               </div>
 
               <nav className="bottom-bar" aria-label="Main navigation">
-                <button className="tab-button" type="button" onClick={() => setScreen('main')}>
-                  <CalendarDays size={21} aria-hidden="true" />
-                  <span>Overview</span>
-                </button>
                 <button className="tab-button active" type="button" onClick={() => setScreen('learn')}>
                   <BookOpen size={21} aria-hidden="true" />
                   <span>Start learning</span>
+                </button>
+                <button className="tab-button" type="button" onClick={() => setScreen('main')}>
+                  <CalendarDays size={21} aria-hidden="true" />
+                  <span>Overview</span>
                 </button>
                 <button className="tab-button" type="button">
                   <Clock3 size={21} aria-hidden="true" />
