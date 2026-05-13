@@ -1,8 +1,20 @@
 import React from 'react';
-import { BookOpen, BrainCircuit, ChevronLeft, PenLine, Settings, Target } from 'lucide-react';
+import {
+  BookOpen,
+  BrainCircuit,
+  CheckCircle2,
+  ChevronLeft,
+  Headphones,
+  Mic,
+  PenLine,
+  Settings,
+  Target,
+  TextCursorInput,
+} from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 
 export function LearningPage({
+  activeExercise,
   activeLesson,
   activePlan,
   learningMode,
@@ -11,13 +23,12 @@ export function LearningPage({
   onBack,
   onLearningMode,
   onNavigate,
+  onOpenExercise,
   onOpenPlan,
   onOpenPlanDetail,
   onOpenSettings,
   onOpenLesson,
 }) {
-  const ActiveLessonIcon = activeLesson.icon;
-
   return (
     <section className="main-page" aria-label="Start learning">
       <header className="main-topbar">
@@ -28,7 +39,9 @@ export function LearningPage({
             </button>
           )}
           <h2>
-            {learningStep === 'lesson'
+            {learningStep === 'exercise'
+              ? 'Exercise'
+              : learningStep === 'lesson'
               ? 'Lesson'
               : learningStep === 'planDetail'
                 ? 'Plan overview'
@@ -82,7 +95,10 @@ export function LearningPage({
               />
             )}
             {learningStep === 'planDetail' && <PlanDetailView activePlan={activePlan} />}
-            {learningStep === 'lesson' && <LessonDetailView activeLesson={activeLesson} />}
+            {learningStep === 'lesson' && (
+              <LessonDetailView activeLesson={activeLesson} onOpenExercise={onOpenExercise} />
+            )}
+            {learningStep === 'exercise' && <ExerciseDetailView activeExercise={activeExercise} />}
           </>
         ) : (
           <section className="ai-placeholder" aria-label="AI Training placeholder">
@@ -224,28 +240,217 @@ function PlanDetailView({ activePlan }) {
   );
 }
 
-function LessonDetailView({ activeLesson }) {
+function LessonDetailView({ activeLesson, onOpenExercise }) {
+  const LessonIcon = activeLesson.icon;
+  const finished = activeLesson.status === 'finished';
+
   return (
-    <section className="prompt-panel lesson-detail" aria-label="Lesson detail">
-      <div className="prompt-heading">
-        <PenLine size={18} aria-hidden="true" />
-        <h3>{activeLesson.title}</h3>
+    <div className="lesson-detail-stack" aria-label="Lesson detail">
+      <section className={`lesson-overview colorful-plan-header ${activeLesson.accent}`}>
+        <div className={`lesson-icon ${activeLesson.accent}`}>
+          <LessonIcon size={24} aria-hidden="true" />
+        </div>
+        <div className="lesson-summary">
+          <p>{activeLesson.status}</p>
+          <h3>{activeLesson.title}</h3>
+          <span>{activeLesson.topic}</span>
+        </div>
+      </section>
+
+      {activeLesson.blocks.map((block, index) => (
+        <LessonBlock
+          block={block}
+          exercises={activeLesson.exercises}
+          key={`${block.type}-${block.title ?? block.exerciseIndex}-${index}`}
+          onOpenExercise={onOpenExercise}
+        />
+      ))}
+
+      {finished && (
+        <section className="completion-comment">
+          <CheckCircle2 size={20} aria-hidden="true" />
+          <p>{activeLesson.comment}</p>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function LessonBlock({ block, exercises, onOpenExercise }) {
+  if (block.type === 'exercise') {
+    const exercise = exercises[block.exerciseIndex];
+
+    return (
+      <section className="lesson-block-group">
+        <div className="section-heading">
+          <h3>{exercise.title}</h3>
+          <span>{exercise.type}</span>
+        </div>
+        <ExerciseCard exercise={exercise} index={block.exerciseIndex} onOpenExercise={onOpenExercise} />
+      </section>
+    );
+  }
+
+  if (block.type === 'summary') {
+    return (
+      <section className="summary-card">
+        <div className="section-heading">
+          <h3>{block.title}</h3>
+          <span>Wrap-up</span>
+        </div>
+        <p>{block.text}</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="summary-card">
+      <div className="section-heading">
+        <h3>{block.title}</h3>
+        <span>{block.subtitle}</span>
       </div>
+      <p>{block.text}</p>
 
-      <p className="lesson-topic">{activeLesson.topic}</p>
-      <p className="lesson-text">{activeLesson.text}</p>
+      {block.visual && (
+        <div className="lesson-visual" aria-label={block.visual.label}>
+          {block.visual.steps.map((step) => (
+            <span key={step}>{step}</span>
+          ))}
+        </div>
+      )}
 
-      <div className="component-list" aria-label="Lesson components">
-        {activeLesson.components.map((component) => (
-          <span key={component}>{component}</span>
+      <div className="learning-point-map" aria-label={`${block.title} points`}>
+        {block.points.map((point, index) => (
+          <div className="learning-point" key={point}>
+            <span>{index + 1}</span>
+            <p>{point}</p>
+          </div>
         ))}
       </div>
-
-      <ol className="prompt-list">
-        {activeLesson.exercises.map((exercise) => (
-          <li key={exercise}>{exercise}</li>
-        ))}
-      </ol>
     </section>
   );
+}
+
+function ExerciseCard({ exercise, index, onOpenExercise }) {
+  return (
+    <button
+      className={`exercise-card lesson-progress-link exercise-type-${exercise.type}`}
+      type="button"
+      onClick={() => onOpenExercise(index)}
+    >
+      <span className={`exercise-type-icon ${exercise.type}`}>
+        <ExerciseTypeIcon type={exercise.type} />
+      </span>
+      <span className="lesson-progress-copy">
+        <strong>{exercise.title}</strong>
+        <em>{exercise.format}</em>
+        <span className="status-pill">{formatStatus(exercise.status)}</span>
+      </span>
+      <small className="lesson-percent">{exercise.grade ? `${exercise.grade}` : '--'}</small>
+    </button>
+  );
+}
+
+function ExerciseDetailView({ activeExercise }) {
+  return (
+    <section className="exercise-detail" aria-label="Exercise detail">
+      <div className="exercise-detail-header">
+        <span className={`exercise-type-icon ${activeExercise.type}`}>
+          <ExerciseTypeIcon type={activeExercise.type} />
+        </span>
+        <div>
+          <p>{activeExercise.type}</p>
+          <h3>{activeExercise.title}</h3>
+        </div>
+      </div>
+
+      <div className="exercise-status-row">
+        <span className="status-pill">{formatStatus(activeExercise.status)}</span>
+        {activeExercise.status === 'finished' && (
+          <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
+        )}
+      </div>
+
+      <section className="summary-card">
+        <div className="section-heading">
+          <h3>Task</h3>
+          <span>{activeExercise.format}</span>
+        </div>
+        <p>{activeExercise.task}</p>
+      </section>
+
+      <section className="summary-card">
+        <div className="section-heading">
+          <h3>Prompt</h3>
+          <span>{activeExercise.type}</span>
+        </div>
+        <p>{activeExercise.prompt}</p>
+      </section>
+
+      {activeExercise.feedback && <ExerciseFeedback feedback={activeExercise.feedback} />}
+    </section>
+  );
+}
+
+function ExerciseFeedback({ feedback }) {
+  return (
+    <section className="feedback-card" aria-label="Exercise feedback">
+      <div className="feedback-score">
+        <CheckCircle2 size={20} aria-hidden="true" />
+        <div>
+          <p>{feedback.title}</p>
+          <strong>{feedback.score}/100</strong>
+        </div>
+      </div>
+      <p>{feedback.message}</p>
+
+      <div className="feedback-grid">
+        <div>
+          <h4>Strengths</h4>
+          {feedback.strengths.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+        <div>
+          <h4>Improve</h4>
+          {feedback.improvements.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+      </div>
+
+      <div className="feedback-example">
+        <h4>Improved example</h4>
+        <p>{feedback.improvedExample}</p>
+      </div>
+    </section>
+  );
+}
+
+function ExerciseTypeIcon({ type }) {
+  if (type === 'listening') {
+    return <Headphones size={18} aria-hidden="true" />;
+  }
+
+  if (type === 'writing') {
+    return <PenLine size={18} aria-hidden="true" />;
+  }
+
+  if (type === 'speaking') {
+    return <Mic size={18} aria-hidden="true" />;
+  }
+
+  return <TextCursorInput size={18} aria-hidden="true" />;
+}
+
+function formatStatus(status) {
+  if (status === 'not-started') {
+    return 'Not yet start';
+  }
+
+  if (status === 'ongoing') {
+    return 'Ongoing';
+  }
+
+  return 'Finished';
 }

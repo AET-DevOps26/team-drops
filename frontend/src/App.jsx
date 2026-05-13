@@ -17,11 +17,13 @@ export function App() {
   const [language, setLanguage] = React.useState('English');
   const [selectedPlan, setSelectedPlan] = React.useState(0);
   const [selectedLesson, setSelectedLesson] = React.useState(0);
+  const [selectedExercise, setSelectedExercise] = React.useState(0);
   const [learningMode, setLearningMode] = React.useState('training');
   const [learningStep, setLearningStep] = React.useState('plans');
 
   const activePlan = learningPlans[selectedPlan];
   const activeLesson = activePlan.lessons[selectedLesson] ?? activePlan.lessons[0];
+  const activeExercise = activeLesson.exercises[selectedExercise] ?? activeLesson.exercises[0];
   const recentLessons = getRecentLessons(learningPlans);
 
   const openSettings = () => {
@@ -50,6 +52,7 @@ export function App() {
   const openLessonFromDashboard = (planIndex, lessonIndex) => {
     setSelectedPlan(planIndex);
     setSelectedLesson(lessonIndex);
+    setSelectedExercise(0);
     setLearningMode('training');
     setLearningStep('lesson');
     setScreen('learn');
@@ -65,12 +68,19 @@ export function App() {
   const openPlan = (planIndex) => {
     setSelectedPlan(planIndex);
     setSelectedLesson(0);
+    setSelectedExercise(0);
     setLearningStep('lessons');
   };
 
   const openLesson = (lessonIndex) => {
     setSelectedLesson(lessonIndex);
+    setSelectedExercise(0);
     setLearningStep('lesson');
+  };
+
+  const openExercise = (exerciseIndex) => {
+    setSelectedExercise(exerciseIndex);
+    setLearningStep('exercise');
   };
 
   const changeLearningMode = (nextMode) => {
@@ -79,6 +89,11 @@ export function App() {
   };
 
   const goBackInLearning = () => {
+    if (learningStep === 'exercise') {
+      setLearningStep('lesson');
+      return;
+    }
+
     setLearningStep(learningStep === 'lesson' || learningStep === 'planDetail' ? 'lessons' : 'plans');
   };
 
@@ -109,6 +124,7 @@ export function App() {
 
           {screen === 'learn' && (
             <LearningPage
+              activeExercise={activeExercise}
               activeLesson={activeLesson}
               activePlan={activePlan}
               learningMode={learningMode}
@@ -117,6 +133,7 @@ export function App() {
               onBack={goBackInLearning}
               onLearningMode={changeLearningMode}
               onNavigate={setScreen}
+              onOpenExercise={openExercise}
               onOpenLesson={openLesson}
               onOpenPlan={openPlan}
               onOpenPlanDetail={() => setLearningStep('planDetail')}
