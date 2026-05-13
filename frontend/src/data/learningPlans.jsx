@@ -1,0 +1,186 @@
+import {
+  BriefcaseBusiness,
+  GraduationCap,
+  Languages,
+  MapPinned,
+  MessageSquareText,
+  Plane,
+  Presentation,
+  Sparkles,
+} from 'lucide-react';
+
+const interviewLessons = [
+  {
+    title: 'Self Introduction',
+    topic: 'Introduce yourself professionally in an interview.',
+    icon: MessageSquareText,
+    accent: 'blue',
+    time: '8 min',
+    progress: 60,
+    components: ['Text guide', 'Speaking exercise', 'Vocabulary upgrade'],
+    text: 'A strong self-introduction is short, professional, and relevant. Start with who you are, mention your field or current role, then connect your experience to the position.',
+    exercises: [
+      'Tell me about yourself.',
+      'Write a short professional introduction.',
+      'Improve your introduction using more formal vocabulary.',
+    ],
+  },
+  {
+    title: 'Education and Background',
+    topic: 'Explain your studies, university, and academic background.',
+    icon: GraduationCap,
+    accent: 'green',
+    time: '7 min',
+    progress: 20,
+    components: ['Text guide', 'Writing exercise', 'Pronunciation practice'],
+    text: 'When explaining your education, name your degree, university, specialization, and academic focus. Keep the answer clear and connect your studies to your career direction.',
+    exercises: [
+      'Describe your degree and specialization.',
+      'Explain why you chose your field.',
+      'Practice saying your graduation status clearly.',
+    ],
+  },
+  {
+    title: 'Work Experience and Internships',
+    topic: 'Talk about previous internships, jobs, or projects.',
+    icon: BriefcaseBusiness,
+    accent: 'amber',
+    time: '9 min',
+    progress: 0,
+    components: ['Text guide', 'Speaking exercise', 'Reflection'],
+    text: 'Work experience answers should explain the context, your responsibilities, and the result. Use active verbs and mention one concrete thing you learned.',
+    exercises: [
+      'Describe one internship or work experience.',
+      'Explain your responsibilities.',
+      'Mention what you learned from the experience.',
+    ],
+  },
+  {
+    title: 'Project Explanation',
+    topic: 'Present a technical or academic project clearly.',
+    icon: Presentation,
+    accent: 'violet',
+    time: '10 min',
+    progress: 0,
+    components: ['Structure guide', 'Technical explanation', 'Simplification task'],
+    text: 'A good project explanation follows a simple structure: problem, solution, your role, and impact. For non-technical listeners, avoid jargon and explain the value first.',
+    exercises: [
+      'Describe one project you worked on.',
+      'Explain the problem, your solution, and your role.',
+      'Simplify a technical explanation for a non-technical interviewer.',
+    ],
+  },
+  {
+    title: 'Strengths and Weaknesses',
+    topic: 'Answer common HR questions about strengths and weaknesses.',
+    icon: Sparkles,
+    accent: 'rose',
+    time: '8 min',
+    progress: 0,
+    components: ['Answer framework', 'Writing exercise', 'Improvement task'],
+    text: 'Strengths need short examples. Weaknesses should sound honest but professional: name the weakness, explain what you are doing to improve, and avoid critical job requirements.',
+    exercises: [
+      'Name two strengths with examples.',
+      'Explain one weakness professionally.',
+      'Rewrite weak answers into stronger interview answers.',
+    ],
+  },
+];
+
+const italyLessons = [
+  {
+    title: 'Italian Travel Basics',
+    topic: 'Greet people, introduce yourself, and handle polite travel phrases.',
+    icon: Languages,
+    accent: 'green',
+    time: '12 min',
+    progress: 35,
+    components: ['Phrase list', 'Speaking exercise', 'Mini quiz'],
+    text: 'Start with high-frequency travel phrases. Practice greetings, your name, where you are from, and polite expressions you can reuse in hotels, cafes, and shops.',
+    exercises: [
+      'Introduce yourself as a traveler.',
+      'Say where you are from and how long you will stay.',
+      'Practice polite greetings for hotels and cafes.',
+    ],
+  },
+  {
+    title: 'Ordering Food',
+    topic: 'Order meals, ask about ingredients, and pay at restaurants.',
+    icon: MessageSquareText,
+    accent: 'amber',
+    time: '15 min',
+    progress: 15,
+    components: ['Menu vocabulary', 'Role-play exercise', 'Listening practice'],
+    text: 'Ordering food is about polite requests and useful menu words. Practice asking for items, checking ingredients, and closing the interaction naturally.',
+    exercises: [
+      'Order a coffee and pastry.',
+      'Ask for a vegetarian option.',
+      'Request the bill politely.',
+    ],
+  },
+  {
+    title: 'Asking for Directions',
+    topic: 'Find stations, hotels, landmarks, and basic transport routes.',
+    icon: MapPinned,
+    accent: 'blue',
+    time: '14 min',
+    progress: 0,
+    components: ['Map phrases', 'Speaking exercise', 'Scenario practice'],
+    text: 'Direction practice focuses on a small set of phrases: where something is, how to get there, and whether it is nearby. Learn the response words before long sentences.',
+    exercises: [
+      'Ask how to get to the train station.',
+      'Understand left, right, straight ahead, and nearby.',
+      'Explain that you are lost and need help.',
+    ],
+  },
+  {
+    title: 'Daily Travel Problems',
+    topic: 'Handle simple problems at hotels, shops, and ticket counters.',
+    icon: Plane,
+    accent: 'violet',
+    time: '13 min',
+    progress: 0,
+    components: ['Useful sentences', 'Problem-solving exercise', 'Review quiz'],
+    text: 'Travel problems need calm, simple sentences. Practice saying what happened, what you need, and one clarifying question.',
+    exercises: [
+      'Say that your reservation is under your name.',
+      'Ask for help when a train is delayed.',
+      'Describe a missing item simply.',
+    ],
+  },
+];
+
+export const learningPlans = [
+  {
+    title: 'German Job Interview Preparation',
+    description: 'Personalized plan to help you succeed in German job interviews.',
+    summary:
+      'Build confident answers for common HR and technical interview questions with short text guides, speaking practice, and answer improvement tasks.',
+    language: 'German',
+    goal: 'Professional interview',
+    duration: '4 weeks',
+    progress: 35,
+    lessons: interviewLessons,
+  },
+  {
+    title: 'Italy Travel Survival Plan',
+    description: 'A two-week daily plan for practical Italian before a trip.',
+    summary:
+      'Prepare practical travel language for restaurants, directions, hotels, and simple travel problems with daily short lessons.',
+    language: 'Italian',
+    goal: 'Travel in two weeks',
+    duration: '14 days',
+    progress: 18,
+    lessons: italyLessons,
+  },
+];
+
+export const weeklyPlan = [
+  { day: 'M', done: true },
+  { day: 'T', done: true },
+  { day: 'W', done: false },
+  { day: 'T', done: true },
+  { day: 'F', done: false },
+  { day: 'S', done: false },
+  { day: 'S', done: false },
+];
