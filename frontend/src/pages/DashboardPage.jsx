@@ -4,6 +4,7 @@ import { BottomNav } from '../components/BottomNav';
 
 export function DashboardPage({
   activePlan,
+  recentFinishedLessons,
   recentLessons,
   weeklyPlan,
   onOpenLesson,
@@ -73,33 +74,55 @@ export function DashboardPage({
           </section>
         </div>
 
-        <section className="lesson-progress-card" aria-label="Lesson progress">
-          <div className="section-heading">
-            <h3>Recent progress</h3>
-            <span>Top 3 lessons</span>
-          </div>
-          {recentLessons.map((lesson, index) => (
-            <button
-              className="progress-row progress-link"
-              key={`${lesson.planTitle}-${lesson.title}`}
-              type="button"
-              onClick={() => onOpenLesson(lesson.planIndex, lesson.lessonIndex)}
-            >
-              <span className={`mini-dot ${lesson.accent}`}>{index + 1}</span>
-              <div>
-                <strong>{lesson.title}</strong>
-                <em>{lesson.planTitle}</em>
-                <div className="progress-track" aria-hidden="true">
-                  <span style={{ width: `${lesson.progress}%` }}></span>
-                </div>
-              </div>
-              <small>{lesson.progress}%</small>
-            </button>
-          ))}
-        </section>
+        <LessonListBlock
+          emptyText="No ongoing lessons yet"
+          lessons={recentLessons}
+          onOpenLesson={onOpenLesson}
+          title="Recent progress"
+        />
+
+        <LessonListBlock
+          emptyText="No finished lessons yet"
+          lessons={recentFinishedLessons}
+          onOpenLesson={onOpenLesson}
+          title="Recent finish"
+        />
       </div>
 
       <BottomNav activeScreen="main" onNavigate={onNavigate} />
+    </section>
+  );
+}
+
+function LessonListBlock({ emptyText, lessons, onOpenLesson, title }) {
+  return (
+    <section className="lesson-progress-card" aria-label={title}>
+      <div className="section-heading">
+        <h3>{title}</h3>
+        <span>Top 3 lessons</span>
+      </div>
+      {lessons.length === 0 ? (
+        <p className="empty-state">{emptyText}</p>
+      ) : (
+        lessons.map((lesson, index) => (
+          <button
+            className="progress-row progress-link"
+            key={`${lesson.planTitle}-${lesson.title}`}
+            type="button"
+            onClick={() => onOpenLesson(lesson.planIndex, lesson.lessonIndex)}
+          >
+            <span className={`mini-dot ${lesson.accent}`}>{index + 1}</span>
+            <div>
+              <strong>{lesson.title}</strong>
+              <em>{lesson.planTitle}</em>
+              <div className="progress-track" aria-hidden="true">
+                <span style={{ width: `${lesson.progress}%` }}></span>
+              </div>
+            </div>
+            <small>{lesson.progress}%</small>
+          </button>
+        ))
+      )}
     </section>
   );
 }

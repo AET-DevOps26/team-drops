@@ -7,7 +7,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LanguagePage } from './pages/LanguagePage';
 import { LearningPage } from './pages/LearningPage';
 import { ProfilePage } from './pages/ProfilePage';
-import { getRecentLessons } from './utils/learning';
+import { getRecentFinishedLessons, getRecentLessons } from './utils/learning';
 
 export function App() {
   const [screen, setScreen] = React.useState('auth');
@@ -25,6 +25,7 @@ export function App() {
   const activeLesson = activePlan.lessons[selectedLesson] ?? activePlan.lessons[0];
   const activeExercise = activeLesson.exercises[selectedExercise] ?? activeLesson.exercises[0];
   const recentLessons = getRecentLessons(learningPlans);
+  const recentFinishedLessons = getRecentFinishedLessons(learningPlans);
 
   const openSettings = () => {
     setSettingsClosing(false);
@@ -113,6 +114,7 @@ export function App() {
           {screen === 'main' && (
             <DashboardPage
               activePlan={activePlan}
+              recentFinishedLessons={recentFinishedLessons}
               recentLessons={recentLessons}
               weeklyPlan={weeklyPlan}
               onNavigate={setScreen}
