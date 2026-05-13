@@ -55,6 +55,13 @@ export function App() {
     setScreen('learn');
   };
 
+  const openPlanFromDashboard = () => {
+    setSelectedLesson(0);
+    setLearningMode('training');
+    setLearningStep('lessons');
+    setScreen('learn');
+  };
+
   const openPlan = (planIndex) => {
     setSelectedPlan(planIndex);
     setSelectedLesson(0);
@@ -95,6 +102,7 @@ export function App() {
               weeklyPlan={weeklyPlan}
               onNavigate={setScreen}
               onOpenLesson={openLessonFromDashboard}
+              onOpenPlan={openPlanFromDashboard}
               onOpenSettings={openSettings}
             />
           )}

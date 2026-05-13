@@ -2,7 +2,15 @@ import React from 'react';
 import { CheckCircle2, Flame, Settings, Target } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 
-export function DashboardPage({ activePlan, recentLessons, weeklyPlan, onOpenLesson, onOpenSettings, onNavigate }) {
+export function DashboardPage({
+  activePlan,
+  recentLessons,
+  weeklyPlan,
+  onOpenLesson,
+  onOpenPlan,
+  onOpenSettings,
+  onNavigate,
+}) {
   return (
     <section className="main-page" aria-label="Overview dashboard">
       <header className="main-topbar">
@@ -16,7 +24,12 @@ export function DashboardPage({ activePlan, recentLessons, weeklyPlan, onOpenLes
       </header>
 
       <div className="dashboard-content">
-        <section className="dashboard-hero" aria-label="Weekly overview">
+        <button
+          className={`dashboard-hero dashboard-hero-button colorful-card ${activePlan.accent}`}
+          type="button"
+          aria-label="Open current learning plan"
+          onClick={onOpenPlan}
+        >
           <div>
             <p>{activePlan.language} plan</p>
             <h3>{activePlan.title}</h3>
@@ -26,7 +39,7 @@ export function DashboardPage({ activePlan, recentLessons, weeklyPlan, onOpenLes
             <strong>{activePlan.progress}%</strong>
             <small>Overall</small>
           </div>
-        </section>
+        </button>
 
         <section className="week-card" aria-label="Weekly training plan">
           <div className="section-heading">
