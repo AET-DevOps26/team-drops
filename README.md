@@ -37,9 +37,10 @@ team-drops/
 
 ## CI/CD
 
-The repository includes a GitHub Actions workflow for backend continuous integration.
+The repository includes GitHub Actions workflows for continuous integration.
 
-Workflow file:
+Workflow files:
 
 ```text
-.github/workflows/backend-ci.yml
+.github/workflows/backend-ci.yml   # Builds all three Spring Boot services and their Docker images
+.github/workflows/genai-ci.yml     # Builds the GenAI service Docker image
