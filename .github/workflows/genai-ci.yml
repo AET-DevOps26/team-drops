@@ -1,0 +1,20 @@
+name: GenAI CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'genai/**'
+      - '!**/*.md'
+
+jobs:
+  build-docker-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build genai-service Docker image
+        run: docker build -t genai-service ./genai
