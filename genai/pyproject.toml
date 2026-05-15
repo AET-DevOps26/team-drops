@@ -12,3 +12,9 @@ dependencies = [
     "langchain-ollama>=0.3.0",
     "langchain-openai>=0.3.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "httpx>=0.28.0",
+]
