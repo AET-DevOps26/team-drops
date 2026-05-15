@@ -9,3 +9,4 @@ This folder contains the system overview, architecture diagrams, and project doc
 - [Class Diagram](Class%20Diagram.pdf)
 - [Use Case Diagram](Use%20Case%20Diagram.pdf)
 - [Top-Level Architecture Diagram](top-level%20architecture%20diagram.pdf)
+- [Microservice Best Practices](microservice-best-practices.md)

@@ -1,0 +1,416 @@
+openapi: 3.1.0
+info:
+  title: Language Learning Platform API
+  description: |
+    Central API contract for the language learning platform.
+
+    **Naming conventions**
+    - API JSON / OpenAPI: `snake_case` (e.g. `lesson_id`, `expected_answer`)
+    - Java entity fields: `camelCase` (e.g. `lessonId`, `expectedAnswer`)
+    - Database columns: `snake_case` via `@Column(name = ...)`
+
+    Service ownership is indicated per-operation via `x-service`.
+  version: 0.1.0
+servers:
+  - url: http://localhost:8081
+    description: User Service
+  - url: http://localhost:8082
+    description: Learning Service
+  - url: http://localhost:8083
+    description: Progress-Feedback Service
+  - url: http://localhost:8084
+    description: GenAI Service
+tags:
+  - name: exercises
+    x-displayName: exercises
+  - name: writing
+    x-displayName: writing
+  - name: ops
+    x-displayName: ops
+paths:
+  /api/v1/genai/exercises/generate:
+    post:
+      tags:
+        - exercises
+      summary: Generate additional exercises
+      description: >-
+        Given a lesson topic and a set of existing exercises as style
+        references, generate new exercises using AI. The AI matches the format,
+        difficulty, and exercise types of the provided reference set.
+      operationId: generateExercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateExercisesRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateExercisesResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /api/v1/genai/writing/evaluate:
+    post:
+      tags:
+        - writing
+      summary: Evaluate a written answer
+      description: >-
+        Evaluate a learner's written answer against the exercise's expected
+        answer. Returns a numeric score (0–10) ready to store as
+        UserAnswer.score, plus message and weak_area fields that map directly to
+        a Feedback record. Also returns the corrected answer and a detailed
+        explanation of errors.
+      operationId: evaluateWriting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WritingEvaluationRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WritingEvaluationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /health:
+    get:
+      tags:
+        - ops
+      summary: Health
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    ExerciseContext:
+      properties:
+        type:
+          type: string
+          title: Type
+          description: >-
+            Exercise type, e.g. 'translation', 'fill-in-the-blank',
+            'multiple-choice'
+          examples:
+            - translation
+        question:
+          type: string
+          title: Question
+          description: The exercise prompt shown to the learner
+          examples:
+            - 'Translate: ''The cat is on the table'''
+        difficulty:
+          type: string
+          title: Difficulty
+          examples:
+            - beginner
+        expected_answer:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Expected Answer
+          examples:
+            - Die Katze ist auf dem Tisch
+      type: object
+      required:
+        - type
+        - question
+        - difficulty
+      title: ExerciseContext
+      description: An existing exercise provided as a style/difficulty reference.
+    GenerateExercisesRequest:
+      properties:
+        lesson_id:
+          type: integer
+          title: Lesson Id
+          description: >-
+            ID of the lesson these exercises belong to — passed through to each
+            generated exercise
+          examples:
+            - 3
+        lesson_topic:
+          type: string
+          title: Lesson Topic
+          description: Topic or theme of the lesson
+          examples:
+            - Everyday household items
+        target_language:
+          type: string
+          title: Target Language
+          description: Language being learned (full name or BCP-47 tag)
+          examples:
+            - German
+        level:
+          type: string
+          title: Level
+          description: CEFR level or descriptive level of the learner
+          examples:
+            - A2
+        existing_exercises:
+          items:
+            $ref: '#/components/schemas/ExerciseContext'
+          type: array
+          maxItems: 5
+          minItems: 1
+          title: Existing Exercises
+          description: 1–5 existing exercises to use as style and difficulty references
+        count:
+          type: integer
+          maximum: 10
+          minimum: 1
+          title: Count
+          description: Number of new exercises to generate
+          default: 3
+          examples:
+            - 3
+      type: object
+      required:
+        - lesson_id
+        - lesson_topic
+        - target_language
+        - level
+        - existing_exercises
+      title: GenerateExercisesRequest
+      description: >-
+        Request body for generating additional exercises similar to existing
+        ones.
+
+        Provide 1–5 existing exercises as style references — the AI will match
+        their
+
+        format, difficulty, and language level when creating new ones.
+    GenerateExercisesResponse:
+      properties:
+        exercises:
+          items:
+            $ref: '#/components/schemas/GeneratedExercise'
+          type: array
+          title: Exercises
+          description: Newly generated exercises in the same style as the provided examples
+      type: object
+      required:
+        - exercises
+      title: GenerateExercisesResponse
+      description: >-
+        Response body containing newly generated exercises.
+
+        Each exercise matches the style and difficulty of the provided reference
+        set.
+    GeneratedExercise:
+      properties:
+        lesson_id:
+          type: integer
+          title: Lesson Id
+          description: Lesson this exercise belongs to — passed through from the request
+        type:
+          type: string
+          enum:
+            - translation
+            - fill-in-the-blank
+            - multiple-choice
+            - sentence-building
+          title: Type
+          description: Exercise type — maps to Exercise.type
+        question:
+          type: string
+          title: Question
+          description: The exercise prompt — maps to Exercise.question
+        difficulty:
+          type: string
+          title: Difficulty
+          description: Difficulty level — maps to Exercise.difficulty
+        expected_answer:
+          type: string
+          title: Expected Answer
+          description: The correct answer — maps to Exercise.expectedAnswer
+      type: object
+      required:
+        - lesson_id
+        - type
+        - question
+        - difficulty
+        - expected_answer
+      title: GeneratedExercise
+      description: >-
+        A single AI-generated exercise. All fields map directly to Exercise in
+        the backend.
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError
+    WritingEvaluationRequest:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+          examples:
+            - 42
+        exercise_id:
+          type: integer
+          title: Exercise Id
+          examples:
+            - 7
+        exercise_type:
+          type: string
+          title: Exercise Type
+          description: Type of the exercise being answered
+          examples:
+            - translation
+        question:
+          type: string
+          title: Question
+          description: The original exercise question shown to the learner
+          examples:
+            - 'Translate: ''I would like a coffee, please'''
+        expected_answer:
+          type: string
+          title: Expected Answer
+          description: The canonical correct answer
+          examples:
+            - Je voudrais un café, s'il vous plaît
+        user_answer:
+          type: string
+          title: User Answer
+          description: The learner's submitted written answer
+          examples:
+            - Je voudrai un cafe s'il vous plait
+        target_language:
+          type: string
+          title: Target Language
+          examples:
+            - French
+        level:
+          type: string
+          title: Level
+          examples:
+            - A2
+      type: object
+      required:
+        - user_id
+        - exercise_id
+        - exercise_type
+        - question
+        - expected_answer
+        - user_answer
+        - target_language
+        - level
+      title: WritingEvaluationRequest
+      description: >-
+        Request body for evaluating a learner's written answer against an
+        exercise.
+
+        Maps directly to the UserAnswer + Exercise domain objects in the Java
+        backend.
+    WritingEvaluationResponse:
+      properties:
+        score:
+          type: number
+          maximum: 10
+          minimum: 0
+          title: Score
+          description: Numeric score 0–10 — maps to UserAnswer.score
+          examples:
+            - 6.5
+        is_correct:
+          type: boolean
+          title: Is Correct
+          description: True if the answer is substantially correct
+        message:
+          type: string
+          title: Message
+          description: >-
+            Full feedback including what was wrong and why — maps to
+            Feedback.message. Should be a complete, helpful explanation suitable
+            for storing as the feedback record.
+          examples:
+            - >-
+              Good attempt! 'voudrais' needs a conditional ending (-ais not
+              -ai), and French requires accents: 'café' not 'cafe'. Otherwise
+              the structure is correct.
+        weak_area:
+          type: string
+          title: Weak Area
+          description: >-
+            Short grammatical/lexical category to improve — maps to
+            Feedback.weakArea
+          examples:
+            - accents and diacritics
+        corrected_answer:
+          type: string
+          title: Corrected Answer
+          description: The corrected version of the learner's answer — for frontend display
+          examples:
+            - Je voudrais un café, s'il vous plaît
+      type: object
+      required:
+        - score
+        - is_correct
+        - message
+        - weak_area
+        - corrected_answer
+      title: WritingEvaluationResponse
+      description: >-
+        AI evaluation of a written answer.
+
+        score maps to UserAnswer.score; message and weak_area map directly to
+
+        the Feedback entity (Feedback.message, Feedback.weakArea) in the
+        backend.
+x-tagGroups:
+  - name: GenAI Language Learning Service
+    tags:
+      - exercises
+      - writing
+      - ops

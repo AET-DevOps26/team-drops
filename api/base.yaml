@@ -1,0 +1,23 @@
+openapi: 3.1.0
+info:
+  title: Language Learning Platform API
+  description: |
+    Central API contract for the language learning platform.
+
+    **Naming conventions**
+    - API JSON / OpenAPI: `snake_case` (e.g. `lesson_id`, `expected_answer`)
+    - Java entity fields: `camelCase` (e.g. `lessonId`, `expectedAnswer`)
+    - Database columns: `snake_case` via `@Column(name = ...)`
+
+    Service ownership is indicated per-operation via `x-service`.
+  version: 0.1.0
+servers:
+  - url: http://localhost:8081
+    description: User Service
+  - url: http://localhost:8082
+    description: Learning Service
+  - url: http://localhost:8083
+    description: Progress-Feedback Service
+  - url: http://localhost:8084
+    description: GenAI Service
+paths: {}

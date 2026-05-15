@@ -94,6 +94,17 @@ services:
       - progress-feedback-service
       - genai-service
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    profiles:
+      - ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
 volumes:
   postgres_data:
   mongo_data:
+  ollama_data:

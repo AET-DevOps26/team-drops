@@ -1,0 +1,98 @@
+name: GenAI CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['genai/**', 'api/**', '!**/*.md']
+  push:
+    branches: [main]
+    paths: ['genai/**', 'api/**', '!**/*.md']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: genai
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run tests
+        run: uv run pytest tests/ -v
+
+  sync-openapi:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Install GenAI dependencies
+        working-directory: genai
+        run: uv sync
+
+      - name: Export GenAI spec and rebuild central spec
+        run: bash api/scripts/export_openapi.sh
+
+      - name: Fail if genai spec is out of sync
+        run: |
+          git diff --exit-code api/services/genai.yaml || \
+            (echo "ERROR: api/services/genai.yaml is stale. Run: bash api/scripts/export_openapi.sh and commit the result." && exit 1)
+
+      - name: Fail if central spec is out of sync
+        run: |
+          git diff --exit-code api/openapi.yaml || \
+            (echo "ERROR: api/openapi.yaml is stale. Run: bash api/scripts/export_openapi.sh and commit the result." && exit 1)
+
+      - name: Lint central spec
+        run: npx --yes @redocly/cli lint api/openapi.yaml --config api/redocly.yaml
+
+  build-docker-image:
+    runs-on: ubuntu-latest
+    needs: [test, sync-openapi]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t genai-service ./genai
+
+  push-docker-image:
+    runs-on: ubuntu-latest
+    needs: build-docker-image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./genai
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/genai-service:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/genai-service:latest

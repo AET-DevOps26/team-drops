@@ -1,0 +1,21 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.10
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^genai/
+      - id: ruff-format
+        files: ^genai/
+
+  - repo: local
+    hooks:
+      - id: redocly-lint
+        name: Redocly OpenAPI lint
+        language: node
+        entry: npx --yes @redocly/cli lint
+        args: [api/openapi.yaml]
+        files: ^api/openapi\.yaml$
+        pass_filenames: false
+        additional_dependencies:
+          - "@redocly/cli@2.x"
