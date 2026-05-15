@@ -70,14 +70,25 @@ class GenerateExercisesRequest(BaseModel):
 class GeneratedExercise(BaseModel):
     """A single AI-generated exercise. All fields map directly to Exercise in the backend."""
 
-    lesson_id: int = Field(..., description="Lesson this exercise belongs to — passed through from the request")
-    type: Literal["translation", "fill-in-the-blank", "multiple-choice", "sentence-building"] = Field(
+    lesson_id: int = Field(
+        ...,
+        description="Lesson this exercise belongs to — passed through from the request",
+    )
+    type: Literal[
+        "translation", "fill-in-the-blank", "multiple-choice", "sentence-building"
+    ] = Field(
         ...,
         description="Exercise type — maps to Exercise.type",
     )
-    question: str = Field(..., description="The exercise prompt — maps to Exercise.question")
-    difficulty: str = Field(..., description="Difficulty level — maps to Exercise.difficulty")
-    expected_answer: str = Field(..., description="The correct answer — maps to Exercise.expectedAnswer")
+    question: str = Field(
+        ..., description="The exercise prompt — maps to Exercise.question"
+    )
+    difficulty: str = Field(
+        ..., description="Difficulty level — maps to Exercise.difficulty"
+    )
+    expected_answer: str = Field(
+        ..., description="The correct answer — maps to Exercise.expectedAnswer"
+    )
 
 
 class GenerateExercisesResponse(BaseModel):

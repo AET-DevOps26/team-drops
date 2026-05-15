@@ -19,7 +19,9 @@ router = APIRouter(prefix="/exercises", tags=["exercises"])
         "exercise types of the provided reference set."
     ),
 )
-async def generate_exercises(body: GenerateExercisesRequest) -> GenerateExercisesResponse:
+async def generate_exercises(
+    body: GenerateExercisesRequest,
+) -> GenerateExercisesResponse:
     llm = get_llm()
     chain = exercises_prompt | llm.with_structured_output(GenerateExercisesResponse)
 
@@ -30,15 +32,19 @@ async def generate_exercises(body: GenerateExercisesRequest) -> GenerateExercise
     )
 
     try:
-        result: GenerateExercisesResponse = await chain.ainvoke({
-            "count": body.count,
-            "target_language": body.target_language,
-            "level": body.level,
-            "lesson_topic": body.lesson_topic,
-            "existing_exercises_json": existing_json,
-        })
+        result: GenerateExercisesResponse = await chain.ainvoke(
+            {
+                "count": body.count,
+                "target_language": body.target_language,
+                "level": body.level,
+                "lesson_topic": body.lesson_topic,
+                "existing_exercises_json": existing_json,
+            }
+        )
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"LLM invocation failed: {exc}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"LLM invocation failed: {exc}"
+        ) from exc
 
     for exercise in result.exercises:
         exercise.lesson_id = body.lesson_id

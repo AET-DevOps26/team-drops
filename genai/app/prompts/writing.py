@@ -17,7 +17,9 @@ Evaluate the answer. Write a single message that covers what was wrong and why â
 stored directly as the feedback record, so make it complete and useful for the learner.
 Also provide the corrected_answer."""
 
-writing_prompt = ChatPromptTemplate.from_messages([
-    ("system", _SYSTEM),
-    ("human", _HUMAN),
-])
+writing_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", _SYSTEM),
+        ("human", _HUMAN),
+    ]
+)

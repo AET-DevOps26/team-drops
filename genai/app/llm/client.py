@@ -11,6 +11,7 @@ def get_llm() -> BaseChatModel:
 
     if provider == "openai":
         from langchain_openai import ChatOpenAI
+
         return ChatOpenAI(
             model=settings.llm_model or "gpt-4o-mini",
             api_key=settings.llm_api_key,
@@ -18,6 +19,7 @@ def get_llm() -> BaseChatModel:
         )
 
     from langchain_ollama import ChatOllama
+
     return ChatOllama(
         model=settings.ollama_model,
         base_url=settings.ollama_base_url,

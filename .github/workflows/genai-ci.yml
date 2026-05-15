@@ -2,43 +2,74 @@ name: GenAI CI
 
 on:
   pull_request:
-    branches:
-      - main
-    paths:
-      - 'genai/**'
-      - '!**/*.md'
+    branches: [main]
+    paths: ['genai/**', 'api/**', '!**/*.md']
+  push:
+    branches: [main]
+    paths: ['genai/**', 'api/**', '!**/*.md']
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: genai
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: '3.13'
 
-      - name: Install uv
-        run: pip install uv
+      - uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
-        working-directory: genai
-        run: uv sync --frozen
+        run: uv sync --group dev
 
       - name: Run tests
-        working-directory: genai
         run: uv run pytest tests/ -v
 
-  build-docker-image:
+  lint-openapi:
     runs-on: ubuntu-latest
     needs: test
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Build genai-service Docker image
+      - name: Lint OpenAPI spec
+        run: npx --yes @redocly/cli lint api/openapi.yaml
+
+  build-docker-image:
+    runs-on: ubuntu-latest
+    needs: [test, lint-openapi]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
         run: docker build -t genai-service ./genai
+
+  push-docker-image:
+    runs-on: ubuntu-latest
+    needs: build-docker-image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./genai
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/genai-service:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/genai-service:latest

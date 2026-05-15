@@ -59,7 +59,9 @@ class WritingEvaluationResponse(BaseModel):
             "Full feedback including what was wrong and why — maps to Feedback.message. "
             "Should be a complete, helpful explanation suitable for storing as the feedback record."
         ),
-        examples=["Good attempt! 'voudrais' needs a conditional ending (-ais not -ai), and French requires accents: 'café' not 'cafe'. Otherwise the structure is correct."],
+        examples=[
+            "Good attempt! 'voudrais' needs a conditional ending (-ais not -ai), and French requires accents: 'café' not 'cafe'. Otherwise the structure is correct."
+        ],
     )
     weak_area: str = Field(
         ...,

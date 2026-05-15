@@ -14,22 +14,27 @@ _LLM_RESPONSE = GenerateExercisesResponse(exercises=[_EXERCISE])
 
 
 def test_generate_exercises_returns_exercises(client):
-    with patch("app.routers.exercises.get_llm", return_value=make_mock_llm(_LLM_RESPONSE)):
-        response = client.post("/exercises/generate", json={
-            "lesson_id": 3,
-            "lesson_topic": "Household items",
-            "target_language": "German",
-            "level": "A2",
-            "existing_exercises": [
-                {
-                    "type": "translation",
-                    "question": "Translate: 'The cat is on the table'",
-                    "difficulty": "A2",
-                    "expected_answer": "Die Katze ist auf dem Tisch",
-                }
-            ],
-            "count": 1,
-        })
+    with patch(
+        "app.routers.exercises.get_llm", return_value=make_mock_llm(_LLM_RESPONSE)
+    ):
+        response = client.post(
+            "/api/v1/exercises/generate",
+            json={
+                "lesson_id": 3,
+                "lesson_topic": "Household items",
+                "target_language": "German",
+                "level": "A2",
+                "existing_exercises": [
+                    {
+                        "type": "translation",
+                        "question": "Translate: 'The cat is on the table'",
+                        "difficulty": "A2",
+                        "expected_answer": "Die Katze ist auf dem Tisch",
+                    }
+                ],
+                "count": 1,
+            },
+        )
 
     assert response.status_code == 200
     body = response.json()
@@ -49,20 +54,25 @@ def test_generate_exercises_passes_lesson_id_through(client):
     )
     llm_response = GenerateExercisesResponse(exercises=[exercise_without_id])
 
-    with patch("app.routers.exercises.get_llm", return_value=make_mock_llm(llm_response)):
-        response = client.post("/exercises/generate", json={
-            "lesson_id": 99,
-            "lesson_topic": "Household items",
-            "target_language": "German",
-            "level": "A2",
-            "existing_exercises": [
-                {
-                    "type": "fill-in-the-blank",
-                    "question": "Die ___ ist offen.",
-                    "difficulty": "A2",
-                }
-            ],
-        })
+    with patch(
+        "app.routers.exercises.get_llm", return_value=make_mock_llm(llm_response)
+    ):
+        response = client.post(
+            "/api/v1/exercises/generate",
+            json={
+                "lesson_id": 99,
+                "lesson_topic": "Household items",
+                "target_language": "German",
+                "level": "A2",
+                "existing_exercises": [
+                    {
+                        "type": "fill-in-the-blank",
+                        "question": "Die ___ ist offen.",
+                        "difficulty": "A2",
+                    }
+                ],
+            },
+        )
 
     assert response.status_code == 200
     for exercise in response.json()["exercises"]:
@@ -70,5 +80,5 @@ def test_generate_exercises_passes_lesson_id_through(client):
 
 
 def test_generate_exercises_missing_required_fields_returns_422(client):
-    response = client.post("/exercises/generate", json={})
+    response = client.post("/api/v1/exercises/generate", json={})
     assert response.status_code == 422

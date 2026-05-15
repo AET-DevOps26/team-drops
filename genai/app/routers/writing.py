@@ -23,15 +23,19 @@ async def evaluate_writing(body: WritingEvaluationRequest) -> WritingEvaluationR
     chain = writing_prompt | llm.with_structured_output(WritingEvaluationResponse)
 
     try:
-        result: WritingEvaluationResponse = await chain.ainvoke({
-            "target_language": body.target_language,
-            "level": body.level,
-            "exercise_type": body.exercise_type,
-            "question": body.question,
-            "expected_answer": body.expected_answer,
-            "user_answer": body.user_answer,
-        })
+        result: WritingEvaluationResponse = await chain.ainvoke(
+            {
+                "target_language": body.target_language,
+                "level": body.level,
+                "exercise_type": body.exercise_type,
+                "question": body.question,
+                "expected_answer": body.expected_answer,
+                "user_answer": body.user_answer,
+            }
+        )
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"LLM invocation failed: {exc}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"LLM invocation failed: {exc}"
+        ) from exc
 
     return result

@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 
 from app.config import settings
+from app.middleware.error_handler import add_error_handlers
 from app.routers.exercises import router as exercises_router
 from app.routers.writing import router as writing_router
 
@@ -13,10 +14,15 @@ app = FastAPI(
         "Interactive docs: `/docs` — Alternative docs: `/redoc`"
     ),
     version="0.1.0",
+    servers=[{"url": "http://localhost:8084", "description": "Local development"}],
 )
 
-app.include_router(exercises_router)
-app.include_router(writing_router)
+add_error_handlers(app)
+
+api_v1 = APIRouter(prefix="/api/v1")
+api_v1.include_router(exercises_router)
+api_v1.include_router(writing_router)
+app.include_router(api_v1)
 
 
 @app.get("/health", tags=["ops"])

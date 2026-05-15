@@ -18,7 +18,9 @@ Requirements:
 - Vary the question formats slightly to avoid repetition
 - Keep questions concise and unambiguous"""
 
-exercises_prompt = ChatPromptTemplate.from_messages([
-    ("system", _SYSTEM),
-    ("human", _HUMAN),
-])
+exercises_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", _SYSTEM),
+        ("human", _HUMAN),
+    ]
+)
