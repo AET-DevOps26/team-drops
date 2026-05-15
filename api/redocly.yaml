@@ -1,4 +1,10 @@
 apis:
+  user-service:
+    root: services/user-service.yaml
+  learning-service:
+    root: services/learning-service.yaml
+  progress-feedback-service:
+    root: services/progress-feedback-service.yaml
   genai:
     root: services/genai.yaml
   central:

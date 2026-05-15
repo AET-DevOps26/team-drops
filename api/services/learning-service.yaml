@@ -1,0 +1,168 @@
+openapi: 3.1.0
+info:
+  title: Learning Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8082
+    description: Learning Service
+paths:
+  /api/v1/learning-plans/default:
+    post:
+      tags:
+        - Learning Service
+      summary: Create default job interview learning plan
+      operationId: createDefaultLearningPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDefaultLearningPlanRequest'
+      responses:
+        '201':
+          description: Default learning plan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPlanResponse'
+        '400':
+          $ref: '../base.yaml#/components/responses/BadRequest'
+      x-service: learning-service
+  /api/v1/learning-plans/user/{user_id}:
+    get:
+      tags:
+        - Learning Service
+      summary: Get learning plans by user ID
+      operationId: getLearningPlansByUserId
+      parameters:
+        - $ref: '../base.yaml#/components/parameters/UserIdPathByName'
+      responses:
+        '200':
+          description: Learning plans found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningPlanResponse'
+        '404':
+          $ref: '../base.yaml#/components/responses/NotFound'
+      x-service: learning-service
+  /api/v1/lessons/{lesson_id}:
+    get:
+      tags:
+        - Learning Service
+      summary: Get lesson by ID
+      operationId: getLessonById
+      parameters:
+        - $ref: '../base.yaml#/components/parameters/LessonIdPath'
+      responses:
+        '200':
+          description: Lesson found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonResponse'
+        '404':
+          $ref: '../base.yaml#/components/responses/NotFound'
+      x-service: learning-service
+components:
+  schemas:
+    CreateDefaultLearningPlanRequest:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+    LearningPlanResponse:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - description
+        - lessons
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        title:
+          type: string
+          example: Job Interview Preparation
+        description:
+          type: string
+          example: A default plan for practicing job interview conversations.
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/LessonResponse'
+    LessonResponse:
+      type: object
+      required:
+        - id
+        - plan_id
+        - title
+        - topic
+        - order_number
+        - exercises
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        plan_id:
+          type: integer
+          format: int64
+          example: 1
+        title:
+          type: string
+          example: Introducing Yourself
+        topic:
+          type: string
+          example: Interview introduction
+        order_number:
+          type: integer
+          format: int32
+          example: 1
+        exercises:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExerciseResponse'
+    ExerciseResponse:
+      type: object
+      required:
+        - id
+        - lesson_id
+        - type
+        - question
+        - difficulty
+        - expected_answer
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        lesson_id:
+          type: integer
+          format: int64
+          example: 1
+        type:
+          type: string
+          example: free_text
+        question:
+          type: string
+          example: Tell me about yourself.
+        difficulty:
+          type: string
+          example: beginner
+        expected_answer:
+          type: string
+          example: A concise summary of experience, strengths, and motivation.

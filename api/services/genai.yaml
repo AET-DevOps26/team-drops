@@ -83,6 +83,18 @@ paths:
           content:
             application/json:
               schema: {}
+        '400':
+          description: Invalid health check request
+          content:
+            application/json:
+              schema:
+                $ref: '../base.yaml#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '../base.yaml#/components/schemas/ErrorResponse'
 components:
   schemas:
     ExerciseContext:

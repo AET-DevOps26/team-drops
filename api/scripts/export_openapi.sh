@@ -18,6 +18,9 @@ print('Exported to api/services/genai.yaml')
 
 npx --yes @redocly/cli join \
   "${REPO_ROOT}/api/base.yaml" \
-  "${REPO_ROOT}/api/services/genai.yaml" \
-  -o "${REPO_ROOT}/api/openapi.yaml"
+  "${REPO_ROOT}/api/services/"*.yaml \
+  -o "${REPO_ROOT}/api/openapi.yaml" \
+  --without-x-tag-groups
 echo "Joined specs into api/openapi.yaml"
+
+npx --yes @redocly/cli lint --config "${REPO_ROOT}/redocly.yaml" "${REPO_ROOT}/api/openapi.yaml"
