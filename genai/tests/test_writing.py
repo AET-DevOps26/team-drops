@@ -27,7 +27,7 @@ def test_evaluate_writing_returns_score_and_feedback(client):
     with patch(
         "app.routers.writing.get_llm", return_value=make_mock_llm(_LLM_RESPONSE)
     ):
-        response = client.post("/api/v1/writing/evaluate", json=_REQUEST)
+        response = client.post("/api/v1/genai/writing/evaluate", json=_REQUEST)
 
     assert response.status_code == 200
     body = response.json()
@@ -42,12 +42,12 @@ def test_evaluate_writing_score_within_range(client):
     with patch(
         "app.routers.writing.get_llm", return_value=make_mock_llm(_LLM_RESPONSE)
     ):
-        response = client.post("/api/v1/writing/evaluate", json=_REQUEST)
+        response = client.post("/api/v1/genai/writing/evaluate", json=_REQUEST)
 
     score = response.json()["score"]
     assert 0.0 <= score <= 10.0
 
 
 def test_evaluate_writing_missing_required_fields_returns_422(client):
-    response = client.post("/api/v1/writing/evaluate", json={})
+    response = client.post("/api/v1/genai/writing/evaluate", json={})
     assert response.status_code == 422

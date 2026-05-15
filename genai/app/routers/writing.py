@@ -9,6 +9,7 @@ router = APIRouter(prefix="/writing", tags=["writing"])
 
 @router.post(
     "/evaluate",
+    operation_id="evaluateWriting",
     response_model=WritingEvaluationResponse,
     summary="Evaluate a written answer",
     description=(
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/writing", tags=["writing"])
         "plus message and weak_area fields that map directly to a Feedback record. "
         "Also returns the corrected answer and a detailed explanation of errors."
     ),
+    openapi_extra={"x-service": "genai-service"},
 )
 async def evaluate_writing(body: WritingEvaluationRequest) -> WritingEvaluationResponse:
     llm = get_llm()

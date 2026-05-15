@@ -11,6 +11,7 @@ router = APIRouter(prefix="/exercises", tags=["exercises"])
 
 @router.post(
     "/generate",
+    operation_id="generateExercises",
     response_model=GenerateExercisesResponse,
     summary="Generate additional exercises",
     description=(
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/exercises", tags=["exercises"])
         "generate new exercises using AI. The AI matches the format, difficulty, and "
         "exercise types of the provided reference set."
     ),
+    openapi_extra={"x-service": "genai-service"},
 )
 async def generate_exercises(
     body: GenerateExercisesRequest,

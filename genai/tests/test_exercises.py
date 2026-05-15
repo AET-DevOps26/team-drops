@@ -18,7 +18,7 @@ def test_generate_exercises_returns_exercises(client):
         "app.routers.exercises.get_llm", return_value=make_mock_llm(_LLM_RESPONSE)
     ):
         response = client.post(
-            "/api/v1/exercises/generate",
+            "/api/v1/genai/exercises/generate",
             json={
                 "lesson_id": 3,
                 "lesson_topic": "Household items",
@@ -58,7 +58,7 @@ def test_generate_exercises_passes_lesson_id_through(client):
         "app.routers.exercises.get_llm", return_value=make_mock_llm(llm_response)
     ):
         response = client.post(
-            "/api/v1/exercises/generate",
+            "/api/v1/genai/exercises/generate",
             json={
                 "lesson_id": 99,
                 "lesson_topic": "Household items",
@@ -80,5 +80,5 @@ def test_generate_exercises_passes_lesson_id_through(client):
 
 
 def test_generate_exercises_missing_required_fields_returns_422(client):
-    response = client.post("/api/v1/exercises/generate", json={})
+    response = client.post("/api/v1/genai/exercises/generate", json={})
     assert response.status_code == 422
