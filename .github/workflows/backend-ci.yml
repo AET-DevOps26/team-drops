@@ -9,6 +9,21 @@ on:
       - 'docs/**'
 
 jobs:
+  openapi-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Lint OpenAPI spec
+        run: npx --yes @redocly/cli lint api/openapi.yaml
+
   build-backend-services:
     runs-on: ubuntu-latest
 
