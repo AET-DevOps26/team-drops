@@ -23,4 +23,4 @@ npx --yes @redocly/cli join \
   --without-x-tag-groups
 echo "Joined specs into api/openapi.yaml"
 
-npx --yes @redocly/cli lint --config "${REPO_ROOT}/redocly.yaml" "${REPO_ROOT}/api/openapi.yaml"
+npx --yes @redocly/cli lint --config "${REPO_ROOT}/api/redocly.yaml" "${REPO_ROOT}/api/openapi.yaml"
