@@ -34,14 +34,6 @@ paths: {}
 components:
   parameters:
     UserIdPath:
-      name: id
-      in: path
-      required: true
-      description: User ID
-      schema:
-        type: integer
-        format: int64
-    UserIdPathByName:
       name: user_id
       in: path
       required: true

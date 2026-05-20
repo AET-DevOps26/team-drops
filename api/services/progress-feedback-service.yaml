@@ -35,7 +35,7 @@ paths:
       summary: Get progress by user ID
       operationId: getProgressByUserId
       parameters:
-        - $ref: '../base.yaml#/components/parameters/UserIdPathByName'
+        - $ref: '../base.yaml#/components/parameters/UserIdPath'
       responses:
         '200':
           description: User progress found

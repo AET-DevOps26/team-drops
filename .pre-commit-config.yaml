@@ -14,7 +14,7 @@ repos:
         name: Redocly OpenAPI lint
         language: node
         entry: npx --yes @redocly/cli lint
-        args: [--config, redocly.yaml, api/openapi.yaml]
+        args: [--config, api/redocly.yaml, api/openapi.yaml]          
         files: ^api/openapi\.yaml$
         pass_filenames: false
         additional_dependencies:

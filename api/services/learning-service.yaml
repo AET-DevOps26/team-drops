@@ -35,7 +35,7 @@ paths:
       summary: Get learning plans by user ID
       operationId: getLearningPlansByUserId
       parameters:
-        - $ref: '../base.yaml#/components/parameters/UserIdPathByName'
+        - $ref: '../base.yaml#/components/parameters/UserIdPath'
       responses:
         '200':
           description: Learning plans found

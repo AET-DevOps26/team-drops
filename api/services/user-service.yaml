@@ -30,7 +30,7 @@ paths:
         '409':
           $ref: '../base.yaml#/components/responses/Conflict'
       x-service: user-service
-  /api/v1/users/{id}:
+  /api/v1/users/{user_id}:
     get:
       tags:
         - User Service
@@ -48,7 +48,7 @@ paths:
         '404':
           $ref: '../base.yaml#/components/responses/NotFound'
       x-service: user-service
-  /api/v1/users/{id}/profile:
+  /api/v1/users/{user_id}/profile:
     post:
       tags:
         - User Service
