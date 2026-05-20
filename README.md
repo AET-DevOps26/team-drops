@@ -44,10 +44,29 @@ Each service owns a spec file in `api/services/<service-name>.yaml` (auto-genera
 
 ### Working on the GenAI service
 
-After changing a FastAPI schema or route, regenerate and commit both updated files:
+After changing a FastAPI schema or route, regenerate the OpenAPI contract.
+
+macOS/Linux:
 
 ```bash
 bash api/scripts/export_openapi.sh
+```
+
+Windows PowerShell, using Git Bash explicitly:
+
+```powershell
+& "C:\Program Files\Git\bin\bash.exe" api/scripts/export_openapi.sh
+```
+
+If uv shows a hardlink warning on Windows, set this before running the Git Bash command:
+
+```powershell
+$env:UV_LINK_MODE="copy"
+```
+
+Then commit both updated files:
+
+```bash
 git add api/services/genai.yaml api/openapi.yaml
 ```
 

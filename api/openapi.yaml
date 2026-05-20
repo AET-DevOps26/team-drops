@@ -143,7 +143,7 @@ paths:
       summary: Get learning plans by user ID
       operationId: getLearningPlansByUserId
       parameters:
-        - $ref: '#/components/parameters/UserIdPathByName'
+        - $ref: '#/components/parameters/UserIdPath'
       responses:
         '200':
           description: Learning plans found
@@ -203,7 +203,7 @@ paths:
       summary: Get progress by user ID
       operationId: getProgressByUserId
       parameters:
-        - $ref: '#/components/parameters/UserIdPathByName'
+        - $ref: '#/components/parameters/UserIdPath'
       responses:
         '200':
           description: User progress found
@@ -238,7 +238,7 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
       x-service: user-service
-  /api/v1/users/{id}:
+  /api/v1/users/{user_id}:
     get:
       tags:
         - User Service
@@ -256,7 +256,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: user-service
-  /api/v1/users/{id}/profile:
+  /api/v1/users/{user_id}/profile:
     post:
       tags:
         - User Service
@@ -302,14 +302,6 @@ paths:
 components:
   parameters:
     UserIdPath:
-      name: id
-      in: path
-      required: true
-      description: User ID
-      schema:
-        type: integer
-        format: int64
-    UserIdPathByName:
       name: user_id
       in: path
       required: true
