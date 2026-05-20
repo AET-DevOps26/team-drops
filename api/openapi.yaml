@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Language Learning Platform API
   description: |
-    Central API contract for the language learning platform.
+    Initial API contract for the job interview preparation scenario.
 
     **Naming conventions**
     - API JSON / OpenAPI: `snake_case` (e.g. `lesson_id`, `expected_answer`)
@@ -10,7 +10,7 @@ info:
     - Database columns: `snake_case` via `@Column(name = ...)`
 
     Service ownership is indicated per-operation via `x-service`.
-  version: 0.1.0
+  version: 1.0.0
 servers:
   - url: http://localhost:8081
     description: User Service
@@ -21,6 +21,18 @@ servers:
   - url: http://localhost:8084
     description: GenAI Service
 tags:
+  - name: User Service
+    description: User and profile APIs
+    x-displayName: User Service
+  - name: Learning Service
+    description: Learning plan, lesson, and exercise APIs
+    x-displayName: Learning Service
+  - name: Progress & Feedback Service
+    description: Answer submission and progress APIs
+    x-displayName: Progress & Feedback Service
+  - name: GenAI Service
+    description: GenAI APIs
+    x-displayName: GenAI Service
   - name: exercises
     x-displayName: exercises
   - name: writing
@@ -102,8 +114,245 @@ paths:
           content:
             application/json:
               schema: {}
+  /api/v1/learning-plans/default:
+    post:
+      tags:
+        - Learning Service
+      summary: Create default job interview learning plan
+      operationId: createDefaultLearningPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDefaultLearningPlanRequest'
+      responses:
+        '201':
+          description: Default learning plan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPlanResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      x-service: learning-service
+  /api/v1/learning-plans/user/{user_id}:
+    get:
+      tags:
+        - Learning Service
+      summary: Get learning plans by user ID
+      operationId: getLearningPlansByUserId
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: Learning plans found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningPlanResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-service: learning-service
+  /api/v1/lessons/{lesson_id}:
+    get:
+      tags:
+        - Learning Service
+      summary: Get lesson by ID
+      operationId: getLessonById
+      parameters:
+        - $ref: '#/components/parameters/LessonIdPath'
+      responses:
+        '200':
+          description: Lesson found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-service: learning-service
+  /api/v1/answers:
+    post:
+      tags:
+        - Progress & Feedback Service
+      summary: Submit answer
+      operationId: submitAnswer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAnswerRequest'
+      responses:
+        '200':
+          description: Answer submitted and scored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAnswerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      x-service: progress-feedback-service
+  /api/v1/progress/user/{user_id}:
+    get:
+      tags:
+        - Progress & Feedback Service
+      summary: Get progress by user ID
+      operationId: getProgressByUserId
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: User progress found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgressResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-service: progress-feedback-service
+  /api/v1/users:
+    post:
+      tags:
+        - User Service
+      summary: Create user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      x-service: user-service
+  /api/v1/users/{user_id}:
+    get:
+      tags:
+        - User Service
+      summary: Get user by ID
+      operationId: getUserById
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-service: user-service
+  /api/v1/users/{user_id}/profile:
+    post:
+      tags:
+        - User Service
+      summary: Create user profile
+      operationId: createUserProfile
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserProfileRequest'
+      responses:
+        '201':
+          description: User profile created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-service: user-service
+    get:
+      tags:
+        - User Service
+      summary: Get user profile
+      operationId: getUserProfile
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: User profile found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-service: user-service
 components:
+  parameters:
+    UserIdPath:
+      name: user_id
+      in: path
+      required: true
+      description: User ID
+      schema:
+        type: integer
+        format: int64
+    LessonIdPath:
+      name: lesson_id
+      in: path
+      required: true
+      description: Lesson ID
+      schema:
+        type: integer
+        format: int64
+  responses:
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - details
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Invalid request data
+        details:
+          type: string
+          example: email must be valid
     ExerciseContext:
       properties:
         type:
@@ -408,9 +657,261 @@ components:
 
         the Feedback entity (Feedback.message, Feedback.weakArea) in the
         backend.
-x-tagGroups:
-  - name: GenAI Language Learning Service
-    tags:
-      - exercises
-      - writing
-      - ops
+    CreateDefaultLearningPlanRequest:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+    LearningPlanResponse:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - description
+        - lessons
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        title:
+          type: string
+          example: Job Interview Preparation
+        description:
+          type: string
+          example: A default plan for practicing job interview conversations.
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/LessonResponse'
+    LessonResponse:
+      type: object
+      required:
+        - id
+        - plan_id
+        - title
+        - topic
+        - order_number
+        - exercises
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        plan_id:
+          type: integer
+          format: int64
+          example: 1
+        title:
+          type: string
+          example: Introducing Yourself
+        topic:
+          type: string
+          example: Interview introduction
+        order_number:
+          type: integer
+          format: int32
+          example: 1
+        exercises:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExerciseResponse'
+    ExerciseResponse:
+      type: object
+      required:
+        - id
+        - lesson_id
+        - type
+        - question
+        - difficulty
+        - expected_answer
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        lesson_id:
+          type: integer
+          format: int64
+          example: 1
+        type:
+          type: string
+          example: free_text
+        question:
+          type: string
+          example: Tell me about yourself.
+        difficulty:
+          type: string
+          example: beginner
+        expected_answer:
+          type: string
+          example: A concise summary of experience, strengths, and motivation.
+    SubmitAnswerRequest:
+      type: object
+      required:
+        - user_id
+        - exercise_id
+        - answer_text
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        exercise_id:
+          type: integer
+          format: int64
+          example: 1
+        answer_text:
+          type: string
+          minLength: 1
+          example: I am a computer science student interested in backend development.
+    UserAnswerResponse:
+      type: object
+      required:
+        - id
+        - user_id
+        - exercise_id
+        - answer_text
+        - score
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        exercise_id:
+          type: integer
+          format: int64
+          example: 1
+        answer_text:
+          type: string
+          example: I am a computer science student interested in backend development.
+        score:
+          type: number
+          format: double
+          example: 0.85
+    ProgressResponse:
+      type: object
+      required:
+        - id
+        - user_id
+        - completed_exercises
+        - total_exercises
+        - average_score
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        completed_exercises:
+          type: integer
+          format: int32
+          example: 4
+        total_exercises:
+          type: integer
+          format: int32
+          example: 10
+        average_score:
+          type: number
+          format: double
+          example: 0.78
+    CreateUserRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: Ada Lovelace
+        email:
+          type: string
+          format: email
+          minLength: 1
+          example: ada@example.com
+        password:
+          type: string
+          minLength: 1
+          format: password
+          example: secure-password
+    UserResponse:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Ada Lovelace
+        email:
+          type: string
+          format: email
+          example: ada@example.com
+    CreateUserProfileRequest:
+      type: object
+      required:
+        - target_language
+        - current_level
+        - learning_goal
+      properties:
+        target_language:
+          type: string
+          minLength: 1
+          example: English
+        current_level:
+          type: string
+          minLength: 1
+          example: B1
+        learning_goal:
+          type: string
+          minLength: 1
+          example: Prepare for a software engineering job interview
+    UserProfileResponse:
+      type: object
+      required:
+        - id
+        - user_id
+        - target_language
+        - current_level
+        - learning_goal
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        target_language:
+          type: string
+          example: English
+        current_level:
+          type: string
+          example: B1
+        learning_goal:
+          type: string
+          example: Prepare for a software engineering job interview
