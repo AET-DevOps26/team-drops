@@ -2,11 +2,15 @@ import React from 'react';
 import {
   BookOpen,
   BrainCircuit,
+  CalendarRange,
   CheckCircle2,
   ChevronLeft,
+  Clock3,
   Headphones,
+  ListChecks,
   Mic,
   PenLine,
+  Sparkles,
   Settings,
   Target,
   TextCursorInput,
@@ -101,16 +105,118 @@ export function LearningPage({
             {learningStep === 'exercise' && <ExerciseDetailView activeExercise={activeExercise} />}
           </>
         ) : (
-          <section className="ai-placeholder" aria-label="AI Training placeholder">
-            <BrainCircuit size={34} aria-hidden="true" />
-            <h3>AI Training</h3>
-            <p>Personalized AI practice will live here later. For now, continue with Training lessons.</p>
-          </section>
+          <AiLearningPlanForm />
         )}
       </div>
 
       <BottomNav activeScreen="learn" onNavigate={onNavigate} />
     </section>
+  );
+}
+
+const exerciseTypeOptions = [
+  { id: 'reading', label: 'Reading' },
+  { id: 'listening', label: 'Listening' },
+  { id: 'writing', label: 'Writing' },
+  { id: 'speaking', label: 'Speaking' },
+];
+
+function AiLearningPlanForm() {
+  const [selectedExerciseTypes, setSelectedExerciseTypes] = React.useState(
+    exerciseTypeOptions.map((type) => type.id),
+  );
+
+  const toggleExerciseType = (exerciseType) => {
+    setSelectedExerciseTypes((currentTypes) =>
+      currentTypes.includes(exerciseType)
+        ? currentTypes.filter((type) => type !== exerciseType)
+        : [...currentTypes, exerciseType],
+    );
+  };
+
+  return (
+    <form className="ai-plan-form" aria-label="AI learning plan generator">
+      <section className="ai-form-hero">
+        <span className="ai-form-icon">
+          <BrainCircuit size={24} aria-hidden="true" />
+        </span>
+        <div>
+          <p>AI Training</p>
+          <h3>Generate learning plan</h3>
+        </div>
+      </section>
+
+      <label className="ai-form-field ai-form-field-full">
+        <span>Main learning plan description / goal</span>
+        <textarea
+          name="learningGoal"
+          placeholder="Example: Prepare for a German job interview with technical project questions."
+          rows={4}
+        />
+      </label>
+
+      <div className="ai-form-grid">
+        <label className="ai-form-field">
+          <span>
+            <CalendarRange size={15} aria-hidden="true" />
+            Duration
+          </span>
+          <input inputMode="numeric" min="1" name="durationWeeks" placeholder="4" type="number" />
+          <small>weeks</small>
+        </label>
+
+        <label className="ai-form-field">
+          <span>
+            <Clock3 size={15} aria-hidden="true" />
+            Study time
+          </span>
+          <input inputMode="numeric" min="1" name="studyHoursPerWeek" placeholder="5" type="number" />
+          <small>hrs / week</small>
+        </label>
+
+        <label className="ai-form-field">
+          <span>
+            <ListChecks size={15} aria-hidden="true" />
+            Maximum lessons
+          </span>
+          <input inputMode="numeric" min="1" name="maximumLessons" placeholder="12" type="number" />
+        </label>
+
+        <label className="ai-form-field">
+          <span>
+            <ListChecks size={15} aria-hidden="true" />
+            Minimum lessons
+          </span>
+          <input inputMode="numeric" min="1" name="minimumLessons" placeholder="6" type="number" />
+        </label>
+      </div>
+
+      <fieldset className="ai-exercise-types">
+        <legend>Exercise types</legend>
+        <div className="ai-checkbox-grid">
+          {exerciseTypeOptions.map((type) => (
+            <label className="ai-checkbox-option" key={type.id}>
+              <input
+                checked={selectedExerciseTypes.includes(type.id)}
+                name="exerciseTypes"
+                onChange={() => toggleExerciseType(type.id)}
+                type="checkbox"
+                value={type.id}
+              />
+              <span className={`exercise-type-icon ${type.id}`}>
+                <ExerciseTypeIcon type={type.id} />
+              </span>
+              <strong>{type.label}</strong>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <button className="ai-generate-button" type="button">
+        <Sparkles size={18} aria-hidden="true" />
+        Generate
+      </button>
+    </form>
   );
 }
 

@@ -1297,33 +1297,222 @@ h1 {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.ai-placeholder {
-  display: grid;
-  flex: 1;
-  min-height: 280px;
-  place-items: center;
-  align-content: center;
+.ai-plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+
+.ai-form-hero {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  padding: 24px;
-  border: 1px dashed rgba(25, 103, 210, 0.42);
-  border-radius: 20px;
-  background: var(--surface);
+  padding: 16px;
+  border: 1px solid rgba(25, 103, 210, 0.2);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #e8f2ff, #f7fbff);
+}
+
+.ai-form-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--blue);
+  color: #ffffff;
+}
+
+.ai-form-hero p,
+.ai-form-hero h3 {
+  margin: 0;
+}
+
+.ai-form-hero p {
   color: var(--blue-dark);
-  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
 }
 
-.ai-placeholder h3 {
-  margin: 0;
+.ai-form-hero h3 {
   color: var(--ink);
-  font-size: 1.1rem;
+  font-size: 1.08rem;
+  line-height: 1.18;
 }
 
-.ai-placeholder p {
-  max-width: 230px;
+.ai-form-field,
+.ai-exercise-types {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.ai-form-field-full {
+  padding: 14px;
+}
+
+.ai-form-field span,
+.ai-exercise-types legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.ai-form-field input,
+.ai-form-field textarea {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.ai-form-field input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.ai-form-field input[type="number"]::-webkit-inner-spin-button,
+.ai-form-field input[type="number"]::-webkit-outer-spin-button {
   margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.ai-form-field textarea {
+  min-height: 104px;
+  resize: vertical;
+  line-height: 1.38;
+}
+
+.ai-form-field input::placeholder,
+.ai-form-field textarea::placeholder {
   color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.42;
+}
+
+.ai-form-field small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.ai-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-exercise-types {
+  padding: 12px;
+}
+
+.ai-exercise-types legend {
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.ai-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-checkbox-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.ai-checkbox-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.ai-checkbox-option strong {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 0.8rem;
+  line-height: 1.15;
+}
+
+.ai-checkbox-option:has(input:checked) {
+  border-color: rgba(25, 103, 210, 0.5);
+  background: var(--blue-soft);
+  box-shadow: 0 10px 22px rgba(25, 103, 210, 0.14);
+}
+
+.ai-checkbox-option:has(input:checked) strong {
+  color: var(--blue-dark);
+}
+
+.ai-checkbox-option:has(input:focus-visible) {
+  outline: 2px solid var(--sky);
+  outline-offset: 2px;
+}
+
+.ai-generate-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 54px;
+  gap: 10px;
+  border: 1px solid var(--blue-dark);
+  border-radius: 16px;
+  background: var(--blue);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 850;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.ai-generate-button:hover {
+  transform: translateY(-1px);
+  background: var(--blue-dark);
+  box-shadow: 0 14px 28px rgba(25, 103, 210, 0.18);
+}
+
+.dark-mode .ai-form-hero {
+  background: linear-gradient(135deg, #183d72, #172a49);
+}
+
+.dark-mode .ai-checkbox-option,
+.dark-mode .ai-checkbox-option {
+  background: #172a49;
+}
+
+.dark-mode .ai-checkbox-option:has(input:checked) {
+  background: #183d72;
+}
+
+.dark-mode .ai-checkbox-option:has(input:checked) strong {
+  color: #eef6ff;
 }
 
 .exercise-card:hover,
