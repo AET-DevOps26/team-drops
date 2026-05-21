@@ -6,6 +6,8 @@ on:
     paths:
       - 'genai/**'
       - 'api/**'
+      - '.github/workflows/genai-ci.yml'
+
       - '!**/*.md'
 
   push:
@@ -13,6 +15,8 @@ on:
     paths:
       - 'genai/**'
       - 'api/**'
+      - '.github/workflows/genai-ci.yml'
+
       - '!**/*.md'
 
 permissions:
