@@ -72,15 +72,6 @@ git add api/services/genai.yaml api/openapi.yaml
 
 CI fails with a clear message if either committed file is out of sync with the code.
 
-### Backend services (TODO)
-
-Each Spring Boot service needs to plug into this workflow:
-
-1. Add `org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9` to `build.gradle`
-2. Add `org.springdoc.openapi-gradle-plugin:1.9.0`, configured to output to `api/services/<service-name>.yaml`
-3. Run `./gradlew :<service>:generateOpenApiDocs` after changing a controller or DTO and commit the result
-4. Add the new spec file to the `redocly join` call in `api/scripts/export_openapi.sh` and register it in `api/redocly.yaml`
-
 ### Frontend (TODO)
 
 Once the central spec is populated with all services:
@@ -91,6 +82,14 @@ Once the central spec is populated with all services:
 4. Import from `src/api/types.ts` — never hand-write HTTP request/response types
 
 ---
+
+### Swagger UI
+
+You can view each backend service's Swagger UI at:
+
+- <http://localhost:8081/swagger/index.html>
+- <http://localhost:8082/swagger/index.html>
+- <http://localhost:8083/swagger/index.html>
 
 ## CI/CD
 
