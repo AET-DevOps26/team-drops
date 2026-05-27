@@ -1,5 +1,6 @@
 package de.tum.aet.devops26.learning_service.service;
 
+import de.tum.aet.devops26.learning_service.dto.ExerciseResponse;
 import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.repository.ExerciseRepository;
 import java.util.List;
@@ -31,5 +32,16 @@ public class ExerciseService {
 
     public void deleteById(Long id) {
         exerciseRepository.deleteById(id);
+    }
+
+    public ExerciseResponse toResponse(Exercise exercise) {
+        return new ExerciseResponse(
+            exercise.getId(),
+            exercise.getLessonId(),
+            exercise.getType(),
+            exercise.getQuestion(),
+            exercise.getDifficulty(),
+            exercise.getExpectedAnswer()
+        );
     }
 }
