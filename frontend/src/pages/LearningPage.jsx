@@ -24,6 +24,7 @@ export function LearningPage({
   learningMode,
   learningPlans,
   learningStep,
+  t,
   onBack,
   onLearningMode,
   onNavigate,
@@ -44,14 +45,14 @@ export function LearningPage({
           )}
           <h2>
             {learningStep === 'exercise'
-              ? 'Exercise'
+              ? t.exercise
               : learningStep === 'lesson'
-              ? 'Lesson'
+              ? t.lesson
               : learningStep === 'planDetail'
-                ? 'Plan overview'
+                ? t.planOverview
               : learningStep === 'lessons'
-                  ? 'Learning Plan'
-                  : 'Learning Hub'}
+                  ? t.learningPlan
+                  : t.learn}
           </h2>
         </div>
         <button className="icon-button" type="button" aria-label="Settings" onClick={onOpenSettings}>
@@ -69,8 +70,8 @@ export function LearningPage({
             >
               <BookOpen size={22} aria-hidden="true" />
               <span>
-                <strong>Training</strong>
-                <small>Guided interview lessons</small>
+                <strong>{t.training}</strong>
+                <small>{t.trainingDescription}</small>
               </span>
             </button>
             <button
@@ -80,8 +81,8 @@ export function LearningPage({
             >
               <BrainCircuit size={22} aria-hidden="true" />
               <span>
-                <strong>AI Training</strong>
-                <small>Coming later</small>
+                <strong>{t.aiTraining}</strong>
+                <small>{t.comingLater}</small>
               </span>
             </button>
           </div>
@@ -89,27 +90,27 @@ export function LearningPage({
 
         {learningMode === 'training' ? (
           <>
-            {learningStep === 'plans' && <LearningPlansView learningPlans={learningPlans} onOpenPlan={onOpenPlan} />}
+            {learningStep === 'plans' && <LearningPlansView learningPlans={learningPlans} t={t} onOpenPlan={onOpenPlan} />}
             {learningStep === 'lessons' && (
               <LessonsView
-                activeLesson={activeLesson}
                 activePlan={activePlan}
                 onOpenLesson={onOpenLesson}
                 onOpenPlanDetail={onOpenPlanDetail}
+                t={t}
               />
             )}
             {learningStep === 'planDetail' && <PlanDetailView activePlan={activePlan} />}
             {learningStep === 'lesson' && (
-              <LessonDetailView activeLesson={activeLesson} onOpenExercise={onOpenExercise} />
+              <LessonDetailView activeLesson={activeLesson} t={t} onOpenExercise={onOpenExercise} />
             )}
             {learningStep === 'exercise' && <ExerciseDetailView activeExercise={activeExercise} />}
           </>
         ) : (
-          <AiLearningPlanForm />
+          <AiLearningPlanForm t={t} />
         )}
       </div>
 
-      <BottomNav activeScreen="learn" onNavigate={onNavigate} />
+      <BottomNav activeScreen="learn" t={t} onNavigate={onNavigate} />
     </section>
   );
 }
@@ -121,12 +122,17 @@ const exerciseTypeOptions = [
   { id: 'speaking', label: 'Speaking' },
 ];
 
-function AiLearningPlanForm() {
+function AiLearningPlanForm({ t }) {
   const [selectedExerciseTypes, setSelectedExerciseTypes] = React.useState(
-    exerciseTypeOptions.map((type) => type.id),
+    exerciseTypeOptions.filter((type) => !isComingSoonType(type.id)).map((type) => type.id),
   );
 
   const toggleExerciseType = (exerciseType) => {
+    if (isComingSoonType(exerciseType)) {
+      window.alert(t.comingSoon);
+      return;
+    }
+
     setSelectedExerciseTypes((currentTypes) =>
       currentTypes.includes(exerciseType)
         ? currentTypes.filter((type) => type !== exerciseType)
@@ -195,7 +201,7 @@ function AiLearningPlanForm() {
         <legend>Exercise types</legend>
         <div className="ai-checkbox-grid">
           {exerciseTypeOptions.map((type) => (
-            <label className="ai-checkbox-option" key={type.id}>
+            <label className={`ai-checkbox-option ${isComingSoonType(type.id) ? 'is-disabled' : ''}`} key={type.id}>
               <input
                 checked={selectedExerciseTypes.includes(type.id)}
                 name="exerciseTypes"
@@ -220,12 +226,12 @@ function AiLearningPlanForm() {
   );
 }
 
-function LearningPlansView({ learningPlans, onOpenPlan }) {
+function LearningPlansView({ learningPlans, t, onOpenPlan }) {
   return (
     <section className="plan-section" aria-label="Suggested learning plans">
       <div className="section-heading">
-        <h3>Suggested learning plans</h3>
-        <span>{learningPlans.length} plans</span>
+        <h3>{t.suggestedPlans}</h3>
+        <span>{learningPlans.length} {t.plans}</span>
       </div>
 
       <div className="plan-list">
@@ -244,7 +250,7 @@ function LearningPlansView({ learningPlans, onOpenPlan }) {
               </span>
               <span className="hero-progress compact-progress" aria-label={`${plan.progress} percent complete`}>
                 <strong>{plan.progress}%</strong>
-                <small>Overall</small>
+                <small>{t.overall}</small>
               </span>
             </button>
           );
@@ -254,7 +260,7 @@ function LearningPlansView({ learningPlans, onOpenPlan }) {
   );
 }
 
-function LessonsView({ activeLesson, activePlan, onOpenLesson, onOpenPlanDetail }) {
+function LessonsView({ activePlan, onOpenLesson, onOpenPlanDetail }) {
   const PlanIcon = activePlan.lessons[0].icon;
 
   return (
@@ -346,7 +352,7 @@ function PlanDetailView({ activePlan }) {
   );
 }
 
-function LessonDetailView({ activeLesson, onOpenExercise }) {
+function LessonDetailView({ activeLesson, t, onOpenExercise }) {
   const LessonIcon = activeLesson.icon;
   const finished = activeLesson.status === 'finished';
 
@@ -368,6 +374,7 @@ function LessonDetailView({ activeLesson, onOpenExercise }) {
           block={block}
           exercises={activeLesson.exercises}
           key={`${block.type}-${block.title ?? block.exerciseIndex}-${index}`}
+          t={t}
           onOpenExercise={onOpenExercise}
         />
       ))}
@@ -382,7 +389,7 @@ function LessonDetailView({ activeLesson, onOpenExercise }) {
   );
 }
 
-function LessonBlock({ block, exercises, onOpenExercise }) {
+function LessonBlock({ block, exercises, t, onOpenExercise }) {
   if (block.type === 'exercise') {
     const exercise = exercises[block.exerciseIndex];
 
@@ -392,7 +399,7 @@ function LessonBlock({ block, exercises, onOpenExercise }) {
           <h3>{exercise.title}</h3>
           <span>{exercise.type}</span>
         </div>
-        <ExerciseCard exercise={exercise} index={block.exerciseIndex} onOpenExercise={onOpenExercise} />
+        <ExerciseCard exercise={exercise} index={block.exerciseIndex} t={t} onOpenExercise={onOpenExercise} />
       </section>
     );
   }
@@ -437,12 +444,14 @@ function LessonBlock({ block, exercises, onOpenExercise }) {
   );
 }
 
-function ExerciseCard({ exercise, index, onOpenExercise }) {
+function ExerciseCard({ exercise, index, t, onOpenExercise }) {
+  const comingSoon = isComingSoonType(exercise.type);
+
   return (
     <button
-      className={`exercise-card lesson-progress-link exercise-type-${exercise.type}`}
+      className={`exercise-card lesson-progress-link exercise-type-${exercise.type} ${comingSoon ? 'is-disabled' : ''}`}
       type="button"
-      onClick={() => onOpenExercise(index)}
+      onClick={() => (comingSoon ? window.alert(t.comingSoon) : onOpenExercise(index))}
     >
       <span className={`exercise-type-icon ${exercise.type}`}>
         <ExerciseTypeIcon type={exercise.type} />
@@ -455,6 +464,10 @@ function ExerciseCard({ exercise, index, onOpenExercise }) {
       <small className="lesson-percent">{exercise.grade ? `${exercise.grade}` : '--'}</small>
     </button>
   );
+}
+
+function isComingSoonType(type) {
+  return type === 'listening' || type === 'speaking';
 }
 
 function ExerciseDetailView({ activeExercise }) {
