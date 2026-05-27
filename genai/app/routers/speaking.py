@@ -185,12 +185,15 @@ async def speaking_practice(
         )
         corr_chain = corrections_prompt | llm.with_structured_output(_SessionCorrectionsLLM)
 
+        async def _no_tts() -> None:
+            return None
+
         # Run TTS for the AI reply and the corrections LLM concurrently — both are
         # independent once conv_result is available.
         tts_coro = (
             synthesize(conv_result.ai_response, target_language)
             if settings.tts_enabled
-            else asyncio.sleep(0)
+            else _no_tts()
         )
         corr_coro = corr_chain.ainvoke(
             {

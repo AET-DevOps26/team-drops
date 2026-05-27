@@ -80,7 +80,7 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3}
       MONGO_URL: mongodb://mongo:27017
       WHISPER_MODEL: ${WHISPER_MODEL:-base}
-      TTS_ENABLED: ${TTS_ENABLED:-true}
+      TTS_ENABLED: ${TTS_ENABLED:-false}
       KOKORO_MODEL_PATH: ${KOKORO_MODEL_PATH:-}
       KOKORO_VOICES_PATH: ${KOKORO_VOICES_PATH:-}
       PREWARM_MODELS: ${PREWARM_MODELS:-false}

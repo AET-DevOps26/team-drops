@@ -1,4 +1,6 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from langchain_core.runnables import RunnableLambda
 
 from tests.conftest import make_mock_llm
 from app.schemas.speaking import _SpeakingEvaluationLLMOutput
@@ -82,3 +84,47 @@ def test_evaluate_speaking_missing_audio_returns_422(client):
         # no audio file
     )
     assert response.status_code == 422
+
+
+def test_evaluate_speaking_stt_failure_returns_502(client):
+    with (
+        patch("app.routers.speaking.transcribe", new=AsyncMock(side_effect=RuntimeError("STT down"))),
+        patch("app.routers.speaking.settings") as mock_settings,
+    ):
+        mock_settings.tts_enabled = False
+        response = client.post(
+            "/api/v1/genai/speaking/evaluate",
+            data=_FORM_DATA,
+            files={"audio": ("test.wav", b"RIFF\x00\x00\x00\x00WAVE", "audio/wav")},
+        )
+    assert response.status_code == 502
+    assert "STT" in response.json()["message"]
+
+
+def test_evaluate_speaking_llm_failure_returns_502(client):
+    failing_llm = MagicMock()
+    failing_llm.with_structured_output.return_value = RunnableLambda(
+        lambda _: (_ for _ in ()).throw(RuntimeError("LLM down"))
+    )
+    with (
+        patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
+        patch("app.routers.speaking.get_llm", return_value=failing_llm),
+        patch("app.routers.speaking.settings") as mock_settings,
+    ):
+        mock_settings.tts_enabled = False
+        response = client.post(
+            "/api/v1/genai/speaking/evaluate",
+            data=_FORM_DATA,
+            files={"audio": ("test.wav", b"RIFF\x00\x00\x00\x00WAVE", "audio/wav")},
+        )
+    assert response.status_code == 502
+
+
+def test_evaluate_speaking_oversized_audio_returns_413(client):
+    big_audio = b"X" * (25 * 1024 * 1024 + 1)
+    response = client.post(
+        "/api/v1/genai/speaking/evaluate",
+        data=_FORM_DATA,
+        files={"audio": ("big.wav", big_audio, "audio/wav")},
+    )
+    assert response.status_code == 413

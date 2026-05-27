@@ -1,5 +1,7 @@
 import json
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from langchain_core.runnables import RunnableLambda
 
 from tests.conftest import make_mock_llm
 from app.schemas.practice import _ConversationTurnLLM, _SessionCorrectionsLLM, TurnCorrection
@@ -33,17 +35,13 @@ _BASE_FORM = {
 
 
 def _make_dual_mock_llm(conv_response, corr_response):
-    """Return a mock LLM whose with_structured_output returns different responses per schema."""
-    from unittest.mock import MagicMock
-    from langchain_core.runnables import RunnableLambda
-
+    """Return a mock LLM that dispatches by schema type, not call order."""
     mock = MagicMock()
-    call_count = [0]
 
     def _with_structured_output(schema):
-        call_count[0] += 1
-        resp = conv_response if call_count[0] <= 1 else corr_response
-        return RunnableLambda(lambda _: resp)
+        if schema is _ConversationTurnLLM:
+            return RunnableLambda(lambda _: conv_response)
+        return RunnableLambda(lambda _: corr_response)
 
     mock.with_structured_output.side_effect = _with_structured_output
     return mock
@@ -142,3 +140,63 @@ def test_practice_invalid_history_returns_422(client):
 def test_practice_missing_audio_returns_422(client):
     response = client.post("/api/v1/genai/speaking/practice", data=_BASE_FORM)
     assert response.status_code == 422
+
+
+def test_practice_stt_failure_returns_502(client):
+    with (
+        patch("app.routers.speaking.transcribe", new=AsyncMock(side_effect=RuntimeError("STT down"))),
+        patch("app.routers.speaking.settings") as mock_settings,
+    ):
+        mock_settings.tts_enabled = False
+        response = client.post(
+            "/api/v1/genai/speaking/practice",
+            data=_BASE_FORM,
+            files={"audio": ("test.wav", b"RIFF\x00\x00\x00\x00WAVE", "audio/wav")},
+        )
+    assert response.status_code == 502
+    assert "STT" in response.json()["message"]
+
+
+def test_practice_llm_failure_returns_502(client):
+    with (
+        patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
+        patch("app.routers.speaking.get_llm", return_value=make_mock_llm(RuntimeError("LLM down"))),
+        patch("app.routers.speaking.settings") as mock_settings,
+    ):
+        mock_settings.tts_enabled = False
+        # make the chain raise instead of return
+        failing_llm = MagicMock()
+        failing_llm.with_structured_output.return_value = RunnableLambda(
+            lambda _: (_ for _ in ()).throw(RuntimeError("LLM down"))
+        )
+        with patch("app.routers.speaking.get_llm", return_value=failing_llm):
+            response = client.post(
+                "/api/v1/genai/speaking/practice",
+                data=_BASE_FORM,
+                files={"audio": ("test.wav", b"RIFF\x00\x00\x00\x00WAVE", "audio/wav")},
+            )
+    assert response.status_code == 502
+
+
+def test_practice_oversized_audio_returns_413(client):
+    big_audio = b"X" * (25 * 1024 * 1024 + 1)
+    response = client.post(
+        "/api/v1/genai/speaking/practice",
+        data=_BASE_FORM,
+        files={"audio": ("big.wav", big_audio, "audio/wav")},
+    )
+    assert response.status_code == 413
+
+
+def test_practice_oversized_history_returns_413(client):
+    with (
+        patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
+        patch("app.routers.speaking.settings") as mock_settings,
+    ):
+        mock_settings.tts_enabled = False
+        response = client.post(
+            "/api/v1/genai/speaking/practice",
+            data={**_BASE_FORM, "history_json": "x" * (100 * 1024 + 1)},
+            files={"audio": ("test.wav", b"RIFF\x00\x00\x00\x00WAVE", "audio/wav")},
+        )
+    assert response.status_code == 413

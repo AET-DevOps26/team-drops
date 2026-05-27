@@ -153,12 +153,6 @@ components:
           contentMediaType: application/octet-stream
           title: Audio
           description: Audio recording of the learner's answer (WAV, MP3, WebM, etc.)
-        user_id:
-          type: integer
-          title: User Id
-        exercise_id:
-          type: integer
-          title: Exercise Id
         exercise_type:
           type: string
           title: Exercise Type
@@ -187,8 +181,6 @@ components:
       type: object
       required:
       - audio
-      - user_id
-      - exercise_id
       - exercise_type
       - question
       - expected_answer

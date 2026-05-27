@@ -1,6 +1,6 @@
 import asyncio
 import io
-from functools import lru_cache
+import threading
 
 from app.config import settings
 
@@ -22,6 +22,9 @@ _WHISPER_LANG: dict[str, str] = {
     "arabic": "ar",
 }
 
+_whisper_lock = threading.Lock()
+_whisper_instance = None
+
 
 def _to_whisper_lang(language: str) -> str | None:
     """Convert a full language name or BCP-47 tag to a Whisper ISO 639-1 code.
@@ -35,11 +38,19 @@ def _to_whisper_lang(language: str) -> str | None:
     return None
 
 
-@lru_cache(maxsize=1)
 def _get_whisper():
-    from faster_whisper import WhisperModel
+    global _whisper_instance
+    if _whisper_instance is not None:
+        return _whisper_instance
+    with _whisper_lock:
+        if _whisper_instance is not None:
+            return _whisper_instance
+        from faster_whisper import WhisperModel
 
-    return WhisperModel(settings.whisper_model, device=settings.whisper_device, compute_type="int8")
+        _whisper_instance = WhisperModel(
+            settings.whisper_model, device=settings.whisper_device, compute_type="int8"
+        )
+        return _whisper_instance
 
 
 def _transcribe_local(audio_bytes: bytes, language: str) -> str:

@@ -403,6 +403,22 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - details
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Invalid request data
+        details:
+          type: string
+          example: email must be valid
     Body_evaluateSpeaking:
       properties:
         audio:
@@ -410,12 +426,6 @@ components:
           contentMediaType: application/octet-stream
           title: Audio
           description: Audio recording of the learner's answer (WAV, MP3, WebM, etc.)
-        user_id:
-          type: integer
-          title: User Id
-        exercise_id:
-          type: integer
-          title: Exercise Id
         exercise_type:
           type: string
           title: Exercise Type
@@ -444,8 +454,6 @@ components:
       type: object
       required:
         - audio
-        - user_id
-        - exercise_id
         - exercise_type
         - question
         - expected_answer
@@ -493,22 +501,6 @@ components:
         - target_language
         - level
       title: Body_speakingPractice
-    ErrorResponse:
-      type: object
-      required:
-        - code
-        - message
-        - details
-      properties:
-        code:
-          type: string
-          example: VALIDATION_ERROR
-        message:
-          type: string
-          example: Invalid request data
-        details:
-          type: string
-          example: email must be valid
     ExerciseContext:
       properties:
         type:
@@ -1224,10 +1216,3 @@ components:
         learning_goal:
           type: string
           example: Prepare for a software engineering job interview
-x-tagGroups:
-  - name: GenAI Language Learning Service
-    tags:
-      - exercises
-      - writing
-      - speaking
-      - ops
