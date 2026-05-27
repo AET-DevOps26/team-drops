@@ -18,5 +18,15 @@ class Settings(BaseSettings):
 
     mongo_url: str = Field(default="mongodb://localhost:27017", alias="MONGO_URL")
 
+    whisper_model: str = Field(default="base", alias="WHISPER_MODEL")
+    tts_enabled: bool = Field(default=True, alias="TTS_ENABLED")
+    prewarm_models: bool = Field(default=False, alias="PREWARM_MODELS")
+
+    # Explicit paths to kokoro-onnx model files.
+    # Download from https://github.com/thewh1teagle/kokoro-onnx/releases and set these.
+    # If unset and TTS is enabled, the first /speaking/evaluate request will download them.
+    kokoro_model_path: str = Field(default="", alias="KOKORO_MODEL_PATH")
+    kokoro_voices_path: str = Field(default="", alias="KOKORO_VOICES_PATH")
+
 
 settings = Settings()
