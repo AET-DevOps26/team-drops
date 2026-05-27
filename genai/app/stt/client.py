@@ -39,7 +39,7 @@ def _to_whisper_lang(language: str) -> str | None:
 def _get_whisper():
     from faster_whisper import WhisperModel
 
-    return WhisperModel(settings.whisper_model, device="cpu", compute_type="int8")
+    return WhisperModel(settings.whisper_model, device=settings.whisper_device, compute_type="int8")
 
 
 def _transcribe_local(audio_bytes: bytes, language: str) -> str:

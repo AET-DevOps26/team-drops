@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     mongo_url: str = Field(default="mongodb://localhost:27017", alias="MONGO_URL")
 
     whisper_model: str = Field(default="base", alias="WHISPER_MODEL")
+    whisper_device: str = Field(default="cpu", alias="WHISPER_DEVICE")
     tts_enabled: bool = Field(default=True, alias="TTS_ENABLED")
     prewarm_models: bool = Field(default=False, alias="PREWARM_MODELS")
 

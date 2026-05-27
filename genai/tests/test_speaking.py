@@ -15,8 +15,6 @@ _LLM_RESPONSE = _SpeakingEvaluationLLMOutput(
 )
 
 _FORM_DATA = {
-    "user_id": "1",
-    "exercise_id": "5",
     "exercise_type": "translation",
     "question": "Translate: 'The cat is on the table'",
     "expected_answer": "Die Katze ist auf dem Tisch",

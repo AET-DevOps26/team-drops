@@ -6,7 +6,6 @@ from fastapi import FastAPI, APIRouter
 from app.config import settings
 from app.middleware.error_handler import add_error_handlers
 from app.routers.exercises import router as exercises_router
-from app.routers.practice import router as practice_router
 from app.routers.speaking import router as speaking_router
 from app.routers.writing import router as writing_router
 
@@ -46,7 +45,6 @@ api_v1 = APIRouter(prefix="/api/v1/genai")
 api_v1.include_router(exercises_router)
 api_v1.include_router(writing_router)
 api_v1.include_router(speaking_router)
-api_v1.include_router(practice_router)
 app.include_router(api_v1)
 
 

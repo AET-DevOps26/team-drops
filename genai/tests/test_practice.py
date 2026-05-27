@@ -57,10 +57,10 @@ def _post_practice(client, extra_form=None, conv_llm=None, corr_llm=None, tts_en
     )
 
     with (
-        patch("app.routers.practice.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
-        patch("app.routers.practice.synthesize", new=AsyncMock(return_value=_FAKE_AUDIO_B64)),
-        patch("app.routers.practice.get_llm", return_value=mock_llm),
-        patch("app.routers.practice.settings") as mock_settings,
+        patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
+        patch("app.routers.speaking.synthesize", new=AsyncMock(return_value=_FAKE_AUDIO_B64)),
+        patch("app.routers.speaking.get_llm", return_value=mock_llm),
+        patch("app.routers.speaking.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = tts_enabled
         response = client.post(
@@ -126,9 +126,9 @@ def test_practice_history_is_accepted(client):
 
 def test_practice_invalid_history_returns_422(client):
     with (
-        patch("app.routers.practice.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
-        patch("app.routers.practice.get_llm", return_value=make_mock_llm(_CONV_LLM_RESPONSE)),
-        patch("app.routers.practice.settings") as mock_settings,
+        patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
+        patch("app.routers.speaking.get_llm", return_value=make_mock_llm(_CONV_LLM_RESPONSE)),
+        patch("app.routers.speaking.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = False
         response = client.post(

@@ -1,8 +1,8 @@
 import asyncio
 import base64
 import io
+import threading
 import wave
-from functools import lru_cache
 
 import numpy as np
 
@@ -22,51 +22,63 @@ _KOKORO_LANG: dict[str, str] = {
     "korean": "ko",
 }
 
-# Default voices per BCP-47 tag (af_heart works for most languages as a fallback).
+# kokoro-onnx v1 ships no native German voice; ef_dora (European Female) is used
+# as a fallback — it is less jarring than the American English af_heart but still
+# not German. Switch to a German voice ID once one is available upstream, or route
+# German learners through OpenAI TTS (LLM_PROVIDER=openai) for correct pronunciation.
 _KOKORO_VOICES: dict[str, str] = {
     "en-us": "af_heart",
     "en-gb": "bf_emma",
-    "de": "af_heart",
-    "fr-fr": "af_heart",
+    "de": "ef_dora",
+    "fr-fr": "ff_siwis",
     "es": "ef_dora",
-    "it": "af_heart",
+    "it": "if_sara",
     "pt-br": "pf_dora",
     "ja": "jf_alpha",
-    "zh": "af_heart",
+    "zh": "zf_xiaobei",
     "ko": "af_heart",
 }
+
+_kokoro_lock = threading.Lock()
+_kokoro_instance = None
 
 
 def _to_kokoro_lang(language: str) -> str:
     return _KOKORO_LANG.get(language.lower(), "en-us")
 
 
-@lru_cache(maxsize=1)
 def _get_kokoro():
-    from kokoro_onnx import Kokoro
+    global _kokoro_instance
+    if _kokoro_instance is not None:
+        return _kokoro_instance
+    with _kokoro_lock:
+        if _kokoro_instance is not None:
+            return _kokoro_instance
+        from kokoro_onnx import Kokoro
 
-    model_path = settings.kokoro_model_path
-    voices_path = settings.kokoro_voices_path
+        model_path = settings.kokoro_model_path
+        voices_path = settings.kokoro_voices_path
 
-    if not model_path or not voices_path:
-        import urllib.request
-        from pathlib import Path
+        if not model_path or not voices_path:
+            import urllib.request
+            from pathlib import Path
 
-        cache_dir = Path.home() / ".cache" / "kokoro_onnx"
-        cache_dir.mkdir(parents=True, exist_ok=True)
+            cache_dir = Path.home() / ".cache" / "kokoro_onnx"
+            cache_dir.mkdir(parents=True, exist_ok=True)
 
-        _BASE = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0"
+            _BASE = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0"
 
-        def _download(filename: str) -> str:
-            dest = cache_dir / filename
-            if not dest.exists():
-                urllib.request.urlretrieve(f"{_BASE}/{filename}", dest)
-            return str(dest)
+            def _download(filename: str) -> str:
+                dest = cache_dir / filename
+                if not dest.exists():
+                    urllib.request.urlretrieve(f"{_BASE}/{filename}", dest)
+                return str(dest)
 
-        model_path = _download("kokoro-v1.0.onnx")
-        voices_path = _download("voices-v1.0.bin")
+            model_path = _download("kokoro-v1.0.onnx")
+            voices_path = _download("voices-v1.0.bin")
 
-    return Kokoro(model_path, voices_path)
+        _kokoro_instance = Kokoro(model_path, voices_path)
+        return _kokoro_instance
 
 
 def _numpy_to_wav_b64(audio: np.ndarray, sample_rate: int) -> str:
