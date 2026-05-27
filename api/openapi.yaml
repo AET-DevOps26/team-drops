@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Language Learning Platform API
   description: |
-    Initial API contract for the job interview preparation scenario.
+    Central API contract for the language learning platform.
 
     **Naming conventions**
     - API JSON / OpenAPI: `snake_case` (e.g. `lesson_id`, `expected_answer`)
@@ -39,8 +39,27 @@ tags:
     x-displayName: writing
   - name: speaking
     x-displayName: speaking
+  - name: listening
+    x-displayName: listening
   - name: ops
     x-displayName: ops
+x-tagGroups:
+  - name: User Service
+    tags:
+      - User Service
+  - name: Learning Service
+    tags:
+      - Learning Service
+  - name: Progress & Feedback Service
+    tags:
+      - Progress & Feedback Service
+  - name: GenAI Service
+    tags:
+      - exercises
+      - writing
+      - speaking
+      - listening
+      - ops
 paths:
   /api/v1/genai/exercises/generate:
     post:
@@ -129,12 +148,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SpeakingEvaluationResponse'
+        '413':
+          description: Audio file exceeds the 25 MB limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+        '502':
+          description: STT transcription or LLM invocation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       x-service: genai-service
   /api/v1/genai/speaking/practice:
     post:
@@ -161,12 +192,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SpeakingPracticeResponse'
+        '413':
+          description: Audio file or history_json exceeds size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+        '502':
+          description: STT transcription or LLM invocation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-service: genai-service
+  /api/v1/genai/listening/generate:
+    post:
+      tags:
+        - listening
+      summary: Generate a listening comprehension exercise
+      description: >-
+        Generate a short listening script in the target language at the
+        specified CEFR level. Once the script is ready, multiple-choice
+        comprehension questions and TTS audio are produced concurrently.
+        Returns the script text, questions (four options each, exactly one
+        correct), and an optional base64-encoded WAV of the script spoken
+        aloud (when TTS is enabled on the server). TTS failure is non-fatal —
+        the exercise is returned without audio.
+      operationId: generateListening
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListeningGenerateRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListeningGenerateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '502':
+          description: LLM or TTS backend error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       x-service: genai-service
   /health:
     get:
@@ -253,7 +336,7 @@ paths:
             schema:
               $ref: '#/components/schemas/SubmitAnswerRequest'
       responses:
-        '200':
+        '201':
           description: Answer submitted and scored
           content:
             application/json:
@@ -408,7 +491,6 @@ components:
       required:
         - code
         - message
-        - details
       properties:
         code:
           type: string
@@ -417,7 +499,10 @@ components:
           type: string
           example: Invalid request data
         details:
-          type: string
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Additional context — only present when available
           example: email must be valid
     Body_evaluateSpeaking:
       properties:
@@ -449,6 +534,7 @@ components:
         level:
           type: string
           title: Level
+          enum: [A1, A2, B1, B2, C1, C2]
           examples:
             - A2
       type: object
@@ -480,6 +566,7 @@ components:
         level:
           type: string
           title: Level
+          enum: [A1, A2, B1, B2, C1, C2]
           examples:
             - A2
         history_json:
@@ -561,7 +648,8 @@ components:
         level:
           type: string
           title: Level
-          description: CEFR level or descriptive level of the learner
+          description: CEFR level of the learner
+          enum: [A1, A2, B1, B2, C1, C2]
           examples:
             - A2
         existing_exercises:
@@ -652,6 +740,126 @@ components:
       description: >-
         A single AI-generated exercise. All fields map directly to Exercise in
         the backend.
+    ListeningGenerateRequest:
+      type: object
+      required:
+        - target_language
+        - level
+      properties:
+        target_language:
+          type: string
+          title: Target Language
+          description: Language the script and questions will be written in
+          examples:
+            - German
+        level:
+          type: string
+          title: Level
+          description: CEFR level of the learner — controls script vocabulary and grammar complexity
+          enum: [A1, A2, B1, B2, C1, C2]
+          examples:
+            - B1
+        topic:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Topic
+          description: >-
+            Optional topic hint for the script (e.g. 'job interview', 'travel').
+            Defaults to everyday life when omitted.
+          examples:
+            - job interview
+      title: ListeningGenerateRequest
+      description: >-
+        Request body for generating a listening comprehension exercise.
+        The LLM generates a short passage at the specified CEFR level, then
+        produces multiple-choice questions about it. If TTS is enabled the
+        passage is also synthesised to audio so learners can listen rather
+        than read.
+    ListeningOption:
+      type: object
+      required:
+        - text
+        - is_correct
+      properties:
+        text:
+          type: string
+          title: Text
+          description: The option text shown to the learner
+          examples:
+            - Im Park
+        is_correct:
+          type: boolean
+          title: Is Correct
+          description: >-
+            True if this is the correct answer — exactly one option per
+            question is true
+      title: ListeningOption
+      description: One answer option in a multiple-choice comprehension question.
+    ListeningQuestion:
+      type: object
+      required:
+        - question
+        - options
+        - explanation
+      properties:
+        question:
+          type: string
+          title: Question
+          description: The question text in the target language
+          examples:
+            - Wo treffen sich die zwei Freunde?
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListeningOption'
+          minItems: 4
+          maxItems: 4
+          title: Options
+          description: Exactly four answer options — exactly one must have is_correct=true
+        explanation:
+          type: string
+          title: Explanation
+          description: Why the correct answer is right — shown after the learner submits
+          examples:
+            - The text says 'treffen sich im Park', which means 'they meet in the park'.
+      title: ListeningQuestion
+      description: >-
+        A single multiple-choice comprehension question about the listening
+        script. Always contains exactly four options with exactly one marked
+        is_correct=true.
+    ListeningGenerateResponse:
+      type: object
+      required:
+        - script
+        - questions
+      properties:
+        script:
+          type: string
+          title: Script
+          description: The listening passage in the target language
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListeningQuestion'
+          minItems: 1
+          title: Questions
+          description: Multiple-choice comprehension questions about the script
+        script_audio_b64:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Script Audio B64
+          description: >-
+            Base64-encoded WAV of the script spoken aloud (null when TTS is
+            disabled)
+      title: ListeningGenerateResponse
+      description: >-
+        A ready-to-use listening comprehension exercise.
+        script is the passage learners listen to (or read).
+        questions are multiple-choice comprehension checks.
+        script_audio_b64 is a base64-encoded WAV of the script spoken aloud —
+        only present when TTS is enabled on the server.
     HTTPValidationError:
       properties:
         detail:
@@ -884,6 +1092,7 @@ components:
         level:
           type: string
           title: Level
+          enum: [A1, A2, B1, B2, C1, C2]
           examples:
             - A2
       type: object
