@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Language Learning Platform API
   description: |
-    Central API contract for the language learning platform.
+    Initial API contract for the job interview preparation scenario.
 
     **Naming conventions**
     - API JSON / OpenAPI: `snake_case` (e.g. `lesson_id`, `expected_answer`)
@@ -10,7 +10,7 @@ info:
     - Database columns: `snake_case` via `@Column(name = ...)`
 
     Service ownership is indicated per-operation via `x-service`.
-  version: 0.1.0
+  version: 1.0.0
 servers:
   - url: http://localhost:8081
     description: User Service
@@ -20,4 +20,68 @@ servers:
     description: Progress-Feedback Service
   - url: http://localhost:8084
     description: GenAI Service
+security: []
+tags:
+  - name: User Service
+    description: User and profile APIs
+  - name: Learning Service
+    description: Learning plan, lesson, and exercise APIs
+  - name: Progress & Feedback Service
+    description: Answer submission and progress APIs
+  - name: GenAI Service
+    description: GenAI APIs
 paths: {}
+components:
+  parameters:
+    UserIdPath:
+      name: user_id
+      in: path
+      required: true
+      description: User ID
+      schema:
+        type: integer
+        format: int64
+    LessonIdPath:
+      name: lesson_id
+      in: path
+      required: true
+      description: Lesson ID
+      schema:
+        type: integer
+        format: int64
+  responses:
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - details
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Invalid request data
+        details:
+          type: string
+          example: email must be valid
