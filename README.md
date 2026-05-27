@@ -35,16 +35,28 @@ team-drops/
 ├── .env.example                    # Environment variable reference
 └── docker-compose.yml              # Local development setup
 ```
+## API Workflow
 
-## API Contract
+Main rule:
 
-The central API contract lives in `api/openapi.yaml`. It is **generated — do not edit it by hand**.
+```text
+Update api/openapi.yaml first
+→ generate code/types
+→ implement business logic
+```
 
-Each service owns a spec file in `api/services/<service-name>.yaml` (auto-generated from the service's code and committed). The central spec is produced by joining `api/base.yaml` (platform-level info) with all service specs via `redocly join`.
+API changes should be designed and reviewed before implementation.
 
-### Working on the GenAI service
+Use versioned API paths from the beginning, for example:
 
-After changing a FastAPI schema or route, regenerate the OpenAPI contract.
+```text
+/api/v1/users
+/api/v1/learning-plans
+/api/v1/progress
+```
+
+
+Export the central OpenAPI contract:
 
 macOS/Linux:
 
@@ -58,38 +70,85 @@ Windows PowerShell, using Git Bash explicitly:
 & "C:\Program Files\Git\bin\bash.exe" api/scripts/export_openapi.sh
 ```
 
-If uv shows a hardlink warning on Windows, set this before running the Git Bash command:
-
-```powershell
-$env:UV_LINK_MODE="copy"
-```
-
-Then commit both updated files:
+Then commit the updated OpenAPI files:
 
 ```bash
-git add api/services/genai.yaml api/openapi.yaml
+git add api/openapi.yaml api/services/*.yaml
 ```
 
-CI fails with a clear message if either committed file is out of sync with the code.
+CI fails if the committed OpenAPI files are out of sync with the code or generated specs.
 
-### Frontend (TODO)
-
-Once the central spec is populated with all services:
-
-1. Add `openapi-typescript` as a dev dependency
-2. Add to `package.json`: `"generate:api": "openapi-typescript ../../api/openapi.yaml -o src/api/types.ts"`
-3. Run `npm run generate:api` whenever the central spec changes and commit `src/api/types.ts`
-4. Import from `src/api/types.ts` — never hand-write HTTP request/response types
+Do not manually create duplicate DTOs or API request/response types.  
+Do not edit generated files manually.  
+If generated code is wrong, fix `api/openapi.yaml` and regenerate.
 
 ---
 
-### Swagger UI
+## Backend
 
-You can view each backend service's Swagger UI at:
+Backend services use **OpenAPI Generator** with the Spring generator.
 
-- <http://localhost:8081/swagger/index.html>
-- <http://localhost:8082/swagger/index.html>
-- <http://localhost:8083/swagger/index.html>
+The generator creates:
+
+- API interfaces from OpenAPI paths
+- DTO/model classes from OpenAPI schemas
+
+The application code implements the generated interfaces and keeps business logic in the service layer.
+
+Generate Java stubs:
+
+```bash
+openapi-generator-cli generate -i api/openapi.yaml -g spring -o backend/<service-name>/generated
+```
+
+If configured through Gradle:
+
+```bash
+./gradlew :<service-name>:openApiGenerate
+```
+
+Windows:
+
+```powershell
+.\gradlew.bat :<service-name>:openApiGenerate
+```
+
+Project versions:
+
+```text
+Spring Boot 4.x
+Java 25 LTS
+```
+
+---
+
+## Frontend
+
+Generate TypeScript API types from the OpenAPI spec:
+
+```bash
+npx openapi-typescript api/openapi.yaml -o frontend/src/api/types.ts
+```
+
+Do not hand-write request or response types.
+
+### Frontend (TODO)
+
+## Mock Server
+
+For frontend development before backend implementation is ready:
+
+```bash
+npx prism mock api/openapi.yaml
+```
+
+---
+
+## Local Development
+
+```bash
+docker compose up --build
+```
 
 ## CI/CD
 
