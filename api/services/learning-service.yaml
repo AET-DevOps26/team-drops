@@ -28,6 +28,32 @@ paths:
         '400':
           $ref: '../base.yaml#/components/responses/BadRequest'
       x-service: learning-service
+  /api/v1/learning-plans/ai:
+    post:
+      tags:
+        - Learning Service
+      summary: Create AI-generated learning plan
+      description: >
+        Create and persist a complete learning plan. The learning backend owns AI
+        orchestration and may call GenAI internally. The frontend must not call
+        GenAI or any LLM provider directly.
+      operationId: createAiLearningPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAiLearningPlanRequest'
+      responses:
+        '201':
+          description: AI learning plan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPlanResponse'
+        '400':
+          $ref: '../base.yaml#/components/responses/BadRequest'
+      x-service: learning-service
   /api/v1/learning-plans/user/{user_id}:
     get:
       tags:
@@ -66,8 +92,63 @@ paths:
         '404':
           $ref: '../base.yaml#/components/responses/NotFound'
       x-service: learning-service
+  /api/v1/lessons/{lesson_id}/ai-exercises:
+    post:
+      tags:
+        - Learning Service
+      summary: Generate AI exercises for lesson
+      description: >
+        Generate and persist exercises for an existing lesson. The learning
+        backend loads lesson context and calls GenAI internally if needed.
+      operationId: generateAiExercisesForLesson
+      parameters:
+        - $ref: '../base.yaml#/components/parameters/LessonIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateAiExercisesRequest'
+      responses:
+        '201':
+          description: AI exercises generated and saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateAiExercisesResponse'
+        '400':
+          $ref: '../base.yaml#/components/responses/BadRequest'
+        '404':
+          $ref: '../base.yaml#/components/responses/NotFound'
+      x-service: learning-service
 components:
   schemas:
+    LearningStatus:
+      type: string
+      enum:
+        - not-started
+        - ongoing
+        - finished
+      example: ongoing
+    ExerciseType:
+      type: string
+      enum:
+        - reading
+        - writing
+        - listening
+        - speaking
+      example: writing
+    ExerciseSubtype:
+      type: string
+      enum:
+        - translation
+        - fill_in_blank
+        - multiple_choice
+        - sentence_building
+        - free_text
+        - speaking_prompt
+        - listening_choice
+      example: free_text
     CreateDefaultLearningPlanRequest:
       type: object
       required:
@@ -77,6 +158,69 @@ components:
           type: integer
           format: int64
           example: 1
+        target_language:
+          type: string
+          example: German
+        current_level:
+          type: string
+          example: A2
+        learning_goal:
+          type: string
+          example: Prepare for a software engineering job interview
+    CreateAiLearningPlanRequest:
+      type: object
+      required:
+        - user_id
+        - target_language
+        - current_level
+        - learning_goal
+        - duration_weeks
+        - study_hours_per_week
+        - minimum_lessons
+        - maximum_lessons
+        - exercise_types
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        target_language:
+          type: string
+          example: German
+        current_level:
+          type: string
+          example: A2
+        learning_goal:
+          type: string
+          example: Prepare for a German job interview with technical project questions.
+        duration_weeks:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 4
+        study_hours_per_week:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 5
+        minimum_lessons:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 6
+        maximum_lessons:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 12
+        exercise_types:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ExerciseType'
+          example:
+            - reading
+            - writing
     LearningPlanResponse:
       type: object
       required:
@@ -84,6 +228,12 @@ components:
         - user_id
         - title
         - description
+        - goal
+        - language
+        - level
+        - duration
+        - status
+        - progress
         - lessons
       properties:
         id:
@@ -100,11 +250,31 @@ components:
         description:
           type: string
           example: A default plan for practicing job interview conversations.
+        goal:
+          type: string
+          example: Prepare for software engineering interviews
+        language:
+          type: string
+          example: German
+        level:
+          type: string
+          example: A2
+        duration:
+          type: string
+          example: 2 weeks
+        status:
+          $ref: '#/components/schemas/LearningStatus'
+        progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 45
         lessons:
           type: array
           items:
-            $ref: '#/components/schemas/LessonResponse'
-    LessonResponse:
+            $ref: '#/components/schemas/LessonSummaryResponse'
+    LessonSummaryResponse:
       type: object
       required:
         - id
@@ -112,7 +282,10 @@ components:
         - title
         - topic
         - order_number
-        - exercises
+        - status
+        - progress
+        - time_estimate_minutes
+        - exercise_count
       properties:
         id:
           type: integer
@@ -132,19 +305,83 @@ components:
           type: integer
           format: int32
           example: 1
-        exercises:
+        status:
+          $ref: '#/components/schemas/LearningStatus'
+        progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 45
+        time_estimate_minutes:
+          type: integer
+          format: int32
+          example: 8
+        exercise_count:
+          type: integer
+          format: int32
+          example: 4
+    LessonResponse:
+      allOf:
+        - $ref: '#/components/schemas/LessonSummaryResponse'
+        - type: object
+          required:
+            - content_blocks
+            - exercises
+          properties:
+            content_blocks:
+              type: array
+              items:
+                $ref: '#/components/schemas/LessonContentBlock'
+            exercises:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExerciseResponse'
+    LessonContentBlock:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - content
+            - exercise
+            - summary
+          example: content
+        title:
+          type: string
+          example: Core idea
+        subtitle:
+          type: string
+          example: Apply it immediately
+        text:
+          type: string
+          example: A strong self-introduction is short, professional, and relevant.
+        points:
           type: array
           items:
-            $ref: '#/components/schemas/ExerciseResponse'
+            type: string
+          example:
+            - Use a three-part structure.
+            - Keep the first answer under one minute.
+        exercise_id:
+          type: integer
+          format: int64
+          example: 1
     ExerciseResponse:
       type: object
       required:
         - id
         - lesson_id
         - type
+        - subtype
+        - title
         - question
         - difficulty
         - expected_answer
+        - status
+        - format
       properties:
         id:
           type: integer
@@ -155,14 +392,84 @@ components:
           format: int64
           example: 1
         type:
+          $ref: '#/components/schemas/ExerciseType'
+        subtype:
+          $ref: '#/components/schemas/ExerciseSubtype'
+        title:
           type: string
-          example: free_text
+          example: Writing practice
         question:
           type: string
           example: Tell me about yourself.
         difficulty:
           type: string
-          example: beginner
+          example: A2
         expected_answer:
           type: string
           example: A concise summary of experience, strengths, and motivation.
+        status:
+          $ref: '#/components/schemas/LearningStatus'
+        score:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 86
+        format:
+          type: string
+          example: Short written answer
+        source:
+          type: string
+          enum:
+            - default
+            - ai
+          example: default
+    GenerateAiExercisesRequest:
+      type: object
+      required:
+        - user_id
+        - count
+        - exercise_types
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        count:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 10
+          example: 3
+        exercise_types:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ExerciseType'
+          example:
+            - reading
+            - writing
+        instructions:
+          type: string
+          example: Focus on technical project interview questions.
+    GenerateAiExercisesResponse:
+      type: object
+      required:
+        - lesson_id
+        - generated_count
+        - exercises
+      properties:
+        lesson_id:
+          type: integer
+          format: int64
+          example: 1
+        generated_count:
+          type: integer
+          format: int32
+          example: 3
+        exercises:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExerciseResponse'

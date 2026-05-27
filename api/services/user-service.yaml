@@ -6,6 +6,30 @@ servers:
   - url: http://localhost:8081
     description: User Service
 paths:
+  /api/v1/auth/login:
+    post:
+      tags:
+        - User Service
+      summary: Log in with email and password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: User logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '../base.yaml#/components/responses/BadRequest'
+        '404':
+          $ref: '../base.yaml#/components/responses/NotFound'
+      x-service: user-service
   /api/v1/users:
     post:
       tags:
@@ -49,6 +73,31 @@ paths:
           $ref: '../base.yaml#/components/responses/NotFound'
       x-service: user-service
   /api/v1/users/{user_id}/profile:
+    put:
+      tags:
+        - User Service
+      summary: Create or update user profile
+      operationId: upsertUserProfile
+      parameters:
+        - $ref: '../base.yaml#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertUserProfileRequest'
+      responses:
+        '200':
+          description: User profile saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '400':
+          $ref: '../base.yaml#/components/responses/BadRequest'
+        '404':
+          $ref: '../base.yaml#/components/responses/NotFound'
+      x-service: user-service
     post:
       tags:
         - User Service
@@ -93,6 +142,37 @@ paths:
       x-service: user-service
 components:
   schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          example: ada@example.com
+        password:
+          type: string
+          minLength: 1
+          format: password
+          example: secure-password
+    LoginResponse:
+      type: object
+      required:
+        - user
+        - access_token
+        - token_type
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        access_token:
+          type: string
+          example: jwt-or-session-token
+        token_type:
+          type: string
+          example: Bearer
     CreateUserRequest:
       type: object
       required:
@@ -151,11 +231,42 @@ components:
           type: string
           minLength: 1
           example: Prepare for a software engineering job interview
+    UpsertUserProfileRequest:
+      type: object
+      required:
+        - name
+        - country
+        - target_language
+        - current_level
+        - learning_goal
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: Ada Lovelace
+        country:
+          type: string
+          minLength: 1
+          example: Germany
+        target_language:
+          type: string
+          minLength: 1
+          example: German
+        current_level:
+          type: string
+          minLength: 1
+          example: A2
+        learning_goal:
+          type: string
+          minLength: 1
+          example: Prepare for a software engineering job interview
     UserProfileResponse:
       type: object
       required:
         - id
         - user_id
+        - name
+        - country
         - target_language
         - current_level
         - learning_goal
@@ -168,12 +279,18 @@ components:
           type: integer
           format: int64
           example: 1
+        name:
+          type: string
+          example: Ada Lovelace
+        country:
+          type: string
+          example: Germany
         target_language:
           type: string
-          example: English
+          example: German
         current_level:
           type: string
-          example: B1
+          example: A2
         learning_goal:
           type: string
           example: Prepare for a software engineering job interview
