@@ -1,7 +1,10 @@
 package de.tum.aet.devops26.learning_service.api.impl;
 
 import de.tum.aet.devops26.learning_service.api.LearningServiceApi;
+import de.tum.aet.devops26.learning_service.dto.CreateAiLearningPlanRequest;
 import de.tum.aet.devops26.learning_service.dto.CreateDefaultLearningPlanRequest;
+import de.tum.aet.devops26.learning_service.dto.GenerateAiExercisesRequest;
+import de.tum.aet.devops26.learning_service.dto.GenerateAiExercisesResponse;
 import de.tum.aet.devops26.learning_service.dto.LearningPlanResponse;
 import de.tum.aet.devops26.learning_service.dto.LessonResponse;
 import de.tum.aet.devops26.learning_service.service.LearningPlanService;
@@ -17,6 +20,14 @@ public class LearningServiceController implements LearningServiceApi {
 
     private final LearningPlanService learningPlanService;
     private final LessonService lessonService;
+
+    @Override
+    public ResponseEntity<LearningPlanResponse> createAiLearningPlan(
+        CreateAiLearningPlanRequest createAiLearningPlanRequest
+    ) {
+        return ResponseEntity.status(201)
+            .body(learningPlanService.createAiLearningPlan(createAiLearningPlanRequest));
+    }
 
     @Override
     public ResponseEntity<LearningPlanResponse> createDefaultLearningPlan(
@@ -39,6 +50,16 @@ public class LearningServiceController implements LearningServiceApi {
     public ResponseEntity<LessonResponse> getLessonById(Long lessonId) {
         return lessonService.findResponseById(lessonId)
             .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Override
+    public ResponseEntity<GenerateAiExercisesResponse> generateAiExercisesForLesson(
+        Long lessonId,
+        GenerateAiExercisesRequest generateAiExercisesRequest
+    ) {
+        return lessonService.generateAiExercisesForLesson(lessonId, generateAiExercisesRequest)
+            .map(response -> ResponseEntity.status(201).body(response))
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

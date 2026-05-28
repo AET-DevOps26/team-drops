@@ -11,6 +11,10 @@ paths:
       tags:
         - Progress & Feedback Service
       summary: Submit answer
+      description: >
+        Submit an exercise answer. The progress-feedback backend owns scoring,
+        feedback persistence, progress updates, and any internal GenAI call.
+        The frontend must not call GenAI or any LLM provider directly.
       operationId: submitAnswer
       requestBody:
         required: true
@@ -20,13 +24,39 @@ paths:
               $ref: '#/components/schemas/SubmitAnswerRequest'
       responses:
         '200':
-          description: Answer submitted and scored
+          description: Answer submitted, scored, and persisted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserAnswerResponse'
+                $ref: '#/components/schemas/SubmitAnswerResponse'
         '400':
           $ref: '../base.yaml#/components/responses/BadRequest'
+        '404':
+          $ref: '../base.yaml#/components/responses/NotFound'
+      x-service: progress-feedback-service
+  /api/v1/answers/{answer_id}/feedback:
+    get:
+      tags:
+        - Progress & Feedback Service
+      summary: Get feedback for answer
+      operationId: getFeedbackByAnswerId
+      parameters:
+        - name: answer_id
+          in: path
+          required: true
+          description: Answer ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Feedback found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackResponse'
+        '404':
+          $ref: '../base.yaml#/components/responses/NotFound'
       x-service: progress-feedback-service
   /api/v1/progress/user/{user_id}:
     get:
@@ -48,6 +78,13 @@ paths:
       x-service: progress-feedback-service
 components:
   schemas:
+    LearningStatus:
+      type: string
+      enum:
+        - not-started
+        - ongoing
+        - finished
+      example: ongoing
     SubmitAnswerRequest:
       type: object
       required:
@@ -67,6 +104,47 @@ components:
           type: string
           minLength: 1
           example: I am a computer science student interested in backend development.
+        client_context:
+          $ref: '#/components/schemas/AnswerClientContext'
+    AnswerClientContext:
+      type: object
+      properties:
+        lesson_id:
+          type: integer
+          format: int64
+          example: 1
+        plan_id:
+          type: integer
+          format: int64
+          example: 1
+    SubmitAnswerResponse:
+      type: object
+      required:
+        - answer
+        - exercise_status
+        - lesson_progress
+        - plan_progress
+      properties:
+        answer:
+          $ref: '#/components/schemas/UserAnswerResponse'
+        feedback:
+          oneOf:
+            - $ref: '#/components/schemas/FeedbackResponse'
+            - type: 'null'
+        exercise_status:
+          $ref: '#/components/schemas/LearningStatus'
+        lesson_progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 75
+        plan_progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 48
     UserAnswerResponse:
       type: object
       required:
@@ -75,6 +153,9 @@ components:
         - exercise_id
         - answer_text
         - score
+        - max_score
+        - is_correct
+        - submitted_at
       properties:
         id:
           type: integer
@@ -92,22 +173,80 @@ components:
           type: string
           example: I am a computer science student interested in backend development.
         score:
-          type: number
-          format: double
-          example: 0.85
-    ProgressResponse:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 86
+        max_score:
+          type: integer
+          format: int32
+          example: 100
+        is_correct:
+          type:
+            - boolean
+            - 'null'
+          example: true
+        submitted_at:
+          type: string
+          format: date-time
+          example: '2026-05-27T21:30:00Z'
+    FeedbackResponse:
       type: object
       required:
         - id
-        - user_id
-        - completed_exercises
-        - total_exercises
-        - average_score
+        - answer_id
+        - message
+        - created_at
       properties:
         id:
           type: integer
           format: int64
           example: 1
+        answer_id:
+          type: integer
+          format: int64
+          example: 1
+        message:
+          type: string
+          example: Good structure and relevant vocabulary.
+        weak_area:
+          type: string
+          example: specificity
+        corrected_answer:
+          type: string
+          example: I am studying computer science, and I enjoy building backend systems.
+        strengths:
+          type: array
+          items:
+            type: string
+          example:
+            - Clear main idea
+            - Relevant technical vocabulary
+        improvements:
+          type: array
+          items:
+            type: string
+          example:
+            - Add one concrete project detail
+            - Use a more natural transition
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-05-27T21:30:00Z'
+    ProgressResponse:
+      type: object
+      required:
+        - user_id
+        - completed_exercises
+        - total_exercises
+        - average_score
+        - recent_progress
+        - recent_finished
+        - top_lessons
+      properties:
         user_id:
           type: integer
           format: int64
@@ -121,6 +260,129 @@ components:
           format: int32
           example: 10
         average_score:
-          type: number
-          format: double
-          example: 0.78
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 78
+        current_plan:
+          $ref: '#/components/schemas/CurrentPlanProgress'
+        recent_progress:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecentProgressItem'
+        recent_finished:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecentFinishedLesson'
+        top_lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopLesson'
+    CurrentPlanProgress:
+      type: object
+      required:
+        - id
+        - title
+        - language
+        - progress
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        title:
+          type: string
+          example: Job Interview Preparation
+        language:
+          type: string
+          example: German
+        progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 45
+    RecentProgressItem:
+      type: object
+      required:
+        - plan_id
+        - lesson_id
+        - lesson_title
+        - status
+        - progress
+        - last_activity_at
+      properties:
+        plan_id:
+          type: integer
+          format: int64
+          example: 1
+        lesson_id:
+          type: integer
+          format: int64
+          example: 1
+        lesson_title:
+          type: string
+          example: Self Introduction
+        status:
+          $ref: '#/components/schemas/LearningStatus'
+        progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 75
+        last_activity_at:
+          type: string
+          format: date-time
+          example: '2026-05-27T21:30:00Z'
+    RecentFinishedLesson:
+      type: object
+      required:
+        - plan_id
+        - lesson_id
+        - lesson_title
+        - finished_at
+        - score
+      properties:
+        plan_id:
+          type: integer
+          format: int64
+          example: 1
+        lesson_id:
+          type: integer
+          format: int64
+          example: 1
+        lesson_title:
+          type: string
+          example: Education and Background
+        finished_at:
+          type: string
+          format: date-time
+          example: '2026-05-26T18:10:00Z'
+        score:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 91
+    TopLesson:
+      type: object
+      required:
+        - lesson_id
+        - lesson_title
+        - score
+      properties:
+        lesson_id:
+          type: integer
+          format: int64
+          example: 1
+        lesson_title:
+          type: string
+          example: Education and Background
+        score:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 91

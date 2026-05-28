@@ -5,10 +5,13 @@ export function SettingsOverlay({
   closing,
   darkMode,
   language,
+  targetLanguage,
+  t,
   onClose,
   onLanguage,
   onLogout,
   onProfile,
+  onTargetLanguage,
   onToggleDarkMode,
 }) {
   return (
@@ -22,7 +25,7 @@ export function SettingsOverlay({
 
       <aside className="settings-sidebar" aria-label="Settings sidebar">
         <header className="sidebar-topbar">
-          <h2>Settings</h2>
+          <h2>{t.settings}</h2>
           <button className="icon-button" type="button" aria-label="Close settings" onClick={onClose}>
             <X size={21} aria-hidden="true" />
           </button>
@@ -34,8 +37,8 @@ export function SettingsOverlay({
               <User size={20} aria-hidden="true" />
             </span>
             <span className="row-text">
-              <strong>Personal profile</strong>
-              <small>View and edit account details</small>
+              <strong>{t.personalProfile}</strong>
+              <small>{t.accountDetails}</small>
             </span>
           </button>
 
@@ -44,8 +47,18 @@ export function SettingsOverlay({
               <Languages size={20} aria-hidden="true" />
             </span>
             <span className="row-text">
-              <strong>Language</strong>
+              <strong>{t.language}</strong>
               <small>{language}</small>
+            </span>
+          </button>
+
+          <button className="settings-row" type="button" onClick={onTargetLanguage}>
+            <span className="row-icon">
+              <Languages size={20} aria-hidden="true" />
+            </span>
+            <span className="row-text">
+              <strong>{t.languageToLearn}</strong>
+              <small>{targetLanguage}</small>
             </span>
           </button>
 
@@ -54,8 +67,8 @@ export function SettingsOverlay({
               {darkMode ? <Moon size={20} aria-hidden="true" /> : <Sun size={20} aria-hidden="true" />}
             </span>
             <span className="row-text">
-              <strong>Light / dark mode</strong>
-              <small>{darkMode ? 'Dark mode enabled' : 'Light mode enabled'}</small>
+              <strong>{t.appearance}</strong>
+              <small>{darkMode ? t.darkEnabled : t.lightEnabled}</small>
             </span>
             <button
               className={`switch ${darkMode ? 'on' : ''}`}
@@ -70,7 +83,7 @@ export function SettingsOverlay({
 
         <button className="logout-button" type="button" onClick={onLogout}>
           <LogOut size={20} aria-hidden="true" />
-          Log out
+          {t.logout}
         </button>
       </aside>
     </div>

@@ -1,10 +1,16 @@
 package de.tum.aet.devops26.learning_service.service;
 
+import de.tum.aet.devops26.learning_service.dto.GenerateAiExercisesRequest;
+import de.tum.aet.devops26.learning_service.dto.GenerateAiExercisesResponse;
+import de.tum.aet.devops26.learning_service.dto.LearningStatus;
+import de.tum.aet.devops26.learning_service.dto.LessonSummaryResponse;
 import de.tum.aet.devops26.learning_service.dto.LessonResponse;
+import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LessonRepository;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -39,16 +45,64 @@ public class LessonService {
         return findById(id).map(this::toResponse);
     }
 
+    public Optional<GenerateAiExercisesResponse> generateAiExercisesForLesson(
+        Long lessonId,
+        GenerateAiExercisesRequest request
+    ) {
+        return findById(lessonId).map(lesson -> {
+            List<Exercise> generatedExercises = IntStream.range(0, request.getCount())
+                .mapToObj(index -> {
+                    var exerciseType = request.getExerciseTypes().get(index % request.getExerciseTypes().size());
+                    return exerciseService.save(Exercise.builder()
+                        .lessonId(lessonId)
+                        .type(exerciseService.defaultSubtypeFor(exerciseType).getValue())
+                        .question(exerciseService.buildAiQuestion(lesson, exerciseType, request.getInstructions(), index + 1))
+                        .difficulty("A2")
+                        .expectedAnswer(exerciseService.defaultExpectedAnswer(exerciseType))
+                        .build());
+                })
+                .toList();
+
+            return new GenerateAiExercisesResponse(
+                lessonId,
+                generatedExercises.size(),
+                generatedExercises.stream().map(exerciseService::toResponse).toList()
+            );
+        });
+    }
+
+    public LessonSummaryResponse toSummaryResponse(Lesson lesson) {
+        List<?> exercises = exerciseService.findByLessonId(lesson.getId());
+        return new LessonSummaryResponse(
+            lesson.getId(),
+            lesson.getPlanId(),
+            lesson.getTitle(),
+            lesson.getTopic(),
+            lesson.getOrderNumber(),
+            LearningStatus.NOT_STARTED,
+            0,
+            10,
+            exercises.size()
+        );
+    }
+
     public LessonResponse toResponse(Lesson lesson) {
+        List<de.tum.aet.devops26.learning_service.dto.ExerciseResponse> exercises = exerciseService.findByLessonId(lesson.getId()).stream()
+            .map(exerciseService::toResponse)
+            .toList();
+
         return new LessonResponse(
             lesson.getId(),
             lesson.getPlanId(),
             lesson.getTitle(),
             lesson.getTopic(),
             lesson.getOrderNumber(),
-            exerciseService.findByLessonId(lesson.getId()).stream()
-                .map(exerciseService::toResponse)
-                .toList()
+            LearningStatus.NOT_STARTED,
+            0,
+            10,
+            exercises.size(),
+            List.of(),
+            exercises
         );
     }
 }

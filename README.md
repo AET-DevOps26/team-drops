@@ -12,6 +12,7 @@ The project documentation is stored in the `docs` folder.
 - [Use Case Diagram](docs/Use%20Case%20Diagram.pdf)
 - [Top-Level Architecture Diagram](docs/top-level%20architecture%20diagram.pdf)
 - [Microservice Best Practices](docs/microservice-best-practices.md)
+- [Backend API Requirements](docs/frontend-backend-api-integration.md)
 
 ## Product Backlog
 

@@ -33,4 +33,22 @@ public class LearningPlan {
 
     @Column(nullable = false)
     private String description;
+
+    @Column(nullable = false)
+    private String goal;
+
+    @Column(nullable = false)
+    private String language;
+
+    @Column(nullable = false)
+    private String level;
+
+    @Column(nullable = false)
+    private String duration;
+
+    @Column(nullable = false)
+    private String status;
+
+    @Column(nullable = false)
+    private Integer progress;
 }

@@ -38,7 +38,7 @@ public class ProgressRecordService {
         return findByUserId(userId).map(this::toResponse);
     }
 
-    public ProgressRecord recordSubmittedAnswer(Long userId, Double score) {
+    public ProgressRecord recordSubmittedAnswer(Long userId, Integer score) {
         ProgressRecord progressRecord = findByUserId(userId)
             .orElseGet(() -> ProgressRecord.builder()
                 .userId(userId)
@@ -61,11 +61,13 @@ public class ProgressRecordService {
 
     private ProgressResponse toResponse(ProgressRecord progressRecord) {
         return new ProgressResponse(
-            progressRecord.getId(),
             progressRecord.getUserId(),
             progressRecord.getCompletedExercises(),
             progressRecord.getTotalExercises(),
-            progressRecord.getAverageScore()
+            (int) Math.round(progressRecord.getAverageScore() == null ? 0.0 : progressRecord.getAverageScore()),
+            List.of(),
+            List.of(),
+            List.of()
         );
     }
 }

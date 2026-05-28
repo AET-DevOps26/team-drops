@@ -1,11 +1,13 @@
 import React from 'react';
-import { CheckCircle2, Flame, Settings, Target } from 'lucide-react';
+import { CheckCircle2, Settings, Target } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 
 export function DashboardPage({
   activePlan,
+  profile,
   recentFinishedLessons,
   recentLessons,
+  t,
   weeklyPlan,
   onOpenLesson,
   onOpenPlan,
@@ -16,8 +18,8 @@ export function DashboardPage({
     <section className="main-page" aria-label="Overview dashboard">
       <header className="main-topbar">
         <div>
-          <p className="app-label">Welcome back</p>
-          <h2>Dashboard</h2>
+          <p className="app-label">{t.welcomeBack}, {profile.name}</p>
+          <h2>{t.dashboard}</h2>
         </div>
         <button className="icon-button" type="button" aria-label="Settings" onClick={onOpenSettings}>
           <Settings size={22} aria-hidden="true" />
@@ -32,74 +34,57 @@ export function DashboardPage({
           onClick={onOpenPlan}
         >
           <div>
-            <p>{activePlan.language} plan</p>
+            <p>{activePlan.language} {t.currentPlan}</p>
             <h3>{activePlan.title}</h3>
-            <span>{activePlan.lessons.length} lessons in progress</span>
+            <span>{activePlan.lessons.length} {t.lessonsInProgress}</span>
           </div>
           <div className="hero-progress" aria-label={`Overall progress ${activePlan.progress} percent`}>
             <strong>{activePlan.progress}%</strong>
-            <small>Overall</small>
+            <small>{t.overall}</small>
           </div>
         </button>
-
-        <section className="week-card" aria-label="Weekly training plan">
-          <div className="section-heading">
-            <h3>This week</h3>
-            <span>3 day streak</span>
-          </div>
-          <div className="week-row">
-            {weeklyPlan.map((item, index) => (
-              <span className={`week-day ${item.done ? 'done' : ''}`} key={`${item.day}-${index}`}>
-                {item.day}
-              </span>
-            ))}
-          </div>
-        </section>
 
         <div className="overview-grid" aria-label="Learning stats">
           <section className="stat-card">
             <CheckCircle2 size={20} aria-hidden="true" />
             <strong>6/15</strong>
-            <span>Exercises done</span>
+            <span>{t.exercisesDone}</span>
           </section>
           <section className="stat-card">
             <Target size={20} aria-hidden="true" />
             <strong>78%</strong>
-            <span>Average score</span>
-          </section>
-          <section className="stat-card">
-            <Flame size={20} aria-hidden="true" />
-            <strong>Vocabulary</strong>
-            <span>Weak area</span>
+            <span>{t.averageScore}</span>
           </section>
         </div>
 
         <LessonListBlock
-          emptyText="No ongoing lessons yet"
+          emptyText={t.noOngoing}
           lessons={recentLessons}
           onOpenLesson={onOpenLesson}
-          title="Recent progress"
+          t={t}
+          title={t.recentProgress}
         />
 
         <LessonListBlock
-          emptyText="No finished lessons yet"
+          emptyText={t.noFinished}
           lessons={recentFinishedLessons}
           onOpenLesson={onOpenLesson}
-          title="Recent finish"
+          t={t}
+          title={t.recentFinish}
         />
       </div>
 
-      <BottomNav activeScreen="main" onNavigate={onNavigate} />
+      <BottomNav activeScreen="main" t={t} onNavigate={onNavigate} />
     </section>
   );
 }
 
-function LessonListBlock({ emptyText, lessons, onOpenLesson, title }) {
+function LessonListBlock({ emptyText, lessons, onOpenLesson, t, title }) {
   return (
     <section className="lesson-progress-card" aria-label={title}>
       <div className="section-heading">
         <h3>{title}</h3>
-        <span>Top 3 lessons</span>
+        <span>{t.topLessons}</span>
       </div>
       {lessons.length === 0 ? (
         <p className="empty-state">{emptyText}</p>

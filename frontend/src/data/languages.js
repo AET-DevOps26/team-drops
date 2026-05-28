@@ -1,1 +1,3 @@
-export const languages = ['English', 'German', 'Spanish', 'French', 'Italian', 'Japanese'];
+export const languages = ['English', 'German', 'French'];
+
+export const targetLanguages = ['German', 'Italien'];

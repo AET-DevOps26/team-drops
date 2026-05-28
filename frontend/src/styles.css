@@ -109,6 +109,10 @@ button {
   gap: 14px;
 }
 
+.auth-form-header {
+  align-items: center;
+}
+
 .logo-placeholder {
   display: grid;
   width: 58px;
@@ -194,25 +198,6 @@ h1 {
   transform: translateY(-1px);
 }
 
-.gmail-button {
-  border: 1px solid #d8dce0;
-  background: #ffffff;
-  color: #202124;
-  box-shadow: 0 14px 32px rgba(16, 32, 51, 0.08);
-}
-
-.google-mark {
-  display: grid;
-  width: 26px;
-  height: 26px;
-  place-items: center;
-  border: 1px solid #d8dce0;
-  border-radius: 50%;
-  color: #4285f4;
-  font-size: 1rem;
-  font-weight: 900;
-}
-
 .register-button {
   border: 1px solid var(--blue-dark);
   background: var(--blue);
@@ -251,6 +236,51 @@ h1 {
   background: #eef6ff;
 }
 
+.auth-form {
+  justify-content: flex-start;
+  gap: 14px;
+  padding-top: 34px;
+}
+
+.auth-form .auth-heading {
+  margin-bottom: 6px;
+}
+
+.auth-field {
+  display: grid;
+  gap: 7px;
+}
+
+.auth-field span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 820;
+  text-transform: uppercase;
+}
+
+.auth-field input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.auth-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #f0b7bc;
+  border-radius: 12px;
+  background: #fff4f5;
+  color: #b4232f;
+  font-size: 0.8rem;
+  font-weight: 780;
+  line-height: 1.35;
+}
+
 .home-indicator {
   width: 118px;
   height: 5px;
@@ -287,7 +317,7 @@ h1 {
 }
 
 .topbar-title .inline-back + h2 {
-  margin-left: 34px;
+  margin-left: 42px;
 }
 
 .topbar-title.learning-plan-title h2 {
@@ -297,14 +327,15 @@ h1 {
 
 .inline-back {
   position: absolute;
-  top: 3px;
+  top: 50%;
   left: 0;
   display: inline-grid;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   place-items: center;
+  transform: translateY(-50%);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: 11px;
   background: var(--surface);
   color: var(--blue-dark);
   cursor: pointer;
@@ -491,7 +522,7 @@ h1 {
 
 .overview-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -968,6 +999,27 @@ h1 {
     border-color 160ms ease,
     background-color 160ms ease,
     box-shadow 160ms ease;
+}
+
+.exercise-card.is-disabled,
+.ai-checkbox-option.is-disabled {
+  opacity: 0.48;
+  filter: grayscale(1);
+}
+
+.exercise-card.is-disabled {
+  cursor: not-allowed;
+}
+
+.exercise-card.is-disabled:hover,
+.ai-checkbox-option.is-disabled:hover {
+  transform: none;
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.ai-checkbox-option.is-disabled {
+  cursor: not-allowed;
 }
 
 .lesson-progress-copy {
@@ -1818,7 +1870,7 @@ button.settings-row {
   align-items: center;
   justify-content: flex-start;
   flex-direction: column;
-  padding-top: 42px;
+  padding-top: 22px;
   text-align: center;
 }
 
@@ -1849,7 +1901,7 @@ button.settings-row {
   display: grid;
   width: 100%;
   gap: 12px;
-  margin-top: 34px;
+  margin-top: 0;
 }
 
 .profile-field {
@@ -1872,6 +1924,24 @@ button.settings-row {
 .profile-field strong {
   color: var(--ink);
   font-size: 1rem;
+}
+
+.profile-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+
+.profile-field small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 760;
+  text-align: right;
 }
 
 .edit-profile-button {
@@ -2036,7 +2106,7 @@ button.settings-row {
 
 .bottom-bar {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   padding: 8px;
   border: 1px solid var(--line);

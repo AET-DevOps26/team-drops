@@ -1,6 +1,8 @@
 package de.tum.aet.devops26.user_service.service;
 
 import de.tum.aet.devops26.user_service.dto.CreateUserRequest;
+import de.tum.aet.devops26.user_service.dto.LoginRequest;
+import de.tum.aet.devops26.user_service.dto.LoginResponse;
 import de.tum.aet.devops26.user_service.dto.UserResponse;
 import de.tum.aet.devops26.user_service.model.User;
 import de.tum.aet.devops26.user_service.repository.UserRepository;
@@ -59,6 +61,12 @@ public class UserService {
 
     public Optional<UserResponse> findResponseById(Long id) {
         return findById(id).map(this::toResponse);
+    }
+
+    public Optional<LoginResponse> loginUser(LoginRequest request) {
+        return findByEmail(request.getEmail())
+            .filter(user -> user.getPasswordHash().equals(hashPassword(request.getPassword())))
+            .map(user -> new LoginResponse(toResponse(user), "session-user-" + user.getId(), "Bearer"));
     }
 
     private UserResponse toResponse(User user) {

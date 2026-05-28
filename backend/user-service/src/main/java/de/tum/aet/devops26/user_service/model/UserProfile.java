@@ -29,6 +29,12 @@ public class UserProfile {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String country;
+
     @Column(name = "target_language", nullable = false)
     private String targetLanguage;
 
