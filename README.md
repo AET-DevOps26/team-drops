@@ -132,19 +132,7 @@ npx openapi-typescript api/openapi.yaml -o frontend/src/api/types.ts
 
 Do not hand-write request or response types.
 
----
-
-## GenAI
-
-If the GenAI service calls backend APIs, generate a Python client from the OpenAPI spec:
-
-```bash
-openapi-python-client --path api/openapi.yaml --output genai/client
-```
-
-Do not duplicate API models manually.
-
----
+### Frontend (TODO)
 
 ## Mock Server
 
