@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d teamdrops"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d teamdrops" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -26,7 +26,8 @@ services:
 
   user-service:
     build:
-      context: ./backend/user-service
+      context: .
+      dockerfile: backend/user-service/Dockerfile
     container_name: user-service
     ports:
       - "8081:8081"
@@ -40,7 +41,8 @@ services:
 
   learning-service:
     build:
-      context: ./backend/learning-service
+      context: .
+      dockerfile: backend/learning-service/Dockerfile
     container_name: learning-service
     ports:
       - "8082:8082"
@@ -54,7 +56,8 @@ services:
 
   progress-feedback-service:
     build:
-      context: ./backend/progress-feedback-service
+      context: .
+      dockerfile: backend/progress-feedback-service/Dockerfile
     container_name: progress-feedback-service
     ports:
       - "8083:8083"

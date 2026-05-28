@@ -65,10 +65,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build user-service Docker image
-        run: docker build -t user-service ./backend/user-service
+        run: docker build -t user-service -f backend/user-service/Dockerfile .
 
       - name: Build learning-service Docker image
-        run: docker build -t learning-service ./backend/learning-service
+        run: docker build -t learning-service -f backend/learning-service/Dockerfile .
 
       - name: Build progress-feedback-service Docker image
-        run: docker build -t progress-feedback-service ./backend/progress-feedback-service
+        run: docker build -t progress-feedback-service -f backend/progress-feedback-service/Dockerfile .

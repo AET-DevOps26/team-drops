@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.14'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.openapi.generator' version '7.22.0'
 }
 
 group = 'de.tum.aet.devops26'
@@ -17,11 +18,45 @@ repositories {
 	mavenCentral()
 }
 
+def openApiGeneratedDir = layout.buildDirectory.dir('generated/sources/openapi')
+
+openApiGenerate {
+	generatorName = 'spring'
+	inputSpec = rootProject.file('../../api/services/user-service.yaml').toURI().toString()
+	outputDir = openApiGeneratedDir.get().asFile.absolutePath
+	apiPackage = 'de.tum.aet.devops26.user_service.api'
+	modelPackage = 'de.tum.aet.devops26.user_service.dto'
+	configOptions = [
+		interfaceOnly: 'true',
+		skipDefaultInterface: 'true',
+		useSpringBoot3: 'true',
+		useTags: 'true',
+		useBeanValidation: 'true',
+		openApiNullable: 'false',
+		hideGenerationTimestamp: 'true',
+		documentationProvider: 'springdoc',
+		annotationLibrary: 'swagger2'
+	]
+}
+
+sourceSets {
+	main {
+		java {
+			srcDir openApiGeneratedDir.map { it.dir('src/main/java') }
+		}
+	}
+}
+
+tasks.named('compileJava') {
+	dependsOn tasks.named('openApiGenerate')
+}
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'

@@ -1,4 +1,4 @@
-package de.tum.aet.devops26.user_service.model;
+package de.tum.aet.devops26.learning_service.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,13 +13,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "user_profiles")
+@Table(name = "learning_plans")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserProfile {
+public class LearningPlan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,19 +29,26 @@ public class UserProfile {
     private Long userId;
 
     @Column(nullable = false)
-    private String name;
+    private String title;
 
     @Column(nullable = false)
-    private String country;
+    private String description;
 
-    @Column(name = "target_language", nullable = false)
-    private String targetLanguage;
+    @Column(nullable = false)
+    private String goal;
 
-    @Column(name = "current_level", nullable = false)
-    private String currentLevel;
+    @Column(nullable = false)
+    private String language;
 
-    @Column(name = "learning_goal")
-    private String learningGoal;
+    @Column(nullable = false)
+    private String level;
 
-    private LocalDate deadline;
+    @Column(nullable = false)
+    private String duration;
+
+    @Column(nullable = false)
+    private String status;
+
+    @Column(nullable = false)
+    private Integer progress;
 }
