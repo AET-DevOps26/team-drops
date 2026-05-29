@@ -4,16 +4,38 @@ import { BottomNav } from '../components/BottomNav';
 
 export function DashboardPage({
   activePlan,
+  dashboardError,
+  hasLearningPlans,
+  hasLessons,
+  loading,
   profile,
+  progress,
   recentFinishedLessons,
   recentLessons,
   t,
-  weeklyPlan,
+  onOpenLearningHub,
   onOpenLesson,
   onOpenPlan,
   onOpenSettings,
   onNavigate,
 }) {
+  const heroActionLabel = !hasLearningPlans
+    ? 'Open start learning page'
+    : hasLessons
+      ? 'Open current learning plan'
+      : 'Current learning plan has no lessons yet';
+
+  const handleHeroClick = () => {
+    if (!hasLearningPlans) {
+      onOpenLearningHub();
+      return;
+    }
+
+    if (hasLessons) {
+      onOpenPlan();
+    }
+  };
+
   return (
     <section className="main-page" aria-label="Overview dashboard">
       <header className="main-topbar">
@@ -27,16 +49,25 @@ export function DashboardPage({
       </header>
 
       <div className="dashboard-content">
+        {dashboardError && <p className="auth-error" role="alert">{dashboardError}</p>}
+
         <button
           className={`dashboard-hero dashboard-hero-button colorful-card ${activePlan.accent}`}
+          disabled={hasLearningPlans && !hasLessons}
           type="button"
-          aria-label="Open current learning plan"
-          onClick={onOpenPlan}
+          aria-label={heroActionLabel}
+          onClick={handleHeroClick}
         >
           <div>
             <p>{activePlan.language} {t.currentPlan}</p>
             <h3>{activePlan.title}</h3>
-            <span>{activePlan.lessons.length} {t.lessonsInProgress}</span>
+            <span>
+              {!hasLearningPlans
+                ? 'Start learning to create your first plan'
+                : hasLessons
+                  ? `${activePlan.lessons.length} ${t.lessonsInProgress}`
+                  : 'No lessons in this plan yet'}
+            </span>
           </div>
           <div className="hero-progress" aria-label={`Overall progress ${activePlan.progress} percent`}>
             <strong>{activePlan.progress}%</strong>
@@ -47,12 +78,12 @@ export function DashboardPage({
         <div className="overview-grid" aria-label="Learning stats">
           <section className="stat-card">
             <CheckCircle2 size={20} aria-hidden="true" />
-            <strong>6/15</strong>
+            <strong>{loading ? '--' : `${progress.completedExercises}/${progress.totalExercises}`}</strong>
             <span>{t.exercisesDone}</span>
           </section>
           <section className="stat-card">
             <Target size={20} aria-hidden="true" />
-            <strong>78%</strong>
+            <strong>{loading ? '--' : `${progress.averageScore}%`}</strong>
             <span>{t.averageScore}</span>
           </section>
         </div>

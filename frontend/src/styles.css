@@ -404,6 +404,16 @@ h1 {
   box-shadow: 0 22px 46px rgba(16, 32, 51, 0.2);
 }
 
+.dashboard-hero-button:disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.dashboard-hero-button:disabled:hover {
+  transform: none;
+  box-shadow: 0 18px 40px rgba(25, 103, 210, 0.22);
+}
+
 .dashboard-hero p,
 .dashboard-hero h3,
 .dashboard-hero span {
@@ -489,6 +499,14 @@ h1 {
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.36;
+}
+
+.no-plan-empty-state {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.45;
 }
 
 .week-row {
@@ -1356,6 +1374,10 @@ h1 {
   padding-bottom: 8px;
 }
 
+.ai-plan-notice {
+  margin-top: -2px;
+}
+
 .ai-form-hero {
   display: flex;
   align-items: center;
@@ -1544,10 +1566,21 @@ h1 {
     box-shadow 160ms ease;
 }
 
+.ai-generate-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .ai-generate-button:hover {
   transform: translateY(-1px);
   background: var(--blue-dark);
   box-shadow: 0 14px 28px rgba(25, 103, 210, 0.18);
+}
+
+.ai-generate-button:disabled:hover {
+  transform: none;
+  background: var(--blue);
+  box-shadow: none;
 }
 
 .dark-mode .ai-form-hero {
@@ -1867,11 +1900,14 @@ button.settings-row {
 .profile-content {
   display: flex;
   flex: 1;
+  width: 100%;
+  min-height: 0;
   align-items: center;
   justify-content: flex-start;
   flex-direction: column;
   padding-top: 22px;
   text-align: center;
+  overflow: hidden;
 }
 
 .profile-avatar {
@@ -1899,9 +1935,24 @@ button.settings-row {
 
 .profile-fields {
   display: grid;
+  flex: 1;
+  min-height: 0;
   width: 100%;
   gap: 12px;
   margin-top: 0;
+  padding-right: 4px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(25, 103, 210, 0.35) transparent;
+}
+
+.profile-fields::-webkit-scrollbar {
+  width: 6px;
+}
+
+.profile-fields::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(25, 103, 210, 0.35);
 }
 
 .profile-field {
@@ -1937,6 +1988,19 @@ button.settings-row {
   font: inherit;
 }
 
+.profile-field textarea {
+  width: 100%;
+  min-height: 132px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+}
+
 .profile-field small {
   color: var(--muted);
   font-size: 0.72rem;
@@ -1945,6 +2009,7 @@ button.settings-row {
 }
 
 .edit-profile-button {
+  flex: 0 0 auto;
   width: 100%;
   min-height: 54px;
   margin-top: 16px;
