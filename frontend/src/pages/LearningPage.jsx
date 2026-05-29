@@ -21,6 +21,9 @@ export function LearningPage({
   activeExercise,
   activeLesson,
   activePlan,
+  answerError,
+  answerPending,
+  learningError,
   learningMode,
   learningPlans,
   learningStep,
@@ -32,6 +35,7 @@ export function LearningPage({
   onOpenPlan,
   onOpenPlanDetail,
   onOpenSettings,
+  onSubmitAnswer,
   onOpenLesson,
 }) {
   return (
@@ -61,6 +65,8 @@ export function LearningPage({
       </header>
 
       <div className="learning-content">
+        {learningError && <p className="auth-error" role="alert">{learningError}</p>}
+
         {learningStep === 'plans' && (
           <div className="learning-options" aria-label="Learning type">
             <button
@@ -103,7 +109,14 @@ export function LearningPage({
             {learningStep === 'lesson' && (
               <LessonDetailView activeLesson={activeLesson} t={t} onOpenExercise={onOpenExercise} />
             )}
-            {learningStep === 'exercise' && <ExerciseDetailView activeExercise={activeExercise} />}
+            {learningStep === 'exercise' && (
+              <ExerciseDetailView
+                activeExercise={activeExercise}
+                answerError={answerError}
+                answerPending={answerPending}
+                onSubmitAnswer={onSubmitAnswer}
+              />
+            )}
           </>
         ) : (
           <AiLearningPlanForm t={t} />
@@ -126,6 +139,7 @@ function AiLearningPlanForm({ t }) {
   const [selectedExerciseTypes, setSelectedExerciseTypes] = React.useState(
     exerciseTypeOptions.filter((type) => !isComingSoonType(type.id)).map((type) => type.id),
   );
+  const aiUnavailableMessage = 'AI plan generation needs the backend learning service and GenAI integration to be available.';
 
   const toggleExerciseType = (exerciseType) => {
     if (isComingSoonType(exerciseType)) {
@@ -151,6 +165,8 @@ function AiLearningPlanForm({ t }) {
           <h3>Generate learning plan</h3>
         </div>
       </section>
+
+      <p className="auth-error ai-plan-notice" role="status">{aiUnavailableMessage}</p>
 
       <label className="ai-form-field ai-form-field-full">
         <span>Main learning plan description / goal</span>
@@ -218,15 +234,27 @@ function AiLearningPlanForm({ t }) {
         </div>
       </fieldset>
 
-      <button className="ai-generate-button" type="button">
+      <button className="ai-generate-button" disabled type="button">
         <Sparkles size={18} aria-hidden="true" />
-        Generate
+        Backend required
       </button>
     </form>
   );
 }
 
 function LearningPlansView({ learningPlans, t, onOpenPlan }) {
+  if (learningPlans.length === 0) {
+    return (
+      <section className="plan-section" aria-label="Suggested learning plans">
+        <div className="section-heading">
+          <h3>{t.suggestedPlans}</h3>
+          <span>0 {t.plans}</span>
+        </div>
+        <p className="empty-state no-plan-empty-state">Current no learning plan.</p>
+      </section>
+    );
+  }
+
   return (
     <section className="plan-section" aria-label="Suggested learning plans">
       <div className="section-heading">
@@ -261,7 +289,19 @@ function LearningPlansView({ learningPlans, t, onOpenPlan }) {
 }
 
 function LessonsView({ activePlan, onOpenLesson, onOpenPlanDetail }) {
-  const PlanIcon = activePlan.lessons[0].icon;
+  const PlanIcon = activePlan.lessons[0]?.icon ?? BookOpen;
+
+  if (activePlan.lessons.length === 0) {
+    return (
+      <section className="summary-card">
+        <div className="section-heading">
+          <h3>No lessons yet</h3>
+          <span>{activePlan.language}</span>
+        </div>
+        <p>This plan exists in the backend, but it does not contain any lessons yet.</p>
+      </section>
+    );
+  }
 
   return (
     <>
@@ -353,7 +393,7 @@ function PlanDetailView({ activePlan }) {
 }
 
 function LessonDetailView({ activeLesson, t, onOpenExercise }) {
-  const LessonIcon = activeLesson.icon;
+  const LessonIcon = activeLesson.icon ?? BookOpen;
   const finished = activeLesson.status === 'finished';
 
   return (
@@ -470,7 +510,30 @@ function isComingSoonType(type) {
   return type === 'listening' || type === 'speaking';
 }
 
-function ExerciseDetailView({ activeExercise }) {
+function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubmitAnswer }) {
+  const [answerText, setAnswerText] = React.useState(activeExercise.answerText ?? '');
+
+  React.useEffect(() => {
+    setAnswerText(activeExercise.answerText ?? '');
+  }, [activeExercise.id, activeExercise.answerText]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    await onSubmitAnswer(activeExercise, answerText);
+  };
+
+  if (!activeExercise.id) {
+    return (
+      <section className="summary-card">
+        <div className="section-heading">
+          <h3>No exercise selected</h3>
+          <span>Practice</span>
+        </div>
+        <p>Open an exercise from the lesson detail screen to load it from the backend.</p>
+      </section>
+    );
+  }
+
   return (
     <section className="exercise-detail" aria-label="Exercise detail">
       <div className="exercise-detail-header">
@@ -500,11 +563,29 @@ function ExerciseDetailView({ activeExercise }) {
 
       <section className="summary-card">
         <div className="section-heading">
-          <h3>Prompt</h3>
+          <h3>Expected answer</h3>
           <span>{activeExercise.type}</span>
         </div>
-        <p>{activeExercise.prompt}</p>
+        <p>{activeExercise.expectedAnswer ?? 'Open-ended exercise.'}</p>
       </section>
+
+      <form className="summary-card" onSubmit={handleSubmit}>
+        <div className="section-heading">
+          <h3>Your answer</h3>
+          <span>Submit to backend</span>
+        </div>
+        <textarea
+          className="auth-field"
+          name="answerText"
+          rows={5}
+          value={answerText}
+          onChange={(event) => setAnswerText(event.target.value)}
+        />
+        {answerError && <p className="auth-error" role="alert">{answerError}</p>}
+        <button className="auth-button register-button" disabled={answerPending} type="submit">
+          {answerPending ? 'Submitting...' : 'Submit answer'}
+        </button>
+      </form>
 
       {activeExercise.feedback && <ExerciseFeedback feedback={activeExercise.feedback} />}
     </section>

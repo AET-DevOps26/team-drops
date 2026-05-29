@@ -1,26 +1,31 @@
 import React from 'react';
 import { ArrowLeft, Mail, UserPlus } from 'lucide-react';
 
-const authError = "Password incorrect or account doesn't exist";
-
-export function AuthPage({ t, onAuthenticated }) {
+export function AuthPage({ t, authErrorMessage, authPending, onAuthenticated }) {
   const [mode, setMode] = React.useState('start');
   const [message, setMessage] = React.useState('');
 
-  const showStubError = (event) => {
+  React.useEffect(() => {
+    setMessage(authErrorMessage ?? '');
+  }, [authErrorMessage]);
+
+  React.useEffect(() => {
+    setMessage('');
+  }, [mode]);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setMessage(authError);
+
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      name: String(formData.get('name') ?? '').trim(),
+      email: String(formData.get('email') ?? '').trim(),
+      password: String(formData.get('password') ?? ''),
+    };
+
+    await onAuthenticated(mode, payload);
   };
 
-  const handleSubmit = (event) => {
-    if (mode === 'login') {
-      event.preventDefault();
-      onAuthenticated();
-      return;
-    }
-
-    showStubError(event);
-  };
 
   if (mode === 'login' || mode === 'register') {
     const isRegister = mode === 'register';
@@ -43,9 +48,16 @@ export function AuthPage({ t, onAuthenticated }) {
             <h2>{isRegister ? 'Create your account.' : 'Sign in with email.'}</h2>
           </div>
 
+          {isRegister && (
+            <label className="auth-field">
+              <span>Name</span>
+              <input autoComplete="name" name="name" placeholder="Ada Lovelace" required type="text" />
+            </label>
+          )}
+
           <label className="auth-field">
             <span>Email</span>
-            <input autoComplete="email" name="email" placeholder="you@example.com" type="email" />
+            <input autoComplete="email" name="email" placeholder="you@example.com" required type="email" />
           </label>
 
           <label className="auth-field">
@@ -54,14 +66,23 @@ export function AuthPage({ t, onAuthenticated }) {
               autoComplete={isRegister ? 'new-password' : 'current-password'}
               name="password"
               placeholder="Password"
+              required
               type="password"
             />
           </label>
 
           {message && <p className="auth-error" role="alert">{message}</p>}
 
-          <button className="auth-button register-button" type="submit">
-            {isRegister ? 'Create account' : 'Sign in'}
+          <button className="auth-button register-button" disabled={authPending} type="submit">
+            {authPending ? (isRegister ? 'Creating account...' : 'Signing in...') : isRegister ? 'Create account' : 'Sign in'}
+          </button>
+
+          <button
+            className="text-login"
+            type="button"
+            onClick={() => setMode(isRegister ? 'login' : 'register')}
+          >
+            {isRegister ? 'Already have an account? Sign in' : 'Need an account? Create one'}
           </button>
         </form>
       </>
@@ -71,9 +92,7 @@ export function AuthPage({ t, onAuthenticated }) {
   return (
     <>
       <header className="app-header">
-        <div className="logo-placeholder" aria-label="Logo placeholder">
-          TD
-        </div>
+        <div className="logo-placeholder" aria-hidden="true">TD</div>
         <div>
           <p className="app-label">{t.appLabel}</p>
           <h1>APP_NAME</h1>

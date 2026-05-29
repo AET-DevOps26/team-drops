@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
 
-export function ProfilePage({ profile, t, onBack, onProfileChange }) {
+export function ProfilePage({ profile, profileError, profilePending, t, onBack, onProfileChange }) {
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(profile);
 
@@ -13,10 +13,13 @@ export function ProfilePage({ profile, t, onBack, onProfileChange }) {
     setDraft((currentDraft) => ({ ...currentDraft, [field]: value }));
   };
 
-  const saveProfile = () => {
-    onProfileChange({
+  const saveProfile = async () => {
+    await onProfileChange({
       name: draft.name.trim() || profile.name,
       country: draft.country.trim() || profile.country,
+      targetLanguage: draft.targetLanguage?.trim() || profile.targetLanguage,
+      currentLevel: draft.currentLevel?.trim() || profile.currentLevel,
+      learningGoal: draft.learningGoal?.trim() || profile.learningGoal,
     });
     setEditing(false);
   };
@@ -54,6 +57,33 @@ export function ProfilePage({ profile, t, onBack, onProfileChange }) {
                 onChange={(event) => updateField('country', event.target.value)}
               />
             </label>
+            <label className="profile-field">
+              <span>Target language</span>
+              <input
+                name="targetLanguage"
+                type="text"
+                value={draft.targetLanguage ?? ''}
+                onChange={(event) => updateField('targetLanguage', event.target.value)}
+              />
+            </label>
+            <label className="profile-field">
+              <span>Current level</span>
+              <input
+                name="currentLevel"
+                type="text"
+                value={draft.currentLevel ?? ''}
+                onChange={(event) => updateField('currentLevel', event.target.value)}
+              />
+            </label>
+            <label className="profile-field">
+              <span>Learning goal</span>
+              <textarea
+                name="learningGoal"
+                rows={4}
+                value={draft.learningGoal ?? ''}
+                onChange={(event) => updateField('learningGoal', event.target.value)}
+              />
+            </label>
           </div>
         ) : (
           <div className="profile-fields">
@@ -65,11 +95,30 @@ export function ProfilePage({ profile, t, onBack, onProfileChange }) {
               <span>{t.country}</span>
               <strong>{profile.country}</strong>
             </div>
+            <div className="profile-field">
+              <span>Target language</span>
+              <strong>{profile.targetLanguage}</strong>
+            </div>
+            <div className="profile-field">
+              <span>Current level</span>
+              <strong>{profile.currentLevel}</strong>
+            </div>
+            <div className="profile-field">
+              <span>Learning goal</span>
+              <strong>{profile.learningGoal}</strong>
+            </div>
           </div>
         )}
 
-        <button className="edit-profile-button" type="button" onClick={editing ? saveProfile : () => setEditing(true)}>
-          {editing ? t.save : t.edit}
+        {profileError && <p className="auth-error" role="alert">{profileError}</p>}
+
+        <button
+          className="edit-profile-button"
+          disabled={profilePending}
+          type="button"
+          onClick={editing ? saveProfile : () => setEditing(true)}
+        >
+          {profilePending ? 'Saving...' : editing ? t.save : t.edit}
         </button>
       </div>
     </section>

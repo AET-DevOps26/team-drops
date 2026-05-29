@@ -619,6 +619,27 @@ GET  /api/v1/answers/{answer_id}/feedback
 GET  /api/v1/progress/user/{user_id}
 ```
 
+## Required API Structure Coverage
+
+This document is the source of truth for required API shapes. The status document in [API_list.md](API_list.md) only tracks implementation state; request and response structures must follow the definitions here.
+
+| Endpoint | Structure defined in this document |
+| --- | --- |
+| `POST /api/v1/users` | `User Service API` -> `Create User` |
+| `POST /api/v1/auth/login` | `User Service API` -> `Login` |
+| `GET /api/v1/users/{user_id}/profile` | `User Service API` -> `Get User Profile` |
+| `PUT /api/v1/users/{user_id}/profile` | `User Service API` -> `Upsert User Profile` |
+| `GET /api/v1/learning-plans/user/{user_id}` | `Learning Service API` -> `Get User Learning Plans` |
+| `POST /api/v1/learning-plans/default` | `Learning Service API` -> `Create Default Learning Plan` |
+| `POST /api/v1/learning-plans/ai` | `Learning Service API` -> `Create AI Learning Plan` |
+| `GET /api/v1/lessons/{lesson_id}` | `Learning Service API` -> `Get Lesson Detail` |
+| `POST /api/v1/lessons/{lesson_id}/ai-exercises` | `Learning Service API` -> `Generate AI Exercises For Lesson` |
+| `POST /api/v1/answers` | `Progress Feedback Service API` -> `Submit Exercise Answer` |
+| `GET /api/v1/answers/{answer_id}/feedback` | `Progress Feedback Service API` -> `Get Feedback For Answer` |
+| `GET /api/v1/progress/user/{user_id}` | `Progress Feedback Service API` -> `Get User Progress Summary` |
+
+Shared structure rules that apply to all endpoints are defined above in `Shared Requirements`, including authentication header format, integer IDs, score scale, status values, exercise types, and the common error response shape.
+
 ## Frontend Data Ownership Expectation
 
 The frontend should treat backend data as source of truth:
@@ -632,3 +653,20 @@ The frontend should treat backend data as source of truth:
 - Scores and feedback are stored by Progress-Feedback Service.
 - Dashboard progress is fetched from Progress-Feedback Service.
 - GenAI remains backend-internal.
+
+## Current Backend And GenAI Follow-Ups From Frontend Testing
+
+- Frontend demo fallback is removed. If User Service, Learning Service, or Progress-Feedback Service cannot be reached, the UI must show the real request error instead of substituting demo auth, local profile persistence, or fake learning/progress state.
+- User Service must be reachable on port `8081` for real `POST /api/v1/users`, `POST /api/v1/auth/login`, `GET /api/v1/users/{user_id}/profile`, and `PUT /api/v1/users/{user_id}/profile` requests. If these calls are unavailable, the frontend now surfaces the backend error instead of substituting local auth or profile data.
+- Learning Service must be reachable on port `8082` for real `GET /api/v1/learning-plans/user/{user_id}` and `GET /api/v1/lessons/{lesson_id}` data. During frontend testing, these calls were unavailable locally, so the frontend could only show empty-state plan and lesson views.
+- Progress-Feedback Service must be reachable on port `8083` for real `GET /api/v1/progress/user/{user_id}` and `POST /api/v1/answers` flows. During frontend testing, these calls were unavailable locally, so stored progress, feedback refresh, and answer submission could not be validated against backend data.
+- AI learning-plan generation should remain backend-owned behind `POST /api/v1/learning-plans/ai`. The frontend now treats this as a backend-dependent state instead of exposing a silent no-op Generate action.
+- AI exercise generation for lessons should remain backend-owned behind `POST /api/v1/lessons/{lesson_id}/ai-exercises`. No frontend-side GenAI or LLM call should be added.
+
+## API Spec Problems Found In /api
+
+- `api/base.yaml` defines the shared `ErrorResponse.details` field as a string, but this document defines the common error shape as a structured array of field-level validation issues. As written, generated service contracts for `400`, `404`, and `409` cannot guarantee the frontend's documented error format.
+- `api/services/genai.yaml` and the aggregated `api/openapi.yaml` expose FastAPI-style `422` responses with `HTTPValidationError`, which is a second validation-error schema and does not match the shared backend `ErrorResponse` contract. This makes GenAI error handling inconsistent with the rest of the platform API.
+- `api/services/genai.yaml` uses generated exercise type values `fill-in-the-blank`, `multiple-choice`, and `sentence-building`, while `api/services/learning-service.yaml` defines learning exercise subtype values as `fill_in_blank`, `multiple_choice`, and `sentence_building`. Without an explicit mapping contract in the API layer, raw GenAI output is not directly usable by Learning Service or the frontend.
+- `api/base.yaml` does not define a bearer `securityScheme`, and the service specs do not mark which endpoints require authentication, even though the frontend contract above requires `Authorization: Bearer <access_token>` after login. The runtime auth story may work ad hoc, but the OpenAPI contract is incomplete for generated clients, docs, and integration testing.
+- `api/openapi.yaml` includes direct GenAI endpoints in the same top-level platform spec even though the platform contract says the frontend must not call GenAI directly and that GenAI remains backend-internal. If these routes are kept in the shared spec, they should be clearly marked internal-only; otherwise the published API surface is misleading.

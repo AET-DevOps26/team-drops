@@ -1,0 +1,281 @@
+import {
+  BookOpen,
+  BriefcaseBusiness,
+  CheckCircle2,
+  GraduationCap,
+  Languages,
+  MapPinned,
+  MessageSquareText,
+  Presentation,
+  Sparkles,
+  Target,
+  TextCursorInput,
+} from 'lucide-react';
+
+const planAccents = ['blue', 'green', 'amber', 'violet', 'rose'];
+const lessonAccents = ['blue', 'green', 'amber', 'violet', 'rose'];
+const lessonIcons = [
+  MessageSquareText,
+  GraduationCap,
+  BriefcaseBusiness,
+  Presentation,
+  Sparkles,
+  Languages,
+  MapPinned,
+  BookOpen,
+];
+
+function pickAccent(index, palette) {
+  return palette[index % palette.length];
+}
+
+function pickLessonIcon(index) {
+  return lessonIcons[index % lessonIcons.length];
+}
+
+function formatPlanSummary(plan) {
+  return plan.description || plan.goal || 'Guided language learning plan.';
+}
+
+function fallbackBlocks(lesson) {
+  return [
+    {
+      type: 'content',
+      title: 'Core idea',
+      subtitle: `${lesson.timeEstimateMinutes ?? 10} min`,
+      text: lesson.topic,
+      points: [
+        'Review the task before answering.',
+        'Use the lesson exercises to practice the target structure.',
+      ],
+    },
+    ...lesson.exercises.map((exercise, index) => ({
+      type: 'exercise',
+      exerciseIndex: index,
+    })),
+    {
+      type: 'summary',
+      title: 'Lesson summary',
+      text: lesson.topic,
+    },
+  ];
+}
+
+export function createEmptyProgress(userId = null) {
+  return {
+    userId,
+    completedExercises: 0,
+    totalExercises: 0,
+    averageScore: 0,
+    recentProgress: [],
+    recentFinished: [],
+    topLessons: [],
+    currentPlan: null,
+  };
+}
+
+export function toProfile(profile, fallbackUser) {
+  return {
+    id: profile?.id ?? null,
+    userId: profile?.user_id ?? fallbackUser?.id ?? null,
+    name: profile?.name ?? fallbackUser?.name ?? '',
+    country: profile?.country ?? 'Unknown',
+    targetLanguage: profile?.target_language ?? 'German',
+    currentLevel: profile?.current_level ?? 'A2',
+    learningGoal: profile?.learning_goal ?? 'Prepare for a software engineering job interview',
+    email: fallbackUser?.email ?? '',
+  };
+}
+
+export function toLearningPlans(plans = []) {
+  return plans.map((plan, planIndex) => ({
+    id: plan.id,
+    userId: plan.user_id,
+    title: plan.title,
+    description: plan.description,
+    goal: plan.goal,
+    language: plan.language,
+    level: plan.level,
+    duration: plan.duration,
+    status: plan.status,
+    progress: plan.progress ?? 0,
+    summary: formatPlanSummary(plan),
+    accent: pickAccent(planIndex, planAccents),
+    lessons: (plan.lessons ?? []).map((lesson, lessonIndex) => ({
+      id: lesson.id,
+      planId: lesson.plan_id,
+      title: lesson.title,
+      topic: lesson.topic,
+      orderNumber: lesson.order_number,
+      status: lesson.status,
+      progress: lesson.progress ?? 0,
+      timeEstimateMinutes: lesson.time_estimate_minutes ?? 10,
+      exerciseCount: lesson.exercise_count ?? 0,
+      accent: pickAccent(lessonIndex, lessonAccents),
+      icon: pickLessonIcon(lessonIndex),
+      exercises: [],
+      blocks: [],
+      comment: null,
+    })),
+  }));
+}
+
+export function toLessonDetail(lesson, planSummaryLesson) {
+  const exercises = (lesson.exercises ?? []).map((exercise) => ({
+    id: exercise.id,
+    lessonId: exercise.lesson_id,
+    type: exercise.type,
+    subtype: exercise.subtype,
+    title: exercise.title,
+    question: exercise.question,
+    expectedAnswer: exercise.expected_answer,
+    difficulty: exercise.difficulty,
+    status: exercise.status,
+    score: exercise.score,
+    format: exercise.format,
+    source: exercise.source,
+    grade: exercise.score,
+    task: exercise.question,
+    prompt: exercise.question,
+    feedback: null,
+    answerText: '',
+  }));
+
+  const exerciseIndexById = new Map(exercises.map((exercise, index) => [exercise.id, index]));
+  const blocks = (lesson.content_blocks ?? []).map((block) => {
+    if (block.type === 'exercise') {
+      return {
+        type: 'exercise',
+        exerciseIndex: exerciseIndexById.get(block.exercise_id) ?? 0,
+      };
+    }
+
+    return {
+      type: block.type,
+      title: block.title ?? 'Lesson content',
+      subtitle: block.subtitle ?? `${lesson.time_estimate_minutes ?? 10} min`,
+      text: block.text ?? lesson.topic,
+      points: block.points ?? [],
+    };
+  });
+
+  const normalizedLesson = {
+    id: lesson.id,
+    planId: lesson.plan_id,
+    title: lesson.title,
+    topic: lesson.topic,
+    orderNumber: lesson.order_number,
+    status: lesson.status,
+    progress: lesson.progress ?? 0,
+    timeEstimateMinutes: lesson.time_estimate_minutes ?? planSummaryLesson?.timeEstimateMinutes ?? 10,
+    exerciseCount: lesson.exercise_count ?? exercises.length,
+    accent: planSummaryLesson?.accent ?? pickAccent((lesson.order_number ?? 1) - 1, lessonAccents),
+    icon: planSummaryLesson?.icon ?? pickLessonIcon((lesson.order_number ?? 1) - 1),
+    exercises,
+    blocks: blocks.length > 0 ? blocks : fallbackBlocks({
+      topic: lesson.topic,
+      exercises,
+      timeEstimateMinutes: lesson.time_estimate_minutes,
+    }),
+    comment: lesson.status === 'finished' ? 'Great work. This lesson is complete.' : null,
+  };
+
+  return normalizedLesson;
+}
+
+export function mergeLessonIntoPlans(plans, lessonDetail) {
+  return plans.map((plan) => {
+    if (plan.id !== lessonDetail.planId) {
+      return plan;
+    }
+
+    return {
+      ...plan,
+      lessons: plan.lessons.map((lesson) => (lesson.id === lessonDetail.id ? { ...lesson, ...lessonDetail } : lesson)),
+    };
+  });
+}
+
+export function toProgressSummary(progress, learningPlans) {
+  if (!progress) {
+    return createEmptyProgress();
+  }
+
+  const lessonLookup = buildLessonLookup(learningPlans);
+
+  function withLessonSelection(item, fallbackAccentIndex) {
+    const selection = lessonLookup.get(item.lesson_id) ?? {};
+    return {
+      planId: item.plan_id,
+      lessonId: item.lesson_id,
+      planIndex: selection.planIndex ?? 0,
+      lessonIndex: selection.lessonIndex ?? 0,
+      title: item.lesson_title,
+      planTitle: learningPlans.find((plan) => plan.id === item.plan_id)?.title ?? 'Learning plan',
+      status: item.status,
+      progress: item.progress ?? item.score ?? 0,
+      accent: pickAccent(fallbackAccentIndex, lessonAccents),
+    };
+  }
+
+  return {
+    userId: progress.user_id,
+    completedExercises: progress.completed_exercises ?? 0,
+    totalExercises: progress.total_exercises ?? 0,
+    averageScore: progress.average_score ?? 0,
+    currentPlan: progress.current_plan ?? learningPlans[0] ?? null,
+    recentProgress: (progress.recent_progress ?? []).map((item) => withLessonSelection(item, 0)),
+    recentFinished: (progress.recent_finished ?? []).map((item) => withLessonSelection({
+      ...item,
+      status: 'finished',
+      progress: item.score ?? 100,
+    }, 1)),
+    topLessons: progress.top_lessons ?? [],
+  };
+}
+
+export function attachSubmissionToLesson(lesson, submission) {
+  if (!lesson || !submission?.answer) {
+    return lesson;
+  }
+
+  return {
+    ...lesson,
+    progress: submission.lesson_progress ?? lesson.progress,
+    exercises: lesson.exercises.map((exercise) => {
+      if (exercise.id !== submission.answer.exercise_id) {
+        return exercise;
+      }
+
+      return {
+        ...exercise,
+        status: submission.exercise_status ?? exercise.status,
+        score: submission.answer.score,
+        grade: submission.answer.score,
+        answerText: submission.answer.answer_text,
+        feedback: submission.feedback
+          ? {
+              title: 'AI feedback',
+              score: submission.answer.score,
+              message: submission.feedback.message,
+              strengths: submission.feedback.strengths ?? [],
+              improvements: submission.feedback.improvements ?? [],
+              improvedExample: submission.feedback.corrected_answer,
+            }
+          : null,
+      };
+    }),
+  };
+}
+
+export function buildLessonLookup(learningPlans) {
+  const lessonMap = new Map();
+
+  learningPlans.forEach((plan, planIndex) => {
+    plan.lessons.forEach((lesson, lessonIndex) => {
+      lessonMap.set(lesson.id, { planIndex, lessonIndex });
+    });
+  });
+
+  return lessonMap;
+}
