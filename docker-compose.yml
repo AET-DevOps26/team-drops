@@ -91,6 +91,10 @@ services:
     container_name: frontend
     ports:
       - "3000:3000"
+    environment:
+      VITE_USER_SERVICE_URL: http://user-service:8081
+      VITE_LEARNING_SERVICE_URL: http://learning-service:8082
+      VITE_PROGRESS_SERVICE_URL: http://progress-feedback-service:8083
     depends_on:
       - user-service
       - learning-service
