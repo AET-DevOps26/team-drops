@@ -82,6 +82,11 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3}
       MONGO_URL: mongodb://mongo:27017
+      WHISPER_MODEL: ${WHISPER_MODEL:-base}
+      TTS_ENABLED: ${TTS_ENABLED:-false}
+      KOKORO_MODEL_PATH: ${KOKORO_MODEL_PATH:-}
+      KOKORO_VOICES_PATH: ${KOKORO_VOICES_PATH:-}
+      PREWARM_MODELS: ${PREWARM_MODELS:-false}
     depends_on:
       - mongo
 

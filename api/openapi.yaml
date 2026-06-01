@@ -37,6 +37,8 @@ tags:
     x-displayName: exercises
   - name: writing
     x-displayName: writing
+  - name: speaking
+    x-displayName: speaking
   - name: ops
     x-displayName: ops
 paths:
@@ -95,6 +97,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WritingEvaluationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /api/v1/genai/speaking/evaluate:
+    post:
+      tags:
+        - speaking
+      summary: Evaluate a spoken answer
+      description: >-
+        Transcribe the learner's audio with Whisper, then evaluate the
+        transcription against the expected answer using the configured LLM.
+        Returns a numeric score (0–10), feedback, the corrected answer, and
+        optionally a base64-encoded WAV of the corrected answer spoken aloud
+        (when TTS is enabled).
+      operationId: evaluateSpeaking
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_evaluateSpeaking'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeakingEvaluationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /api/v1/genai/speaking/practice:
+    post:
+      tags:
+        - speaking
+      summary: Conversational speaking practice
+      description: >-
+        One turn of a free-form spoken conversation with an AI character in the
+        target language. The frontend maintains the conversation history and
+        sends it with each request. On the final turn (end_session=true) the
+        service additionally returns a list of language corrections made across
+        the full session, plus a spoken audio summary.
+      operationId: speakingPractice
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_speakingPractice'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeakingPracticeResponse'
         '422':
           description: Validation Error
           content:
@@ -487,6 +553,88 @@ components:
         details:
           type: string
           example: email must be valid
+    Body_evaluateSpeaking:
+      properties:
+        audio:
+          type: string
+          contentMediaType: application/octet-stream
+          title: Audio
+          description: Audio recording of the learner's answer (WAV, MP3, WebM, etc.)
+        exercise_type:
+          type: string
+          title: Exercise Type
+          examples:
+            - translation
+        question:
+          type: string
+          title: Question
+          examples:
+            - 'Translate: ''The cat is on the table'''
+        expected_answer:
+          type: string
+          title: Expected Answer
+          examples:
+            - Die Katze ist auf dem Tisch
+        target_language:
+          type: string
+          title: Target Language
+          examples:
+            - German
+        level:
+          type: string
+          title: Level
+          examples:
+            - A2
+      type: object
+      required:
+        - audio
+        - exercise_type
+        - question
+        - expected_answer
+        - target_language
+        - level
+      title: Body_evaluateSpeaking
+    Body_speakingPractice:
+      properties:
+        audio:
+          type: string
+          contentMediaType: application/octet-stream
+          title: Audio
+          description: Audio of the learner's spoken turn
+        scenario:
+          type: string
+          title: Scenario
+          examples:
+            - waiter at a German restaurant
+        target_language:
+          type: string
+          title: Target Language
+          examples:
+            - German
+        level:
+          type: string
+          title: Level
+          examples:
+            - A2
+        history_json:
+          type: string
+          title: History Json
+          description: >-
+            JSON-serialised list of ConversationMessage objects from previous
+            turns
+          default: '[]'
+        end_session:
+          type: boolean
+          title: End Session
+          description: Set to true on the final turn to trigger end-of-session corrections
+          default: false
+      type: object
+      required:
+        - audio
+        - scenario
+        - target_language
+        - level
+      title: Body_speakingPractice
     ExerciseContext:
       properties:
         type:
@@ -647,6 +795,159 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
+    SpeakingEvaluationResponse:
+      properties:
+        transcription:
+          type: string
+          title: Transcription
+          description: Speech-to-text transcription of the learner's audio
+          examples:
+            - Die Katze ist an den Tisch
+        score:
+          type: number
+          maximum: 10
+          minimum: 0
+          title: Score
+          description: Numeric score 0–10 — maps to UserAnswer.score
+          examples:
+            - 6.5
+        is_correct:
+          type: boolean
+          title: Is Correct
+          description: True if the spoken answer is substantially correct
+        message:
+          type: string
+          title: Message
+          description: >-
+            Full feedback covering what was wrong and why — maps to
+            Feedback.message. Should be a complete, helpful explanation suitable
+            for storing as the feedback record.
+          examples:
+            - >-
+              Good attempt! You used 'an' (contact/vertical surface) instead of
+              'auf' (horizontal surface). Also check the case: 'Tisch' requires
+              the dative 'dem' here.
+        weak_area:
+          type: string
+          title: Weak Area
+          description: Short category to improve — maps to Feedback.weakArea
+          examples:
+            - preposition usage
+        corrected_answer:
+          type: string
+          title: Corrected Answer
+          description: The corrected version of the learner's answer — for frontend display
+          examples:
+            - Die Katze ist auf dem Tisch
+        feedback_audio_b64:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Feedback Audio B64
+          description: >-
+            Base64-encoded WAV audio of corrected_answer spoken aloud (null when
+            TTS is disabled)
+      type: object
+      required:
+        - transcription
+        - score
+        - is_correct
+        - message
+        - weak_area
+        - corrected_answer
+      title: SpeakingEvaluationResponse
+      description: >-
+        AI evaluation of a spoken answer.
+
+        score and feedback fields mirror WritingEvaluationResponse so both map
+        to
+
+        the same UserAnswer + Feedback domain objects in the backend.
+
+        transcription is the raw Whisper output — useful for displaying what was
+        heard.
+
+        feedback_audio_b64 is a base64-encoded WAV of the corrected answer
+        spoken aloud
+
+        (only present when TTS is enabled).
+    SpeakingPracticeResponse:
+      properties:
+        transcription:
+          type: string
+          title: Transcription
+          description: Whisper transcription of the learner's audio for this turn
+        ai_response_text:
+          type: string
+          title: Ai Response Text
+          description: AI character's reply in the target language
+        ai_response_audio_b64:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ai Response Audio B64
+          description: Base64-encoded WAV of the AI's reply spoken aloud
+        session_corrections:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/TurnCorrection'
+              type: array
+            - type: 'null'
+          title: Session Corrections
+          description: >-
+            Language errors found across the full session — only present on the
+            final turn
+        corrections_audio_b64:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Corrections Audio B64
+          description: >-
+            Base64-encoded WAV of the corrections summary spoken aloud — only on
+            the final turn
+      type: object
+      required:
+        - transcription
+        - ai_response_text
+      title: SpeakingPracticeResponse
+      description: >-
+        Response for one turn of a speaking practice conversation.
+
+        On normal turns only transcription + AI reply are populated.
+
+        On the final turn (end_session=true) session_corrections and
+        corrections_audio_b64
+
+        are also populated.
+    TurnCorrection:
+      properties:
+        original:
+          type: string
+          title: Original
+          description: What the learner actually said
+          examples:
+            - Ich möchte ein Kaffee
+        corrected:
+          type: string
+          title: Corrected
+          description: What they should have said
+          examples:
+            - Ich möchte einen Kaffee
+        explanation:
+          type: string
+          title: Explanation
+          description: Short grammar or vocabulary note
+          examples:
+            - >-
+              'Kaffee' is masculine, so the accusative article is 'einen' not
+              'ein'
+      type: object
+      required:
+        - original
+        - corrected
+        - explanation
+      title: TurnCorrection
+      description: A single language error identified across the session.
     ValidationError:
       properties:
         loc:

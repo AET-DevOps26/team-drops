@@ -11,6 +11,10 @@ dependencies = [
     "langchain-community>=0.3.0",
     "langchain-ollama>=0.3.0",
     "langchain-openai>=0.3.0",
+    "faster-whisper>=1.1.0",
+    "kokoro-onnx>=0.4.0",
+    "huggingface-hub>=0.24.0",
+    "python-multipart>=0.0.12",
 ]
 
 [dependency-groups]
