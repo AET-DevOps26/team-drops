@@ -92,10 +92,10 @@ export function AuthPage({ t, authErrorMessage, authPending, onAuthenticated }) 
   return (
     <>
       <header className="app-header">
-        <div className="logo-placeholder" aria-hidden="true">TD</div>
+        <div className="logo-placeholder" aria-hidden="true">IM</div>
         <div>
           <p className="app-label">{t.appLabel}</p>
-          <h1>APP_NAME</h1>
+          <h1>InterviewMate</h1>
         </div>
       </header>
 

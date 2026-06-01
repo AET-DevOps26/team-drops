@@ -19,8 +19,59 @@ import org.springframework.transaction.annotation.Transactional;
 public class LearningPlanService {
 
     private static final String DEFAULT_TITLE = "Job Interview Preparation";
-    private static final String DEFAULT_DESCRIPTION = "A default plan for practicing job interview conversations.";
+    private static final String DEFAULT_DESCRIPTION = "Fixed lessons for practicing professional job interview answers.";
     private static final String DEFAULT_DURATION = "2 weeks";
+    private static final String DEFAULT_GOAL = "Prepare for a professional job interview";
+    private static final String DEFAULT_LANGUAGE = "English";
+    private static final String DEFAULT_LEVEL = "A2";
+    private static final String DEFAULT_EXPECTED_ANSWER = "Write a clear, professional answer using specific details and formal vocabulary.";
+    private static final List<FixedLesson> FIXED_INTERVIEW_LESSONS = List.of(
+        new FixedLesson(
+            "Self Introduction",
+            "Introduce yourself professionally in an interview.",
+            List.of(
+                "Tell me about yourself.",
+                "Write a short professional introduction.",
+                "Improve your introduction using more formal vocabulary."
+            )
+        ),
+        new FixedLesson(
+            "Education and Background",
+            "Explain your studies, university, and academic background.",
+            List.of(
+                "Describe your degree and specialization.",
+                "Explain why you chose your field.",
+                "Practice saying your graduation status clearly."
+            )
+        ),
+        new FixedLesson(
+            "Work Experience and Internships",
+            "Talk about previous internships, jobs, or projects.",
+            List.of(
+                "Describe one internship or work experience.",
+                "Explain your responsibilities.",
+                "Mention what you learned from the experience."
+            )
+        ),
+        new FixedLesson(
+            "Project Explanation",
+            "Present a technical or academic project clearly.",
+            List.of(
+                "Describe one project you worked on.",
+                "Explain the problem, your solution, and your role.",
+                "Simplify a technical explanation for a non-technical interviewer."
+            )
+        ),
+        new FixedLesson(
+            "Strengths and Weaknesses",
+            "Answer common HR questions about strengths and weaknesses.",
+            List.of(
+                "Name two strengths with examples.",
+                "Explain one weakness professionally.",
+                "Rewrite weak answers into stronger interview answers."
+            )
+        )
+    );
 
     private final LearningPlanRepository learningPlanRepository;
     private final LessonService lessonService;
@@ -32,43 +83,33 @@ public class LearningPlanService {
             .userId(request.getUserId())
             .title(DEFAULT_TITLE)
             .description(DEFAULT_DESCRIPTION)
-            .goal(request.getLearningGoal())
-            .language(request.getTargetLanguage())
-            .level(request.getCurrentLevel())
+            .goal(valueOrDefault(request.getLearningGoal(), DEFAULT_GOAL))
+            .language(valueOrDefault(request.getTargetLanguage(), DEFAULT_LANGUAGE))
+            .level(valueOrDefault(request.getCurrentLevel(), DEFAULT_LEVEL))
             .duration(DEFAULT_DURATION)
             .status(LearningStatus.NOT_STARTED.getValue())
             .progress(0)
             .build());
 
-        Lesson introductionLesson = lessonService.save(Lesson.builder()
-            .planId(plan.getId())
-            .title("Introducing Yourself")
-            .topic("Interview introduction")
-            .orderNumber(1)
-            .build());
+        for (int lessonIndex = 0; lessonIndex < FIXED_INTERVIEW_LESSONS.size(); lessonIndex++) {
+            FixedLesson fixedLesson = FIXED_INTERVIEW_LESSONS.get(lessonIndex);
+            Lesson lesson = lessonService.save(Lesson.builder()
+                .planId(plan.getId())
+                .title(fixedLesson.title())
+                .topic(fixedLesson.topic())
+                .orderNumber(lessonIndex + 1)
+                .build());
 
-        exerciseService.save(Exercise.builder()
-            .lessonId(introductionLesson.getId())
-            .type("free_text")
-            .question("Tell me about yourself.")
-            .difficulty("beginner")
-            .expectedAnswer("A concise summary of experience, strengths, and motivation.")
-            .build());
-
-        Lesson behavioralLesson = lessonService.save(Lesson.builder()
-            .planId(plan.getId())
-            .title("Behavioral Questions")
-            .topic("STAR answers")
-            .orderNumber(2)
-            .build());
-
-        exerciseService.save(Exercise.builder()
-            .lessonId(behavioralLesson.getId())
-            .type("free_text")
-            .question("Describe a challenging project and how you handled it.")
-            .difficulty("intermediate")
-            .expectedAnswer("A structured STAR response covering situation, task, action, and result.")
-            .build());
+            for (String question : fixedLesson.exercises()) {
+                exerciseService.save(Exercise.builder()
+                    .lessonId(lesson.getId())
+                    .type("free_text")
+                    .question(question)
+                    .difficulty(plan.getLevel())
+                    .expectedAnswer(DEFAULT_EXPECTED_ANSWER)
+                    .build());
+            }
+        }
 
         return toResponse(plan);
     }
@@ -140,5 +181,12 @@ public class LearningPlanService {
 
     private LearningStatus toLearningStatus(String value) {
         return value == null ? LearningStatus.NOT_STARTED : LearningStatus.fromValue(value);
+    }
+
+    private String valueOrDefault(String value, String defaultValue) {
+        return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private record FixedLesson(String title, String topic, List<String> exercises) {
     }
 }

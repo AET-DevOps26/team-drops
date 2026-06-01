@@ -89,6 +89,14 @@ export function getLearningPlans(userId, token) {
   return request('learning', `/api/v1/learning-plans/user/${userId}`, { token });
 }
 
+export function createDefaultLearningPlan(payload, token) {
+  return request('learning', '/api/v1/learning-plans/default', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+}
+
 export function getLesson(lessonId, token) {
   return request('learning', `/api/v1/lessons/${lessonId}`, { token });
 }

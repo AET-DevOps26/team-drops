@@ -53,11 +53,6 @@ function fallbackBlocks(lesson) {
       type: 'exercise',
       exerciseIndex: index,
     })),
-    {
-      type: 'summary',
-      title: 'Lesson summary',
-      text: lesson.topic,
-    },
   ];
 }
 
@@ -126,7 +121,7 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     lessonId: exercise.lesson_id,
     type: exercise.type,
     subtype: exercise.subtype,
-    title: exercise.title,
+    title: exercise.question || exercise.title,
     question: exercise.question,
     expectedAnswer: exercise.expected_answer,
     difficulty: exercise.difficulty,
