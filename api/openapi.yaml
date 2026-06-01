@@ -39,6 +39,8 @@ tags:
     x-displayName: writing
   - name: speaking
     x-displayName: speaking
+  - name: listening
+    x-displayName: listening
   - name: ops
     x-displayName: ops
 paths:
@@ -161,6 +163,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SpeakingPracticeResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /api/v1/genai/listening/generate:
+    post:
+      tags:
+        - listening
+      summary: Generate a listening comprehension exercise
+      description: >-
+        Generate a short listening script in the target language at the
+        specified CEFR level. Once the script is ready, questions and audio are
+        produced concurrently: the LLM generates multiple-choice comprehension
+        questions while TTS synthesises the script as spoken audio. Returns the
+        script text, questions (four options each, exactly one correct), and an
+        optional base64-encoded WAV audio of the script (when TTS is enabled).
+        TTS failure is non-fatal — the exercise is returned without audio.
+      operationId: generateListening
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListeningGenerateRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListeningGenerateResponse'
         '422':
           description: Validation Error
           content:
@@ -795,6 +831,119 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
+    ListeningGenerateRequest:
+      properties:
+        target_language:
+          type: string
+          title: Target Language
+          description: Language the script and questions will be written in
+          examples:
+            - German
+        level:
+          type: string
+          enum:
+            - A1
+            - A2
+            - B1
+            - B2
+            - C1
+            - C2
+          title: Level
+          description: >-
+            CEFR level of the learner — controls script vocabulary and grammar
+            complexity
+          examples:
+            - B1
+        topic:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Topic
+          description: >-
+            Optional topic hint for the script (e.g. 'job interview', 'travel').
+            Defaults to everyday life when omitted.
+          examples:
+            - job interview
+      type: object
+      required:
+        - target_language
+        - level
+      title: ListeningGenerateRequest
+    ListeningGenerateResponse:
+      properties:
+        script:
+          type: string
+          title: Script
+          description: The listening passage in the target language
+        questions:
+          items:
+            $ref: '#/components/schemas/ListeningQuestion'
+          type: array
+          minItems: 1
+          title: Questions
+          description: Multiple-choice comprehension questions about the script
+        script_audio_b64:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Script Audio B64
+          description: >-
+            Base64-encoded WAV of the script spoken aloud (null when TTS is
+            disabled)
+      type: object
+      required:
+        - script
+        - questions
+      title: ListeningGenerateResponse
+    ListeningOption:
+      properties:
+        text:
+          type: string
+          title: Text
+          description: The option text shown to the learner
+          examples:
+            - Im Park
+        is_correct:
+          type: boolean
+          title: Is Correct
+          description: >-
+            True if this is the correct answer — exactly one option per question
+            is true
+      type: object
+      required:
+        - text
+        - is_correct
+      title: ListeningOption
+    ListeningQuestion:
+      properties:
+        question:
+          type: string
+          title: Question
+          description: The question text in the target language
+          examples:
+            - Wo treffen sich die zwei Freunde?
+        options:
+          items:
+            $ref: '#/components/schemas/ListeningOption'
+          type: array
+          maxItems: 4
+          minItems: 4
+          title: Options
+          description: Exactly four answer options — exactly one must have is_correct=true
+        explanation:
+          type: string
+          title: Explanation
+          description: Why the correct answer is right — shown after the learner submits
+          examples:
+            - >-
+              The text says 'treffen sich im Park', which means 'they meet in
+              the park'.
+      type: object
+      required:
+        - question
+        - options
+        - explanation
+      title: ListeningQuestion
     SpeakingEvaluationResponse:
       properties:
         transcription:
