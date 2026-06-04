@@ -12,7 +12,7 @@ on:
       - '!**/*.md'
 
   push:
-    branches: [main, kubernetes]
+    branches: [main]
     tags: ['v*']
     paths:
       - 'backend/**'
