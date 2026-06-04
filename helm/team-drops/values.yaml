@@ -1,0 +1,135 @@
+image:
+  registry: ghcr.io
+  owner: aet-devops26
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets: []
+
+frontend:
+  replicaCount: 1
+  port: 80
+  image: team-drops-frontend
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+services:
+  user:
+    name: user-service
+    image: team-drops-user-service
+    replicaCount: 1
+    port: 8081
+    pathPrefix: /user-service
+    resources:
+      requests:
+        cpu: 100m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+  learning:
+    name: learning-service
+    image: team-drops-learning-service
+    replicaCount: 1
+    port: 8082
+    pathPrefix: /learning-service
+    resources:
+      requests:
+        cpu: 100m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+  progress:
+    name: progress-feedback-service
+    image: team-drops-progress-feedback-service
+    replicaCount: 1
+    port: 8083
+    pathPrefix: /progress-service
+    resources:
+      requests:
+        cpu: 100m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+
+genai:
+  replicaCount: 1
+  image: team-drops-genai-service
+  port: 8084
+  llmProvider: openai
+  llmApiKey: ""
+  llmModel: ""
+  ollamaBaseUrl: ""
+  ollamaModel: llama3
+  whisperModel: base
+  whisperDevice: cpu
+  ttsEnabled: false
+  prewarmModels: false
+  kokoroModelPath: ""
+  kokoroVoicesPath: ""
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1536Mi
+
+postgres:
+  image: postgres:16
+  username: postgres
+  password: postgres
+  database: teamdrops
+  port: 5432
+  storage:
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+mongo:
+  image: mongo:7
+  port: 27017
+  storage:
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+ollama:
+  enabled: false
+  image: ollama/ollama:latest
+  port: 11434
+  storage:
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+ingress:
+  enabled: true
+  host: ""
+  className: ""
+  tls:
+    enabled: false
+    secretName: team-drops-tls
+    clusterIssuer: letsencrypt-staging
