@@ -604,25 +604,33 @@ function ExerciseFeedback({ feedback }) {
       </div>
       <p>{feedback.message}</p>
 
-      <div className="feedback-grid">
-        <div>
-          <h4>Strengths</h4>
-          {feedback.strengths.map((item) => (
-            <span key={item}>{item}</span>
-          ))}
+      {(feedback.strengths.length > 0 || feedback.improvements.length > 0) && (
+        <div className="feedback-grid">
+          {feedback.strengths.length > 0 && (
+            <div>
+              <h4>Strengths</h4>
+              {feedback.strengths.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+          )}
+          {feedback.improvements.length > 0 && (
+            <div>
+              <h4>Improve</h4>
+              {feedback.improvements.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+          )}
         </div>
-        <div>
-          <h4>Improve</h4>
-          {feedback.improvements.map((item) => (
-            <span key={item}>{item}</span>
-          ))}
-        </div>
-      </div>
+      )}
 
-      <div className="feedback-example">
-        <h4>Improved example</h4>
-        <p>{feedback.improvedExample}</p>
-      </div>
+      {feedback.improvedExample && (
+        <div className="feedback-example">
+          <h4>Improved example</h4>
+          <p>{feedback.improvedExample}</p>
+        </div>
+      )}
     </section>
   );
 }

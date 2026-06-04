@@ -30,11 +30,14 @@ public class Feedback {
     @Column(name = "answer_id", nullable = false)
     private Long answerId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
     @Column(name = "weak_area")
     private String weakArea;
+
+    @Column(name = "corrected_answer", columnDefinition = "TEXT")
+    private String correctedAnswer;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

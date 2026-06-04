@@ -48,6 +48,7 @@ public class FeedbackService {
             OffsetDateTime.ofInstant(feedback.getCreatedAt(), ZoneOffset.UTC)
         );
         response.setWeakArea(feedback.getWeakArea());
+        response.setCorrectedAnswer(feedback.getCorrectedAnswer());
         return response;
     }
 }

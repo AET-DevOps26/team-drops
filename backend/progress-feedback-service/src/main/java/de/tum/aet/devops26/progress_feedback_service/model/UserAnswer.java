@@ -33,7 +33,7 @@ public class UserAnswer {
     @Column(name = "exercise_id", nullable = false)
     private Long exerciseId;
 
-    @Column(name = "answer_text", nullable = false)
+    @Column(name = "answer_text", nullable = false, columnDefinition = "TEXT")
     private String answerText;
 
     private Double score;

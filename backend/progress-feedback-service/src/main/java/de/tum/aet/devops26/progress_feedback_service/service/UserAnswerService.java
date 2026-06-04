@@ -5,6 +5,11 @@ import de.tum.aet.devops26.progress_feedback_service.dto.LearningStatus;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerRequest;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerResponse;
 import de.tum.aet.devops26.progress_feedback_service.dto.UserAnswerResponse;
+import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient;
+import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient.WritingEvaluationRequest;
+import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient.WritingEvaluationResponse;
+import de.tum.aet.devops26.progress_feedback_service.integration.LearningServiceClient;
+import de.tum.aet.devops26.progress_feedback_service.integration.LearningServiceClient.ExerciseContext;
 import de.tum.aet.devops26.progress_feedback_service.model.Feedback;
 import de.tum.aet.devops26.progress_feedback_service.model.UserAnswer;
 import de.tum.aet.devops26.progress_feedback_service.repository.FeedbackRepository;
@@ -14,18 +19,22 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
 public class UserAnswerService {
 
-    private static final int PLACEHOLDER_SCORE = 75;
     private static final int MAX_SCORE = 100;
 
     private final UserAnswerRepository userAnswerRepository;
     private final FeedbackRepository feedbackRepository;
     private final ProgressRecordService progressRecordService;
+    private final LearningServiceClient learningServiceClient;
+    private final GenAiWritingClient genAiWritingClient;
 
     public UserAnswer save(UserAnswer userAnswer) {
         return userAnswerRepository.save(userAnswer);
@@ -51,27 +60,49 @@ public class UserAnswerService {
         userAnswerRepository.deleteById(id);
     }
 
+    @Transactional
     public SubmitAnswerResponse submitAnswer(SubmitAnswerRequest request) {
+        if (request.getClientContext() == null || request.getClientContext().getLessonId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "client_context.lesson_id is required.");
+        }
+
+        ExerciseContext exercise = learningServiceClient.getExercise(
+            request.getClientContext().getLessonId(),
+            request.getExerciseId()
+        );
+        WritingEvaluationResponse evaluation = genAiWritingClient.evaluate(new WritingEvaluationRequest(
+            request.getUserId(),
+            request.getExerciseId(),
+            exercise.subtype() == null ? exercise.type() : exercise.subtype(),
+            exercise.question(),
+            exercise.expectedAnswer(),
+            request.getAnswerText(),
+            valueOrDefault(request.getClientContext().getTargetLanguage(), "English"),
+            valueOrDefault(request.getClientContext().getLevel(), exercise.difficulty())
+        ));
+        int score = Math.max(0, Math.min(MAX_SCORE, (int) Math.round(evaluation.score() * 10)));
+
         UserAnswer userAnswer = UserAnswer.builder()
             .userId(request.getUserId())
             .exerciseId(request.getExerciseId())
             .answerText(request.getAnswerText())
-            .score((double) PLACEHOLDER_SCORE)
+            .score((double) score)
             .build();
 
         UserAnswer savedAnswer = save(userAnswer);
         Feedback savedFeedback = feedbackRepository.save(Feedback.builder()
             .answerId(savedAnswer.getId())
-            .message("Answer saved and scored with placeholder feedback.")
-            .weakArea("specificity")
+            .message(evaluation.message())
+            .weakArea(evaluation.weakArea())
+            .correctedAnswer(evaluation.correctedAnswer())
             .build());
-        progressRecordService.recordSubmittedAnswer(savedAnswer.getUserId(), PLACEHOLDER_SCORE);
+        progressRecordService.recordSubmittedAnswer(savedAnswer.getUserId(), score);
 
         SubmitAnswerResponse response = new SubmitAnswerResponse(
             toResponse(savedAnswer),
             LearningStatus.FINISHED,
-            PLACEHOLDER_SCORE,
-            PLACEHOLDER_SCORE
+            score,
+            score
         );
         response.setFeedback(toFeedbackResponse(savedFeedback));
         return response;
@@ -98,6 +129,11 @@ public class UserAnswerService {
             OffsetDateTime.ofInstant(feedback.getCreatedAt(), ZoneOffset.UTC)
         );
         response.setWeakArea(feedback.getWeakArea());
+        response.setCorrectedAnswer(feedback.getCorrectedAnswer());
         return response;
+    }
+
+    private String valueOrDefault(String value, String defaultValue) {
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 }

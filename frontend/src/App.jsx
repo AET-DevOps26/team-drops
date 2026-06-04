@@ -515,6 +515,8 @@ export function App() {
         client_context: {
           lesson_id: activeLesson.id,
           plan_id: activePlan.id,
+          target_language: profile.targetLanguage,
+          level: profile.currentLevel,
         },
       }, session.accessToken);
 

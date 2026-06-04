@@ -253,8 +253,10 @@ export function attachSubmissionToLesson(lesson, submission) {
               title: 'AI feedback',
               score: submission.answer.score,
               message: submission.feedback.message,
+              weakArea: submission.feedback.weak_area,
               strengths: submission.feedback.strengths ?? [],
-              improvements: submission.feedback.improvements ?? [],
+              improvements: submission.feedback.improvements
+                ?? (submission.feedback.weak_area ? [`Focus on: ${submission.feedback.weak_area}`] : []),
               improvedExample: submission.feedback.corrected_answer,
             }
           : null,
