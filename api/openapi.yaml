@@ -1147,6 +1147,7 @@ components:
         - user_id
         - exercise_id
         - answer_text
+        - client_context
       properties:
         user_id:
           type: integer
@@ -1164,6 +1165,8 @@ components:
           $ref: '#/components/schemas/AnswerClientContext'
     AnswerClientContext:
       type: object
+      required:
+        - lesson_id
       properties:
         lesson_id:
           type: integer
@@ -1173,6 +1176,12 @@ components:
           type: integer
           format: int64
           example: 1
+        target_language:
+          type: string
+          example: German
+        level:
+          type: string
+          example: A2
     SubmitAnswerResponse:
       type: object
       required:
