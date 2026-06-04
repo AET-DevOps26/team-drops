@@ -16,6 +16,7 @@ import {
   attachSubmissionToLesson,
   attachSavedAnswersToLesson,
   createEmptyProgress,
+  derivePlanProgress,
   mergeLessonIntoPlans,
   toLearningPlans,
   toLessonDetail,
@@ -274,6 +275,33 @@ export function App() {
         learningPlansError = error;
       }
     }
+    if (nextLearningPlans.length > 0) {
+      try {
+        const savedAnswers = await getUserAnswers(userId, token);
+        const lessonDetails = await Promise.all(
+          nextLearningPlans.flatMap((plan) => plan.lessons.map(async (lesson) => {
+            const lessonResponse = await getLesson(lesson.id, token);
+            return toLessonDetail(lessonResponse, lesson);
+          })),
+        );
+
+        nextLearningPlans = derivePlanProgress(
+          lessonDetails.reduce(
+            (plans, lessonDetail) => mergeLessonIntoPlans(
+              plans,
+              attachSavedAnswersToLesson(lessonDetail, savedAnswers),
+            ),
+            nextLearningPlans,
+          ),
+        );
+      } catch (error) {
+        if (error.status !== 404) {
+          setDashboardError(error.message || 'Unable to load lesson progress.');
+        }
+        nextLearningPlans = derivePlanProgress(nextLearningPlans);
+      }
+    }
+
     const nextProgress = progressResult.status === 'fulfilled'
       ? toProgressSummary(progressResult.value, nextLearningPlans)
       : createEmptyProgress(userId);
