@@ -265,6 +265,49 @@ export function attachSubmissionToLesson(lesson, submission) {
   };
 }
 
+export function attachSavedAnswersToLesson(lesson, savedAnswers = [], feedbackByAnswerId = new Map()) {
+  if (!lesson || savedAnswers.length === 0) {
+    return lesson;
+  }
+
+  const answerByExerciseId = new Map(
+    savedAnswers.map((answer) => [answer.exercise_id, answer]),
+  );
+
+  return {
+    ...lesson,
+    exercises: lesson.exercises.map((exercise) => {
+      const answer = answerByExerciseId.get(exercise.id);
+
+      if (!answer) {
+        return exercise;
+      }
+
+      const feedback = feedbackByAnswerId.get(answer.id);
+
+      return {
+        ...exercise,
+        status: 'finished',
+        score: answer.score,
+        grade: answer.score,
+        answerText: answer.answer_text,
+        feedback: feedback
+          ? {
+              title: 'AI feedback',
+              score: answer.score,
+              message: feedback.message,
+              weakArea: feedback.weak_area,
+              strengths: feedback.strengths ?? [],
+              improvements: feedback.improvements
+                ?? (feedback.weak_area ? [`Focus on: ${feedback.weak_area}`] : []),
+              improvedExample: feedback.corrected_answer,
+            }
+          : exercise.feedback,
+      };
+    }),
+  };
+}
+
 export function buildLessonLookup(learningPlans) {
   const lessonMap = new Map();
 

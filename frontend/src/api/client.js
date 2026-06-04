@@ -109,6 +109,14 @@ export function submitAnswer(payload, token) {
   });
 }
 
+export function getUserAnswers(userId, token) {
+  return request('progress', `/api/v1/answers/user/${userId}`, { token });
+}
+
+export function getFeedbackByAnswerId(answerId, token) {
+  return request('progress', `/api/v1/answers/${answerId}/feedback`, { token });
+}
+
 export function getProgress(userId, token) {
   return request('progress', `/api/v1/progress/user/${userId}`, { token });
 }

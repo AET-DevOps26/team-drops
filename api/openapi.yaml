@@ -281,6 +281,26 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: progress-feedback-service
+  /api/v1/answers/user/{user_id}:
+    get:
+      tags:
+        - Progress & Feedback Service
+      summary: Get submitted answers by user
+      operationId: getAnswersByUserId
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: Submitted answers for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserAnswerResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-service: progress-feedback-service
   /api/v1/progress/user/{user_id}:
     get:
       tags:

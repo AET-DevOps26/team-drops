@@ -4,14 +4,17 @@ import {
   createUser,
   getLearningPlans,
   getLesson,
+  getFeedbackByAnswerId,
   getProgress,
   getUserProfile,
+  getUserAnswers,
   login,
   submitAnswer,
   updateUserProfile,
 } from './api/client';
 import {
   attachSubmissionToLesson,
+  attachSavedAnswersToLesson,
   createEmptyProgress,
   mergeLessonIntoPlans,
   toLearningPlans,
@@ -310,7 +313,31 @@ export function App() {
     }
 
     const lessonResponse = await getLesson(selectedLessonSummary.id, currentSession.accessToken);
-    const normalizedLesson = toLessonDetail(lessonResponse, selectedLessonSummary);
+    const lessonDetail = toLessonDetail(lessonResponse, selectedLessonSummary);
+    const lessonExerciseIds = new Set(lessonDetail.exercises.map((exercise) => exercise.id));
+    const savedAnswers = (await getUserAnswers(currentSession.user.id, currentSession.accessToken))
+      .filter((answer) => lessonExerciseIds.has(answer.exercise_id));
+    const feedbackEntries = await Promise.all(
+      savedAnswers.map(async (answer) => {
+        try {
+          return [answer.id, await getFeedbackByAnswerId(answer.id, currentSession.accessToken)];
+        } catch (error) {
+          if (error.status === 404) {
+            return [answer.id, null];
+          }
+
+          throw error;
+        }
+      }),
+    );
+    const feedbackByAnswerId = new Map(
+      feedbackEntries.filter(([, feedback]) => feedback),
+    );
+    const normalizedLesson = attachSavedAnswersToLesson(
+      lessonDetail,
+      savedAnswers,
+      feedbackByAnswerId,
+    );
 
     setLearningPlans((currentPlans) => mergeLessonIntoPlans(currentPlans, normalizedLesson));
   }, [learningPlans]);
