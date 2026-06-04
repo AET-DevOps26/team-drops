@@ -10,13 +10,11 @@ Nginx on port 80.
 
 ```bash
 helm lint ./helm/team-drops \
-  --set ingress.host=test.stud.k8s.aet.cit.tum.de \
-  --set genai.llmApiKey=dummy
+  -f helm/team-drops/values-rancher.yaml
 
 helm template team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set ingress.host=test.stud.k8s.aet.cit.tum.de \
-  --set genai.llmApiKey=dummy \
+  -f helm/team-drops/values-rancher.yaml \
   > /tmp/team-drops-rendered.yaml
 ```
 
@@ -47,13 +45,14 @@ kubectl apply --dry-run=server -n team-drops -f /tmp/team-drops-rendered.yaml
 Use the real ingress host for the namespace. For a branch-image test before
 merging to `main`, use `--set image.tag=kubernetes`. OpenAI mode requires
 `genai.llmApiKey`; infrastructure-only tests can use `genai.llmProvider=ollama`.
+The committed `values-rancher.yaml` file contains the non-secret Rancher
+settings: host, staging TLS, and Ollama mode.
 
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set image.tag=kubernetes \
-  --set ingress.host=team-drops.stud.k8s.aet.cit.tum.de \
-  --set genai.llmProvider=ollama
+  -f helm/team-drops/values-rancher.yaml \
+  --set image.tag=kubernetes
 ```
 
 If GHCR packages are private, create an image pull secret in the namespace and
@@ -62,8 +61,7 @@ install with:
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set ingress.host=<your-name>.stud.k8s.aet.cit.tum.de \
-  --set genai.llmApiKey=<api-key> \
+  -f helm/team-drops/values-rancher.yaml \
   --set imagePullSecrets[0]=<secret-name>
 ```
 
@@ -123,7 +121,7 @@ The default chart does not deploy Ollama. OpenAI mode requires an API key:
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set ingress.host=<your-name>.stud.k8s.aet.cit.tum.de \
+  -f helm/team-drops/values-rancher.yaml \
   --set genai.llmProvider=openai \
   --set genai.llmApiKey=<api-key>
 ```
@@ -135,8 +133,7 @@ fail until a backend is configured.
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set ingress.host=<your-name>.stud.k8s.aet.cit.tum.de \
-  --set genai.llmProvider=ollama
+  -f helm/team-drops/values-rancher.yaml
 ```
 
 To opt into in-cluster Ollama:
@@ -144,8 +141,7 @@ To opt into in-cluster Ollama:
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set ingress.host=<your-name>.stud.k8s.aet.cit.tum.de \
-  --set genai.llmProvider=ollama \
+  -f helm/team-drops/values-rancher.yaml \
   --set ollama.enabled=true
 ```
 
@@ -161,8 +157,7 @@ cluster admins or tutors:
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set ingress.host=<your-name>.stud.k8s.aet.cit.tum.de \
-  --set genai.llmProvider=ollama \
+  -f helm/team-drops/values-rancher.yaml \
   --set ingress.tls.enabled=true \
   --set ingress.tls.clusterIssuer=<issuer-name>
 ```

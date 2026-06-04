@@ -163,13 +163,11 @@ Render and validate without changing the cluster:
 
 ```bash
 helm lint ./helm/team-drops \
-  --set ingress.host=test.stud.k8s.aet.cit.tum.de \
-  --set genai.llmApiKey=dummy
+  -f helm/team-drops/values-rancher.yaml
 
 helm template team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set ingress.host=test.stud.k8s.aet.cit.tum.de \
-  --set genai.llmApiKey=dummy \
+  -f helm/team-drops/values-rancher.yaml \
   | kubectl apply --dry-run=server -n team-drops -f -
 ```
 
@@ -178,17 +176,18 @@ Install or update the application:
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set ingress.host=team-drops.stud.k8s.aet.cit.tum.de \
-  --set genai.llmApiKey=<api-key>
+  -f helm/team-drops/values-rancher.yaml
 ```
 
-For infrastructure tests without an OpenAI key, set GenAI to Ollama mode:
+For a deploy with OpenAI, keep the API key out of Git and pass it at install
+time:
 
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
-  --set ingress.host=team-drops.stud.k8s.aet.cit.tum.de \
-  --set genai.llmProvider=ollama
+  -f helm/team-drops/values-rancher.yaml \
+  --set genai.llmProvider=openai \
+  --set genai.llmApiKey=<api-key>
 ```
 
 For temporary tests with images built from a branch, add:
