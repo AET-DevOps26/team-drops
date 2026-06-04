@@ -79,6 +79,12 @@ public class LearningPlanService {
 
     @Transactional
     public LearningPlanResponse createDefaultLearningPlan(CreateDefaultLearningPlanRequest request) {
+        return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), DEFAULT_TITLE)
+            .map(this::toResponse)
+            .orElseGet(() -> createFixedDefaultLearningPlan(request));
+    }
+
+    private LearningPlanResponse createFixedDefaultLearningPlan(CreateDefaultLearningPlanRequest request) {
         LearningPlan plan = learningPlanRepository.save(LearningPlan.builder()
             .userId(request.getUserId())
             .title(DEFAULT_TITLE)
