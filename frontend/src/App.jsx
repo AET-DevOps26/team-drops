@@ -75,6 +75,11 @@ const translations = {
     training: 'Training',
     trainingDescription: 'Guided interview lessons',
     aiTraining: 'AI Training',
+    aiTrainingDescription: 'Adaptive interview practice will be available here.',
+    ragLearning: 'RAG learning',
+    ragLearningDescription: 'Create from document topics',
+    chooseRagTopic: 'Choose a RAG topic',
+    generateLearningPlan: 'Generate learning plan',
     comingLater: 'Coming later',
     suggestedPlans: 'Suggested learning plans',
     plans: 'plans',
@@ -120,6 +125,11 @@ const translations = {
     training: 'Training',
     trainingDescription: 'Gefuhrte Interviewlektionen',
     aiTraining: 'KI-Training',
+    aiTrainingDescription: 'Adaptives Interviewtraining wird hier verfugbar sein.',
+    ragLearning: 'RAG-Lernen',
+    ragLearningDescription: 'Aus Dokumentthemen erstellen',
+    chooseRagTopic: 'RAG-Thema wahlen',
+    generateLearningPlan: 'Lernplan erstellen',
     comingLater: 'Kommt spater',
     suggestedPlans: 'Vorgeschlagene Lernplane',
     plans: 'Plane',
@@ -165,6 +175,11 @@ const translations = {
     training: 'Entrainement',
     trainingDescription: 'Lecons guidees d entretien',
     aiTraining: 'Entrainement IA',
+    aiTrainingDescription: 'La pratique adaptive d entretien sera disponible ici.',
+    ragLearning: 'Apprentissage RAG',
+    ragLearningDescription: 'Creer depuis les documents',
+    chooseRagTopic: 'Choisir un sujet RAG',
+    generateLearningPlan: 'Generer un plan',
     comingLater: 'A venir',
     suggestedPlans: 'Plans suggeres',
     plans: 'plans',
@@ -319,6 +334,14 @@ export function App() {
     setScreen('main');
     setSettingsOpen(false);
     setSettingsClosing(false);
+  };
+
+  const bypassAuth = () => {
+    setAuthError('');
+    setDashboardError('');
+    setProfileError('');
+    setLearningError('');
+    setScreen('main');
   };
 
   const logout = () => {
@@ -541,6 +564,7 @@ export function App() {
               authPending={authPending}
               t={t}
               onAuthenticated={handleAuthentication}
+              onBypass={bypassAuth}
             />
           )}
 

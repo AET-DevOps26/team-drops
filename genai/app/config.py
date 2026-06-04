@@ -1,5 +1,16 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from pathlib import Path
+
+
+def default_rag_doc_db_path() -> str:
+    config_path = Path(__file__).resolve()
+    for parent in [Path.cwd(), *config_path.parents]:
+        candidate = parent / "RAG doc DB"
+        if candidate.exists():
+            return str(candidate)
+    return str(config_path.parents[1] / "RAG doc DB")
+
 
 
 class Settings(BaseSettings):
@@ -17,6 +28,10 @@ class Settings(BaseSettings):
     ollama_model: str = Field(default="llama3", alias="OLLAMA_MODEL")
 
     mongo_url: str = Field(default="mongodb://localhost:27017", alias="MONGO_URL")
+    rag_doc_db_path: str = Field(
+        default_factory=default_rag_doc_db_path,
+        alias="RAG_DOC_DB_PATH",
+    )
 
     whisper_model: str = Field(default="base", alias="WHISPER_MODEL")
     whisper_device: str = Field(default="cpu", alias="WHISPER_DEVICE")

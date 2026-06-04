@@ -1,0 +1,42 @@
+status	filename	pages_or_code	english_score_or_type	url
+KEPT	fsu_interview_guide_2022.pdf	8	26	https://career.fsu.edu/sites/g/files/upcbnu746/files/Interview%20Guide%20-%20Summer%202022%20%28digital%29_0_0.pdf
+REMOVED	ku_preparing_for_job_interviews_2025.pdf	20	0	https://career.ku.edu/sites/career/files/documents/Guides/Preparing%20for%20Job%20Interviews%20-%202025.pdf
+KEPT	ku_preparing_for_job_interviews_accessible_2025.pdf	21	53	https://career.ku.edu/sites/career/files/documents/Guides/Preparing%20for%20Job%20Interviews%20booklet-2025%20Accessible.pdf
+REMOVED	hmc_interview_guide_2025.pdf	3	57	https://www.hmc.edu/career-services/wp-content/uploads/sites/9/2025/03/OCS-Career-Guide-Interview-Guide_FINAL.pdf
+KEPT	sjsu_interviewing_guide_2025.pdf	11	64	https://cdn.uconnectlabs.com/wp-content/uploads/sites/255/2025/12/SJSU-Career-Center-Interviewing-Guide_120425.pdf
+KEPT	bridgewater_effective_interviewing_guide.pdf	9	26	https://cdn.uconnectlabs.com/wp-content/uploads/sites/293/2024/01/EffectiveInterviewingGuide-1.pdf
+REMOVED	suffolk_professional_interviewing_guide.pdf	2	78	https://cdn.uconnectlabs.com/wp-content/uploads/sites/576/2025/05/Professional-Interviewing-Guide.pdf
+KEPT	suffolk_interviews_guide.pdf	22	68	https://www.suffolk.edu/-/media/suffolk/documents/career-center/resources-and-tools/interviews-guide---suffolk-career-center.pdf?hash=A89E1460DE437D1AED5D49B0C7C6F56DBCC91437&la=en
+KEPT	jefferson_interview_guide_2022.pdf	6	74	https://www.jefferson.edu/content/dam/academic/east-falls/career-services/2022-updated-jefferson-handouts/2022-interview-guide.pdf
+KEPT	csuci_interview_handbook_cdae.pdf	15	39	https://www.csuci.edu/careerdevelopment/documents/interview-handbook-cdae.pdf
+REMOVED	csuci_interviewing.pdf	18	1	https://www.csuci.edu/careerdevelopment/services/counseling/career-steps/interviewing.pdf
+REMOVED	csuci_phone_video_interview_prep.pdf	1	18	https://www.csuci.edu/careerdevelopment/services/counseling/career-steps/phone-video-interview-prep.pdf
+REMOVED	csuci_informational_interview_guidelines.pdf	2	36	https://www.csuci.edu/careerdevelopment/services/counseling/career-steps/informational-interview-guidelines.pdf
+REMOVED	unm_informational_interviewing.pdf	2	62	https://career.unm.edu/assets/pdfs/informational-interviewing.pdf
+KEPT	fhu_preparing_for_job_interviews.pdf	14	36	https://fhu.edu/wp-content/uploads/preparing-for-job-interviews.pdf
+KEPT	cmu_heinz_interviewing_guide.pdf	13	13	https://www.heinz.cmu.edu/heinz-shared/_files/img/career-services-pages/career-academy-interviewing-guide.pdf
+REMOVED	oswego_interviewing_guide.pdf	2	59	https://www.oswego.edu/career-services/sites/www.oswego.edu.career-services/files/interviewing_guide_handout_08-19-20.pdf
+KEPT	miami_oh_interviewing_guide.pdf	36	4	https://miamioh.edu/emss/_files/documents/career-services/pdfs/interviewing.pdf
+KEPT	loyola_chicago_interviewing_guide.pdf	6	88	https://www.luc.edu/media/lucedu/career/pdfs/guideshandouts/Interviewing%20Guide.pdf
+REMOVED	loyola_chicago_mock_interview_guide.pdf	1	39	https://www.luc.edu/media/lucedu/career/pdfs/guideshandouts/Mock%20Interview%20Guide%202020.pdf
+REMOVED	washu_law_successful_interviewing_2019.pdf	34	0	https://law.wustl.edu/wp-content/uploads/2019/07/Guide-to-Successful-Interviewing-2019.pdf
+SKIP_DOWNLOAD	jhu_jobs_and_interviews.pdf	403	text/html; charset=utf-8	https://me.jhu.edu/wp-content/uploads/2021/07/Career-Center-Jobs-and-Interviews.pdf
+KEPT	case_western_career_search_guide.pdf	69	31	https://case.edu/studentlife/careercenter/sites/default/files/2019-05/careersearchguide_2.pdf
+KEPT	betts_interview_handbook_2019.pdf	19	12	https://bettsrecruiting.com/wp-content/uploads/2021/06/The-Interview-Handbook-2019.pdf
+ERROR	universityculture_interview_handbook.pdf	SSLError	HTTPSConnectionPool(host='universityculture.org', port=443): Max retries exceeded with url: /careerdevelopment/documents/interview-handbook-cdae.pdf (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'universityculture.org'. (_ssl.c:1077)")))	https://universityculture.org/careerdevelopment/documents/interview-handbook-cdae.pdf
+KEPT	wabash_interview_guide_2019.pdf	5	58	https://www.wabash.edu/careers/docs/2019_Interview_Guide.pdf
+SKIP_DOWNLOAD	mranet_successful_interviewing.pdf	403	text/html; charset=utf-8	https://www.mranet.org/sites/default/files/files/2019-01/Guide_to_Successful_Interviewing.pdf
+SKIP_DOWNLOAD	suny_wcc_interview_guide.pdf	404	text/html; charset=utf-8	https://www.sunywcc.edu/assets/documents/Interview-Guide.pdf
+KEPT	hanover_art_of_interviewing_2020.pdf	7	16	https://careercenter.hanover.edu/documents/ArtofInterviewing2020.pdf
+SKIP_DOWNLOAD	richmond_law_interviewing_guide.pdf	200	text/html; charset=utf-8	https://law.richmond.edu/career/_pdf/interviewing_guide.pdf
+KEPT	usfca_job_and_internship_guide.pdf	52	19	https://myusf.usfca.edu/sites/default/files/default/Career_Services/job-and-internship-guide-pdf.pdf
+SKIP_DOWNLOAD	sonoma_mastering_job_interview.pdf	404	text/html; charset=utf-8	https://career.sonoma.edu/sites/default/files/document/interview-guide.pdf
+ERROR	cobleskill_job_interview_guide.pdf	ConnectTimeout	HTTPSConnectionPool(host='www.cobleskill.edu', port=443): Max retries exceeded with url: /academics/career-development/pdfs/Job_Interveiw_Guide.pdf (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x10bb006e0>, 'Connection to www.cobleskill.edu timed out. (connect timeout=30)'))	https://www.cobleskill.edu/academics/career-development/pdfs/Job_Interveiw_Guide.pdf
+REMOVED	utampa_interviewing_guide.pdf	2	92	https://www.ut.edu/uploadedFiles/Campus_Life/Career_Services/Toolbox/InterviewingWebsite.pdf
+KEPT	calpoly_successful_interviewing.pdf	8	77	https://content-calpoly-edu.s3.amazonaws.com/careerservices/1/documents/student/handouts/Guide%20for%20Successful%20Interviewing.pdf
+SKIP_DOWNLOAD	dominican_interview_guide_students.pdf	404	text/html; charset=UTF-8	https://www.dom.edu/sites/default/files/pdfs/academic_services/Career_Dev_Interview_Guide_for_Students_2019_rev.03.30.20.pdf
+SKIP_DOWNLOAD	dominican_job_search_guide.pdf	404	text/html; charset=UTF-8	https://www.dom.edu/sites/default/files/pdfs/academic_services/Career_Dev_JobSearchGuideHandout_2019_rev03.30.20.pdf
+KEPT	humboldt_interview_guide.pdf	12	77	https://acac.humboldt.edu/sites/default/files/u27/interviewGuide.pdf
+KEPT	winthrop_interview_preparation.pdf	7	152	https://www.winthrop.edu/uploadedFiles/cdi/Interview-Preparation.pdf
+SKIP_DOWNLOAD	sbdc_hiring_and_interview_guide.pdf	403	text/html	https://sbdc-techsource.org/wp-content/uploads/sites/4/2022/08/Hiring-and-interview-guide.pdf
+KEPT	lehigh_behavioral_interview_guide.pdf	5	96	https://careercenter.lehigh.edu/sites/careercenter.lehigh.edu/files/Behavioral%20Interview%20Guide.pdf

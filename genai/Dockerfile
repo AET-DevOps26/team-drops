@@ -4,13 +4,15 @@ RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock* ./
+COPY genai/pyproject.toml genai/uv.lock* ./
 
 RUN uv sync --frozen --no-dev
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-COPY . .
+COPY genai/ .
+COPY RAG ./RAG
+COPY ["RAG doc DB", "./RAG doc DB"]
 
 EXPOSE 8084
 
