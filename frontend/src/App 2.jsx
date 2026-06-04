@@ -1,0 +1,649 @@
+import React from 'react';
+import {
+  createUser,
+  getLearningPlans,
+  getLesson,
+  getProgress,
+  getUserProfile,
+  login,
+  submitAnswer,
+  updateUserProfile,
+} from './api/client';
+import {
+  attachSubmissionToLesson,
+  createEmptyProgress,
+  mergeLessonIntoPlans,
+  toLearningPlans,
+  toLessonDetail,
+  toProfile,
+  toProgressSummary,
+} from './api/mappers';
+import { SettingsOverlay } from './components/SettingsOverlay';
+import { languages, targetLanguages } from './data/languages';
+import { AuthPage } from './pages/AuthPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { LanguagePage } from './pages/LanguagePage';
+import { LearningPage } from './pages/LearningPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { getRecentFinishedLessons, getRecentLessons } from './utils/learning';
+
+const defaultProfile = {
+  name: 'Learner',
+  country: 'Unknown',
+  targetLanguage: 'German',
+  currentLevel: 'A2',
+  learningGoal: 'Prepare for a software engineering job interview',
+};
+
+const translations = {
+  English: {
+    appLabel: 'Language learning',
+    welcomeBack: 'Welcome back',
+    dashboard: 'Dashboard',
+    settings: 'Settings',
+    startLearning: 'Start learning',
+    overview: 'Overview',
+    language: 'Language',
+    languageToLearn: 'Language to learn',
+    appLanguage: 'Choose app language',
+    targetLanguage: 'Choose language to learn',
+    profile: 'Profile',
+    name: 'Name',
+    country: 'Country',
+    edit: 'Edit',
+    save: 'Save',
+    learn: 'Learning Hub',
+    learningPlan: 'Learning Plan',
+    lesson: 'Lesson',
+    exercise: 'Exercise',
+    planOverview: 'Plan overview',
+    currentPlan: 'plan',
+    lessonsInProgress: 'lessons in progress',
+    exercisesDone: 'Exercises done',
+    averageScore: 'Average score',
+    recentProgress: 'Recent progress',
+    recentFinish: 'Recent finish',
+    topLessons: 'Top 3 lessons',
+    noOngoing: 'No ongoing lessons yet',
+    noFinished: 'No finished lessons yet',
+    personalProfile: 'Personal profile',
+    accountDetails: 'View and edit account details',
+    appearance: 'Light / dark mode',
+    darkEnabled: 'Dark mode enabled',
+    lightEnabled: 'Light mode enabled',
+    logout: 'Log out',
+    training: 'Training',
+    trainingDescription: 'Guided interview lessons',
+    aiTraining: 'AI Training',
+    comingLater: 'Coming later',
+    suggestedPlans: 'Suggested learning plans',
+    plans: 'plans',
+    overall: 'Overall',
+    comingSoon: 'Coming soon',
+  },
+  German: {
+    appLabel: 'Sprachen lernen',
+    welcomeBack: 'Willkommen zuruck',
+    dashboard: 'Ubersicht',
+    settings: 'Einstellungen',
+    startLearning: 'Lernen starten',
+    overview: 'Ubersicht',
+    language: 'Sprache',
+    languageToLearn: 'Lernsprache',
+    appLanguage: 'App-Sprache wahlen',
+    targetLanguage: 'Lernsprache wahlen',
+    profile: 'Profil',
+    name: 'Name',
+    country: 'Land',
+    edit: 'Bearbeiten',
+    save: 'Speichern',
+    learn: 'Lernbereich',
+    learningPlan: 'Lernplan',
+    lesson: 'Lektion',
+    exercise: 'Ubung',
+    planOverview: 'Planubersicht',
+    currentPlan: 'Plan',
+    lessonsInProgress: 'Lektionen laufen',
+    exercisesDone: 'Ubungen erledigt',
+    averageScore: 'Durchschnitt',
+    recentProgress: 'Aktueller Fortschritt',
+    recentFinish: 'Abgeschlossen',
+    topLessons: 'Top 3 Lektionen',
+    noOngoing: 'Noch keine laufenden Lektionen',
+    noFinished: 'Noch keine abgeschlossenen Lektionen',
+    personalProfile: 'Personliches Profil',
+    accountDetails: 'Kontodaten anzeigen und bearbeiten',
+    appearance: 'Hell- / Dunkelmodus',
+    darkEnabled: 'Dunkelmodus aktiv',
+    lightEnabled: 'Hellmodus aktiv',
+    logout: 'Abmelden',
+    training: 'Training',
+    trainingDescription: 'Gefuhrte Interviewlektionen',
+    aiTraining: 'KI-Training',
+    comingLater: 'Kommt spater',
+    suggestedPlans: 'Vorgeschlagene Lernplane',
+    plans: 'Plane',
+    overall: 'Gesamt',
+    comingSoon: 'Kommt bald',
+  },
+  French: {
+    appLabel: 'Apprentissage des langues',
+    welcomeBack: 'Bon retour',
+    dashboard: 'Tableau de bord',
+    settings: 'Parametres',
+    startLearning: 'Commencer',
+    overview: 'Vue d ensemble',
+    language: 'Langue',
+    languageToLearn: 'Langue a apprendre',
+    appLanguage: 'Choisir la langue de l app',
+    targetLanguage: 'Choisir la langue a apprendre',
+    profile: 'Profil',
+    name: 'Nom',
+    country: 'Pays',
+    edit: 'Modifier',
+    save: 'Enregistrer',
+    learn: 'Espace apprentissage',
+    learningPlan: 'Plan d apprentissage',
+    lesson: 'Lecon',
+    exercise: 'Exercice',
+    planOverview: 'Apercu du plan',
+    currentPlan: 'plan',
+    lessonsInProgress: 'lecons en cours',
+    exercisesDone: 'Exercices faits',
+    averageScore: 'Score moyen',
+    recentProgress: 'Progression recente',
+    recentFinish: 'Termine recemment',
+    topLessons: 'Top 3 lecons',
+    noOngoing: 'Aucune lecon en cours',
+    noFinished: 'Aucune lecon terminee',
+    personalProfile: 'Profil personnel',
+    accountDetails: 'Voir et modifier le compte',
+    appearance: 'Mode clair / sombre',
+    darkEnabled: 'Mode sombre active',
+    lightEnabled: 'Mode clair active',
+    logout: 'Se deconnecter',
+    training: 'Entrainement',
+    trainingDescription: 'Lecons guidees d entretien',
+    aiTraining: 'Entrainement IA',
+    comingLater: 'A venir',
+    suggestedPlans: 'Plans suggeres',
+    plans: 'plans',
+    overall: 'Total',
+    comingSoon: 'Bientot disponible',
+  },
+};
+
+export function App() {
+  const [screen, setScreen] = React.useState('auth');
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [settingsClosing, setSettingsClosing] = React.useState(false);
+  const [darkMode, setDarkMode] = React.useState(false);
+  const [language, setLanguage] = React.useState('English');
+  const [targetLanguage, setTargetLanguage] = React.useState(defaultProfile.targetLanguage);
+  const [session, setSession] = React.useState(null);
+  const [authPending, setAuthPending] = React.useState(false);
+  const [authError, setAuthError] = React.useState('');
+  const [loadingInitialData, setLoadingInitialData] = React.useState(false);
+  const [dashboardError, setDashboardError] = React.useState('');
+  const [profilePending, setProfilePending] = React.useState(false);
+  const [profileError, setProfileError] = React.useState('');
+  const [answerPending, setAnswerPending] = React.useState(false);
+  const [answerError, setAnswerError] = React.useState('');
+  const [learningError, setLearningError] = React.useState('');
+  const [profile, setProfile] = React.useState(defaultProfile);
+  const [progress, setProgress] = React.useState(createEmptyProgress());
+  const [learningPlans, setLearningPlans] = React.useState([]);
+  const [selectedPlan, setSelectedPlan] = React.useState(0);
+  const [selectedLesson, setSelectedLesson] = React.useState(0);
+  const [selectedExercise, setSelectedExercise] = React.useState(0);
+  const [learningMode, setLearningMode] = React.useState('training');
+  const [learningStep, setLearningStep] = React.useState('plans');
+
+  const activePlan = learningPlans[selectedPlan] ?? {
+    accent: 'blue',
+    title: 'No learning plans yet',
+    language: targetLanguage,
+    progress: 0,
+    lessons: [],
+    goal: profile.learningGoal,
+    summary: 'Create a plan in the backend to start learning.',
+    duration: '--',
+  };
+  const activeLesson = activePlan.lessons[selectedLesson] ?? {
+    id: null,
+    accent: 'blue',
+    icon: null,
+    title: 'No lesson selected',
+    topic: 'Choose a lesson from your learning plans.',
+    status: 'not-started',
+    progress: 0,
+    exercises: [],
+    blocks: [],
+  };
+  const activeExercise = activeLesson.exercises[selectedExercise] ?? {
+    id: null,
+    type: 'reading',
+    title: 'No exercise selected',
+    status: 'not-started',
+    format: 'Short written answer',
+    task: 'Open a lesson exercise to start practicing.',
+    prompt: '',
+    expectedAnswer: '',
+    feedback: null,
+    answerText: '',
+  };
+  const recentLessons = getRecentLessons(learningPlans);
+  const recentFinishedLessons = progress.recentFinished.length > 0 ? progress.recentFinished : getRecentFinishedLessons(learningPlans);
+  const t = translations[language] ?? translations.English;
+
+  const syncLearningData = React.useCallback(async (currentSession, options = {}) => {
+    setDashboardError('');
+    setProfileError('');
+
+    const token = currentSession.accessToken;
+    const userId = currentSession.user.id;
+    const [profileResult, learningPlansResult, progressResult] = await Promise.allSettled([
+      getUserProfile(userId, token),
+      getLearningPlans(userId, token),
+      getProgress(userId, token),
+    ]);
+
+    const nextProfile = profileResult.status === 'fulfilled'
+      ? toProfile(profileResult.value, currentSession.user)
+      : toProfile(null, currentSession.user);
+    const nextLearningPlans = learningPlansResult.status === 'fulfilled'
+      ? toLearningPlans(learningPlansResult.value)
+      : [];
+    const nextProgress = progressResult.status === 'fulfilled'
+      ? toProgressSummary(progressResult.value, nextLearningPlans)
+      : createEmptyProgress(userId);
+
+    setProfile(nextProfile);
+    setTargetLanguage(nextProfile.targetLanguage || targetLanguage);
+    setLearningPlans(nextLearningPlans);
+    setProgress(nextProgress);
+
+    if (!options.skipSelectionReset) {
+      setSelectedPlan(0);
+      setSelectedLesson(0);
+      setSelectedExercise(0);
+    }
+
+    if (profileResult.status === 'rejected' && profileResult.reason?.status !== 404) {
+      setProfileError(profileResult.reason.message);
+    }
+
+    if (learningPlansResult.status === 'rejected' && learningPlansResult.reason?.status !== 404) {
+      setDashboardError(learningPlansResult.reason.message);
+    }
+
+    if (progressResult.status === 'rejected' && progressResult.reason?.status !== 404) {
+      setDashboardError(progressResult.reason.message);
+    }
+
+    return { nextLearningPlans, nextProgress };
+  }, [targetLanguage]);
+
+  const loadLessonDetail = React.useCallback(async (planIndex, lessonIndex, currentSession) => {
+    const selectedPlanSummary = learningPlans[planIndex];
+    const selectedLessonSummary = selectedPlanSummary?.lessons[lessonIndex];
+
+    if (!selectedLessonSummary?.id) {
+      return;
+    }
+
+    const lessonResponse = await getLesson(selectedLessonSummary.id, currentSession.accessToken);
+    const normalizedLesson = toLessonDetail(lessonResponse, selectedLessonSummary);
+
+    setLearningPlans((currentPlans) => mergeLessonIntoPlans(currentPlans, normalizedLesson));
+  }, [learningPlans]);
+
+  const openSettings = () => {
+    setSettingsClosing(false);
+    setSettingsOpen(true);
+  };
+
+  const closeSettings = (nextScreen) => {
+    setSettingsClosing(true);
+    window.setTimeout(() => {
+      setSettingsOpen(false);
+      setSettingsClosing(false);
+
+      if (nextScreen) {
+        setScreen(nextScreen);
+      }
+    }, 220);
+  };
+
+  const goToMain = () => {
+    setScreen('main');
+    setSettingsOpen(false);
+    setSettingsClosing(false);
+  };
+
+  const logout = () => {
+    setSession(null);
+    setAuthError('');
+    setDashboardError('');
+    setProfileError('');
+    setAnswerError('');
+    setLearningError('');
+    setProfile(defaultProfile);
+    setTargetLanguage(defaultProfile.targetLanguage);
+    setLearningPlans([]);
+    setProgress(createEmptyProgress());
+    setScreen('auth');
+    setSettingsOpen(false);
+    setSettingsClosing(false);
+  };
+
+  const applyProfileState = React.useCallback((nextProfile) => {
+    setProfile(nextProfile);
+    setTargetLanguage(nextProfile.targetLanguage);
+  }, []);
+
+  const handleAuthentication = async (mode, payload) => {
+    setAuthPending(true);
+    setAuthError('');
+    setDashboardError('');
+    setProfileError('');
+
+    try {
+      if (mode === 'register') {
+        await createUser({
+          name: payload.name,
+          email: payload.email,
+          password: payload.password,
+        });
+      }
+
+      const loginResponse = await login({
+        email: payload.email,
+        password: payload.password,
+      });
+
+      const nextSession = {
+        user: loginResponse.user,
+        accessToken: loginResponse.access_token,
+        tokenType: loginResponse.token_type,
+      };
+
+      setSession(nextSession);
+      setLoadingInitialData(true);
+      await syncLearningData(nextSession);
+      goToMain();
+    } catch (error) {
+      setAuthError(error.message || 'Unable to sign in.');
+    } finally {
+      setAuthPending(false);
+      setLoadingInitialData(false);
+    }
+  };
+
+  const openLessonFromDashboard = (planIndex, lessonIndex) => {
+    setLearningError('');
+    setSelectedPlan(planIndex);
+    setSelectedLesson(lessonIndex);
+    setSelectedExercise(0);
+    setLearningMode('training');
+    setLearningStep('lesson');
+    setScreen('learn');
+
+    if (session) {
+      loadLessonDetail(planIndex, lessonIndex, session).catch((error) => {
+        setLearningError(error.message || 'Unable to load lesson.');
+      });
+    }
+  };
+
+  const openPlanFromDashboard = () => {
+    if (learningPlans.length === 0) {
+      setLearningMode('training');
+      setLearningStep('plans');
+      setScreen('learn');
+      return;
+    }
+
+    setSelectedLesson(0);
+    setLearningMode('training');
+    setLearningStep('lessons');
+    setScreen('learn');
+  };
+
+  const openPlan = (planIndex) => {
+    setSelectedPlan(planIndex);
+    setSelectedLesson(0);
+    setSelectedExercise(0);
+    setLearningStep('lessons');
+  };
+
+  const openLesson = (lessonIndex) => {
+    setLearningError('');
+    setSelectedLesson(lessonIndex);
+    setSelectedExercise(0);
+    setLearningStep('lesson');
+
+    if (session) {
+      loadLessonDetail(selectedPlan, lessonIndex, session).catch((error) => {
+        setLearningError(error.message || 'Unable to load lesson.');
+      });
+    }
+  };
+
+  const openExercise = (exerciseIndex) => {
+    setSelectedExercise(exerciseIndex);
+    setLearningStep('exercise');
+  };
+
+  const changeLearningMode = (nextMode) => {
+    setLearningMode(nextMode);
+    setLearningStep('plans');
+  };
+
+  const handleProfileChange = async (nextProfile) => {
+    const resolvedProfile = {
+      ...profile,
+      ...nextProfile,
+    };
+
+    if (!session) {
+      setProfileError('Please sign in before updating your profile.');
+      return;
+    }
+
+    setProfilePending(true);
+    setProfileError('');
+
+    try {
+      const savedProfile = await updateUserProfile(session.user.id, {
+        name: resolvedProfile.name,
+        country: resolvedProfile.country,
+        target_language: resolvedProfile.targetLanguage,
+        current_level: resolvedProfile.currentLevel,
+        learning_goal: resolvedProfile.learningGoal,
+      }, session.accessToken);
+      const normalizedProfile = toProfile(savedProfile, session.user);
+      applyProfileState(normalizedProfile);
+    } catch (error) {
+      setProfileError(error.message || 'Unable to save profile.');
+      throw error;
+    } finally {
+      setProfilePending(false);
+    }
+  };
+
+  const handleTargetLanguageChange = (nextTargetLanguage) => {
+    setTargetLanguage(nextTargetLanguage);
+    setProfile((currentProfile) => {
+      return {
+        ...currentProfile,
+        targetLanguage: nextTargetLanguage,
+      };
+    });
+  };
+
+  const handleSubmitAnswer = async (exercise, answerText) => {
+    if (!session || !exercise?.id || !activeLesson?.id || !activePlan?.id) {
+      return;
+    }
+
+    setAnswerPending(true);
+    setAnswerError('');
+
+    try {
+      const submission = await submitAnswer({
+        user_id: session.user.id,
+        exercise_id: exercise.id,
+        answer_text: answerText,
+        client_context: {
+          lesson_id: activeLesson.id,
+          plan_id: activePlan.id,
+        },
+      }, session.accessToken);
+
+      const lessonResponse = await getLesson(activeLesson.id, session.accessToken);
+      const normalizedLesson = attachSubmissionToLesson(
+        toLessonDetail(lessonResponse, activeLesson),
+        submission,
+      );
+      const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+      setLearningPlans(mergeLessonIntoPlans(syncResult.nextLearningPlans, normalizedLesson));
+    } catch (error) {
+      setAnswerError(error.message || 'Unable to submit answer.');
+    } finally {
+      setAnswerPending(false);
+    }
+  };
+
+  const goBackInLearning = () => {
+    if (learningStep === 'exercise') {
+      setLearningStep('lesson');
+      return;
+    }
+
+    setLearningStep(learningStep === 'lesson' || learningStep === 'planDetail' ? 'lessons' : 'plans');
+  };
+
+  return (
+    <main className="phone-stage">
+      <div className="phone-frame" aria-label="Phone app preview">
+        <div className="phone-speaker" aria-hidden="true"></div>
+
+        <section className={`app-shell ${darkMode ? 'dark-mode' : ''}`} aria-label="APP_NAME">
+          <div className="status-bar" aria-hidden="true">
+            <span>9:41</span>
+            <span>LTE 100%</span>
+          </div>
+
+          {screen === 'auth' && (
+            <AuthPage
+              authErrorMessage={authError}
+              authPending={authPending}
+              t={t}
+              onAuthenticated={handleAuthentication}
+            />
+          )}
+
+          {screen === 'main' && (
+            <DashboardPage
+              activePlan={activePlan}
+              dashboardError={dashboardError}
+              hasLearningPlans={learningPlans.length > 0}
+              hasLessons={activePlan.lessons.length > 0}
+              loading={loadingInitialData}
+              progress={progress}
+              recentFinishedLessons={recentFinishedLessons}
+              recentLessons={recentLessons}
+              profile={profile}
+              t={t}
+              onNavigate={setScreen}
+              onOpenLearningHub={() => {
+                setLearningMode('training');
+                setLearningStep('plans');
+                setScreen('learn');
+              }}
+              onOpenLesson={openLessonFromDashboard}
+              onOpenPlan={openPlanFromDashboard}
+              onOpenSettings={openSettings}
+            />
+          )}
+
+          {screen === 'learn' && (
+            <LearningPage
+              activeExercise={activeExercise}
+              activeLesson={activeLesson}
+              activePlan={activePlan}
+              answerError={answerError}
+              answerPending={answerPending}
+              learningError={learningError}
+              learningMode={learningMode}
+              learningPlans={learningPlans}
+              learningStep={learningStep}
+              t={t}
+              onBack={goBackInLearning}
+              onLearningMode={changeLearningMode}
+              onNavigate={setScreen}
+              onOpenExercise={openExercise}
+              onOpenLesson={openLesson}
+              onOpenPlan={openPlan}
+              onOpenPlanDetail={() => setLearningStep('planDetail')}
+              onOpenSettings={openSettings}
+              onSubmitAnswer={handleSubmitAnswer}
+            />
+          )}
+
+          {screen === 'profile' && (
+            <ProfilePage
+              profile={profile}
+              profileError={profileError}
+              profilePending={profilePending}
+              t={t}
+              onBack={goToMain}
+              onProfileChange={handleProfileChange}
+            />
+          )}
+
+          {screen === 'language' && (
+            <LanguagePage
+              heading={t.appLanguage}
+              language={language}
+              languages={languages}
+              title={t.language}
+              onBack={goToMain}
+              onLanguage={setLanguage}
+            />
+          )}
+
+          {screen === 'targetLanguage' && (
+            <LanguagePage
+              heading={t.targetLanguage}
+              language={targetLanguage}
+              languages={targetLanguages}
+              title={t.languageToLearn}
+              onBack={goToMain}
+              onLanguage={handleTargetLanguageChange}
+            />
+          )}
+
+          {settingsOpen && (
+            <SettingsOverlay
+              closing={settingsClosing}
+              darkMode={darkMode}
+              language={language}
+              targetLanguage={targetLanguage}
+              t={t}
+              onClose={() => closeSettings()}
+              onLanguage={() => closeSettings('language')}
+              onTargetLanguage={() => closeSettings('targetLanguage')}
+              onLogout={logout}
+              onProfile={() => closeSettings('profile')}
+              onToggleDarkMode={() => setDarkMode((value) => !value)}
+            />
+          )}
+
+          <div className="home-indicator" aria-hidden="true"></div>
+        </section>
+      </div>
+    </main>
+  );
+}
