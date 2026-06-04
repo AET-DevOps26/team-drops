@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     ollama_base_url: str = Field(
         default="http://host.docker.internal:11434", alias="OLLAMA_BASE_URL"
     )
-    ollama_model: str = Field(default="llama3", alias="OLLAMA_MODEL")
+    ollama_model: str = Field(default="llama3.2:1b", alias="OLLAMA_MODEL")
 
     mongo_url: str = Field(default="mongodb://localhost:27017", alias="MONGO_URL")
 
