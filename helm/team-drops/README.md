@@ -45,14 +45,15 @@ kubectl apply --dry-run=server -n team-drops -f /tmp/team-drops-rendered.yaml
 ## Install or update
 
 Use the real ingress host for the namespace. For a branch-image test before
-merging to `main`, use `--set image.tag=kubernetes`.
+merging to `main`, use `--set image.tag=kubernetes`. OpenAI mode requires
+`genai.llmApiKey`; infrastructure-only tests can use `genai.llmProvider=ollama`.
 
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
   --set image.tag=kubernetes \
   --set ingress.host=team-drops.stud.k8s.aet.cit.tum.de \
-  --set genai.llmApiKey=<api-key>
+  --set genai.llmProvider=ollama
 ```
 
 If GHCR packages are private, create an image pull secret in the namespace and
@@ -117,7 +118,7 @@ helm uninstall team-drops -n team-drops
 
 ## GenAI configuration
 
-The default chart does not deploy Ollama. To use OpenAI, pass an API key:
+The default chart does not deploy Ollama. OpenAI mode requires an API key:
 
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
@@ -125,6 +126,17 @@ helm upgrade --install team-drops ./helm/team-drops \
   --set ingress.host=<your-name>.stud.k8s.aet.cit.tum.de \
   --set genai.llmProvider=openai \
   --set genai.llmApiKey=<api-key>
+```
+
+For infrastructure tests without an OpenAI key, use Ollama mode without deploying
+Ollama. The GenAI service starts, but AI requests that need an Ollama backend may
+fail until a backend is configured.
+
+```bash
+helm upgrade --install team-drops ./helm/team-drops \
+  --namespace team-drops \
+  --set ingress.host=<your-name>.stud.k8s.aet.cit.tum.de \
+  --set genai.llmProvider=ollama
 ```
 
 To opt into in-cluster Ollama:
@@ -135,4 +147,22 @@ helm upgrade --install team-drops ./helm/team-drops \
   --set ingress.host=<your-name>.stud.k8s.aet.cit.tum.de \
   --set genai.llmProvider=ollama \
   --set ollama.enabled=true
+```
+
+## TLS and browser access
+
+HTTP works through the Ingress by default. Browsers may force HTTPS for
+`*.stud.k8s.aet.cit.tum.de` because of HSTS; if the cluster serves a self-signed
+certificate, the browser can block access even though HTTP and `curl` checks work.
+
+The chart supports TLS, but the correct cert-manager issuer must come from the
+cluster admins or tutors:
+
+```bash
+helm upgrade --install team-drops ./helm/team-drops \
+  --namespace team-drops \
+  --set ingress.host=<your-name>.stud.k8s.aet.cit.tum.de \
+  --set genai.llmProvider=ollama \
+  --set ingress.tls.enabled=true \
+  --set ingress.tls.clusterIssuer=<issuer-name>
 ```

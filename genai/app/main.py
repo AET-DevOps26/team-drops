@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, APIRouter
 
 from app.config import settings
+from app.llm import llm_configuration_status
 from app.middleware.error_handler import add_error_handlers
 from app.routers.exercises import router as exercises_router
 from app.routers.listening import router as listening_router
@@ -52,4 +53,9 @@ app.include_router(api_v1)
 
 @app.get("/health", tags=["ops"])
 async def health():
-    return {"status": "ok", "provider": settings.llm_provider}
+    llm_status = llm_configuration_status()
+    return {
+        "status": "ok" if llm_status["configured"] else "degraded",
+        "provider": settings.llm_provider,
+        "llm_configured": llm_status["configured"],
+    }

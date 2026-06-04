@@ -5,11 +5,30 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from app.config import settings
 
 
+class LLMConfigurationError(Exception):
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+def llm_configuration_status() -> dict:
+    provider = settings.llm_provider.lower()
+    configured = provider != "openai" or bool(settings.llm_api_key.strip())
+
+    return {
+        "provider": provider,
+        "configured": configured,
+    }
+
+
 @lru_cache(maxsize=1)
 def get_llm() -> BaseChatModel:
     provider = settings.llm_provider.lower()
 
     if provider == "openai":
+        if not settings.llm_api_key.strip():
+            raise LLMConfigurationError("LLM provider openai requires LLM_API_KEY.")
+
         from langchain_openai import ChatOpenAI
 
         return ChatOpenAI(

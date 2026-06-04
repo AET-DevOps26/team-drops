@@ -134,7 +134,8 @@ npx openapi-typescript api/openapi.yaml -o frontend/src/api/types.ts
 
 Do not hand-write request or response types.
 
-### Frontend (TODO)
+For Kubernetes, the frontend image builds the Vite app into static files and
+serves them with Nginx.
 
 ## Mock Server
 
@@ -181,8 +182,16 @@ helm upgrade --install team-drops ./helm/team-drops \
   --set genai.llmApiKey=<api-key>
 ```
 
-For testing images built from the `kubernetes` branch before merging to `main`,
-add:
+For infrastructure tests without an OpenAI key, set GenAI to Ollama mode:
+
+```bash
+helm upgrade --install team-drops ./helm/team-drops \
+  --namespace team-drops \
+  --set ingress.host=team-drops.stud.k8s.aet.cit.tum.de \
+  --set genai.llmProvider=ollama
+```
+
+For temporary tests with images built from a branch, add:
 
 ```bash
 --set image.tag=kubernetes
@@ -199,7 +208,7 @@ After deployment, the ingress host exposes:
 ```
 
 See `helm/team-drops/README.md` for validation, private image pull secrets,
-GenAI configuration, and troubleshooting commands.
+GenAI configuration, TLS notes, and troubleshooting commands.
 
 ## CI/CD
 
