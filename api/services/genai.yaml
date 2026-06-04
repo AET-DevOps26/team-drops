@@ -165,6 +165,78 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       x-service: genai-service
+  /api/v1/genai/rag/topics:
+    get:
+      tags:
+      - rag
+      summary: List available RAG topics
+      operationId: listRagTopics
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagTopicsResponse'
+      x-service: genai-service
+  /api/v1/genai/rag/topics/{topic}/corpus:
+    post:
+      tags:
+      - rag
+      summary: Build or rebuild a RAG topic corpus
+      description: Reads PDFs from `RAG doc DB/{topic}` and writes corpus files under
+        `RAG doc DB/{topic}/corpus`.
+      operationId: buildRagCorpus
+      parameters:
+      - name: topic
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Topic
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagCorpusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /api/v1/genai/rag/query:
+    post:
+      tags:
+      - rag
+      summary: Answer a question using a RAG topic
+      description: Retrieves context from PDFs under `RAG doc DB/{topic}`. If the
+        corpus is missing or stale, it is rebuilt automatically under that topic's
+        `corpus` folder.
+      operationId: queryRag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RagQueryRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagQueryResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
   /health:
     get:
       tags:
@@ -520,6 +592,118 @@ components:
       - options
       - explanation
       title: ListeningQuestion
+    RagCorpusResponse:
+      properties:
+        topic:
+          type: string
+          title: Topic
+        pdf_count:
+          type: integer
+          title: Pdf Count
+        chunk_count:
+          type: integer
+          title: Chunk Count
+        corpus_dir:
+          type: string
+          title: Corpus Dir
+      type: object
+      required:
+      - topic
+      - pdf_count
+      - chunk_count
+      - corpus_dir
+      title: RagCorpusResponse
+    RagQueryRequest:
+      properties:
+        topic:
+          type: string
+          title: Topic
+          description: Folder name under RAG doc DB, e.g. 'job interview'
+          examples:
+          - job interview
+        question:
+          type: string
+          minLength: 1
+          title: Question
+          description: Question to answer from the topic corpus
+          examples:
+          - How should I answer behavioral interview questions?
+        top_k:
+          type: integer
+          maximum: 12.0
+          minimum: 1.0
+          title: Top K
+          description: Number of retrieved chunks to pass to the LLM
+          default: 5
+        rebuild_corpus:
+          type: boolean
+          title: Rebuild Corpus
+          description: Force rebuilding corpus files before retrieval
+          default: false
+      type: object
+      required:
+      - topic
+      - question
+      title: RagQueryRequest
+    RagQueryResponse:
+      properties:
+        topic:
+          type: string
+          title: Topic
+        question:
+          type: string
+          title: Question
+        answer:
+          type: string
+          title: Answer
+        sources:
+          items:
+            $ref: '#/components/schemas/RagSource'
+          type: array
+          title: Sources
+      type: object
+      required:
+      - topic
+      - question
+      - answer
+      - sources
+      title: RagQueryResponse
+    RagSource:
+      properties:
+        source:
+          type: string
+          title: Source
+        page:
+          type: integer
+          title: Page
+        chunk_index:
+          type: integer
+          title: Chunk Index
+        score:
+          type: number
+          title: Score
+        text:
+          type: string
+          title: Text
+      type: object
+      required:
+      - source
+      - page
+      - chunk_index
+      - score
+      - text
+      title: RagSource
+    RagTopicsResponse:
+      properties:
+        topics:
+          items:
+            type: string
+          type: array
+          title: Topics
+      type: object
+      required:
+      - topics
+      title: RagTopicsResponse
     SpeakingEvaluationResponse:
       properties:
         transcription:
