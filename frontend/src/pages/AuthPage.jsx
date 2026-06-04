@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Mail, UserPlus } from 'lucide-react';
 
-export function AuthPage({ t, authErrorMessage, authPending, onAuthenticated }) {
+export function AuthPage({ t, authErrorMessage, authPending, onAuthenticated, onBypass }) {
   const [mode, setMode] = React.useState('start');
   const [message, setMessage] = React.useState('');
 
@@ -92,7 +92,9 @@ export function AuthPage({ t, authErrorMessage, authPending, onAuthenticated }) 
   return (
     <>
       <header className="app-header">
-        <div className="logo-placeholder" aria-hidden="true">TD</div>
+        <button className="logo-placeholder logo-bypass-button" type="button" aria-label="Bypass login" onClick={onBypass}>
+          TD
+        </button>
         <div>
           <p className="app-label">{t.appLabel}</p>
           <h1>APP_NAME</h1>

@@ -91,6 +91,17 @@ export function LearningPage({
                 <small>{t.comingLater}</small>
               </span>
             </button>
+            <button
+              className={`mode-card ${learningMode === 'rag' ? 'selected' : ''}`}
+              type="button"
+              onClick={() => onLearningMode('rag')}
+            >
+              <Target size={22} aria-hidden="true" />
+              <span>
+                <strong>{t.ragLearning}</strong>
+                <small>{t.ragLearningDescription}</small>
+              </span>
+            </button>
           </div>
         )}
 
@@ -118,8 +129,10 @@ export function LearningPage({
               />
             )}
           </>
+        ) : learningMode === 'rag' ? (
+          <RagLearningFlow t={t} />
         ) : (
-          <AiLearningPlanForm t={t} />
+          <AiTrainingPlaceholder t={t} />
         )}
       </div>
 
@@ -135,11 +148,92 @@ const exerciseTypeOptions = [
   { id: 'speaking', label: 'Speaking' },
 ];
 
-function AiLearningPlanForm({ t }) {
+const ragTopics = [
+  {
+    id: 'job interview',
+    title: 'Job interview',
+    description: 'Practice answers, interview etiquette, follow-up, and preparation.',
+  },
+  {
+    id: 'Reisen in der Schweiz',
+    title: 'Reisen in der Schweiz',
+    description: 'Routen, Regionen, Wandern, Unterkünfte und Reiseideen in der Schweiz.',
+  },
+];
+
+function AiTrainingPlaceholder({ t }) {
+  return (
+    <section className="ai-plan-form" aria-label="AI training">
+      <section className="ai-form-hero">
+        <span className="ai-form-icon">
+          <BrainCircuit size={24} aria-hidden="true" />
+        </span>
+        <div>
+          <p>{t.aiTraining}</p>
+          <h3>{t.comingSoon}</h3>
+        </div>
+      </section>
+      <p className="empty-state no-plan-empty-state">{t.aiTrainingDescription}</p>
+    </section>
+  );
+}
+
+function RagLearningFlow({ t }) {
+  const [selectedTopic, setSelectedTopic] = React.useState(null);
+
+  if (!selectedTopic) {
+    return <RagTopicPicker t={t} onSelectTopic={setSelectedTopic} />;
+  }
+
+  return (
+    <AiLearningPlanForm
+      selectedTopic={selectedTopic}
+      t={t}
+      onBackToTopics={() => setSelectedTopic(null)}
+    />
+  );
+}
+
+function RagTopicPicker({ t, onSelectTopic }) {
+  return (
+    <section className="rag-topic-section" aria-label="RAG learning topics">
+      <section className="ai-form-hero">
+        <span className="ai-form-icon">
+          <Target size={24} aria-hidden="true" />
+        </span>
+        <div>
+          <p>{t.ragLearning}</p>
+          <h3>{t.chooseRagTopic}</h3>
+        </div>
+      </section>
+
+      <div className="rag-topic-list">
+        {ragTopics.map((topic) => (
+          <button
+            className="rag-topic-card"
+            key={topic.id}
+            type="button"
+            onClick={() => onSelectTopic(topic)}
+          >
+            <span className="rag-topic-icon">
+              <Target size={19} aria-hidden="true" />
+            </span>
+            <span>
+              <strong>{topic.title}</strong>
+              <small>{topic.description}</small>
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
   const [selectedExerciseTypes, setSelectedExerciseTypes] = React.useState(
     exerciseTypeOptions.filter((type) => !isComingSoonType(type.id)).map((type) => type.id),
   );
-  const aiUnavailableMessage = 'AI plan generation needs the backend learning service and GenAI integration to be available.';
+  const aiUnavailableMessage = 'RAG plan generation needs the backend learning service and GenAI integration to be available.';
 
   const toggleExerciseType = (exerciseType) => {
     if (isComingSoonType(exerciseType)) {
@@ -158,13 +252,18 @@ function AiLearningPlanForm({ t }) {
     <form className="ai-plan-form" aria-label="AI learning plan generator">
       <section className="ai-form-hero">
         <span className="ai-form-icon">
-          <BrainCircuit size={24} aria-hidden="true" />
+          <Target size={24} aria-hidden="true" />
         </span>
         <div>
-          <p>AI Training</p>
-          <h3>Generate learning plan</h3>
+          <p>{t.ragLearning}</p>
+          <h3>{t.generateLearningPlan}</h3>
         </div>
       </section>
+
+      <button className="rag-topic-back" type="button" onClick={onBackToTopics}>
+        <ChevronLeft size={16} aria-hidden="true" />
+        {selectedTopic.title}
+      </button>
 
       <p className="auth-error ai-plan-notice" role="status">{aiUnavailableMessage}</p>
 

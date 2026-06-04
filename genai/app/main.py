@@ -7,6 +7,7 @@ from app.config import settings
 from app.middleware.error_handler import add_error_handlers
 from app.routers.exercises import router as exercises_router
 from app.routers.listening import router as listening_router
+from app.routers.rag import router as rag_router
 from app.routers.speaking import router as speaking_router
 from app.routers.writing import router as writing_router
 
@@ -47,6 +48,7 @@ api_v1.include_router(exercises_router)
 api_v1.include_router(writing_router)
 api_v1.include_router(speaking_router)
 api_v1.include_router(listening_router)
+api_v1.include_router(rag_router)
 app.include_router(api_v1)
 
 
