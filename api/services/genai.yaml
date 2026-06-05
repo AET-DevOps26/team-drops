@@ -2,8 +2,8 @@ openapi: 3.1.0
 info:
   title: GenAI Language Learning Service
   description: 'LLM-powered microservice for the language learning platform. Provides
-    exercise generation and writing evaluation via LangChain with configurable backends
-    (Ollama or OpenAI). All routes are prefixed with `/api/v1/genai/`.
+    exercise generation, writing evaluation, and speaking practice via LangChain with
+    configurable backends (Ollama or OpenAI). All routes are prefixed with `/api/v1/genai/`.
 
 
     Interactive docs: `/docs` — Alternative docs: `/redoc`'
@@ -71,6 +71,172 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       x-service: genai-service
+  /api/v1/genai/speaking/evaluate:
+    post:
+      tags:
+      - speaking
+      summary: Evaluate a spoken answer
+      description: Transcribe the learner's audio with Whisper, then evaluate the
+        transcription against the expected answer using the configured LLM. Returns
+        a numeric score (0–10), feedback, the corrected answer, and optionally a base64-encoded
+        WAV of the corrected answer spoken aloud (when TTS is enabled).
+      operationId: evaluateSpeaking
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_evaluateSpeaking'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeakingEvaluationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /api/v1/genai/speaking/practice:
+    post:
+      tags:
+      - speaking
+      summary: Conversational speaking practice
+      description: One turn of a free-form spoken conversation with an AI character
+        in the target language. The frontend maintains the conversation history and
+        sends it with each request. On the final turn (end_session=true) the service
+        additionally returns a list of language corrections made across the full session,
+        plus a spoken audio summary.
+      operationId: speakingPractice
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_speakingPractice'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeakingPracticeResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /api/v1/genai/listening/generate:
+    post:
+      tags:
+      - listening
+      summary: Generate a listening comprehension exercise
+      description: 'Generate a short listening script in the target language at the
+        specified CEFR level. Once the script is ready, questions and audio are produced
+        concurrently: the LLM generates multiple-choice comprehension questions while
+        TTS synthesises the script as spoken audio. Returns the script text, questions
+        (four options each, exactly one correct), and an optional base64-encoded WAV
+        audio of the script (when TTS is enabled). TTS failure is non-fatal — the
+        exercise is returned without audio.'
+      operationId: generateListening
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListeningGenerateRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListeningGenerateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /api/v1/genai/rag/topics:
+    get:
+      tags:
+      - rag
+      summary: List available RAG topics
+      operationId: listRagTopics
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagTopicsResponse'
+      x-service: genai-service
+  /api/v1/genai/rag/topics/{topic}/corpus:
+    post:
+      tags:
+      - rag
+      summary: Build or rebuild a RAG topic corpus
+      description: Reads PDFs from `RAG doc DB/{topic}` and writes corpus files under
+        `RAG doc DB/{topic}/corpus`.
+      operationId: buildRagCorpus
+      parameters:
+      - name: topic
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Topic
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagCorpusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
+  /api/v1/genai/rag/query:
+    post:
+      tags:
+      - rag
+      summary: Answer a question using a RAG topic
+      description: Retrieves context from PDFs under `RAG doc DB/{topic}`. If the
+        corpus is missing or stale, it is rebuilt automatically under that topic's
+        `corpus` folder.
+      operationId: queryRag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RagQueryRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagQueryResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-service: genai-service
   /health:
     get:
       tags:
@@ -85,6 +251,87 @@ paths:
               schema: {}
 components:
   schemas:
+    Body_evaluateSpeaking:
+      properties:
+        audio:
+          type: string
+          contentMediaType: application/octet-stream
+          title: Audio
+          description: Audio recording of the learner's answer (WAV, MP3, WebM, etc.)
+        exercise_type:
+          type: string
+          title: Exercise Type
+          examples:
+          - translation
+        question:
+          type: string
+          title: Question
+          examples:
+          - 'Translate: ''The cat is on the table'''
+        expected_answer:
+          type: string
+          title: Expected Answer
+          examples:
+          - Die Katze ist auf dem Tisch
+        target_language:
+          type: string
+          title: Target Language
+          examples:
+          - German
+        level:
+          type: string
+          title: Level
+          examples:
+          - A2
+      type: object
+      required:
+      - audio
+      - exercise_type
+      - question
+      - expected_answer
+      - target_language
+      - level
+      title: Body_evaluateSpeaking
+    Body_speakingPractice:
+      properties:
+        audio:
+          type: string
+          contentMediaType: application/octet-stream
+          title: Audio
+          description: Audio of the learner's spoken turn
+        scenario:
+          type: string
+          title: Scenario
+          examples:
+          - waiter at a German restaurant
+        target_language:
+          type: string
+          title: Target Language
+          examples:
+          - German
+        level:
+          type: string
+          title: Level
+          examples:
+          - A2
+        history_json:
+          type: string
+          title: History Json
+          description: JSON-serialised list of ConversationMessage objects from previous
+            turns
+          default: '[]'
+        end_session:
+          type: boolean
+          title: End Session
+          description: Set to true on the final turn to trigger end-of-session corrections
+          default: false
+      type: object
+      required:
+      - audio
+      - scenario
+      - target_language
+      - level
+      title: Body_speakingPractice
     ExerciseContext:
       properties:
         type:
@@ -238,6 +485,367 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
+    ListeningGenerateRequest:
+      properties:
+        target_language:
+          type: string
+          title: Target Language
+          description: Language the script and questions will be written in
+          examples:
+          - German
+        level:
+          type: string
+          enum:
+          - A1
+          - A2
+          - B1
+          - B2
+          - C1
+          - C2
+          title: Level
+          description: CEFR level of the learner — controls script vocabulary and
+            grammar complexity
+          examples:
+          - B1
+        topic:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Topic
+          description: Optional topic hint for the script (e.g. 'job interview', 'travel').
+            Defaults to everyday life when omitted.
+          examples:
+          - job interview
+      type: object
+      required:
+      - target_language
+      - level
+      title: ListeningGenerateRequest
+    ListeningGenerateResponse:
+      properties:
+        script:
+          type: string
+          title: Script
+          description: The listening passage in the target language
+        questions:
+          items:
+            $ref: '#/components/schemas/ListeningQuestion'
+          type: array
+          minItems: 1
+          title: Questions
+          description: Multiple-choice comprehension questions about the script
+        script_audio_b64:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Script Audio B64
+          description: Base64-encoded WAV of the script spoken aloud (null when TTS
+            is disabled)
+      type: object
+      required:
+      - script
+      - questions
+      title: ListeningGenerateResponse
+    ListeningOption:
+      properties:
+        text:
+          type: string
+          title: Text
+          description: The option text shown to the learner
+          examples:
+          - Im Park
+        is_correct:
+          type: boolean
+          title: Is Correct
+          description: True if this is the correct answer — exactly one option per
+            question is true
+      type: object
+      required:
+      - text
+      - is_correct
+      title: ListeningOption
+    ListeningQuestion:
+      properties:
+        question:
+          type: string
+          title: Question
+          description: The question text in the target language
+          examples:
+          - Wo treffen sich die zwei Freunde?
+        options:
+          items:
+            $ref: '#/components/schemas/ListeningOption'
+          type: array
+          maxItems: 4
+          minItems: 4
+          title: Options
+          description: Exactly four answer options — exactly one must have is_correct=true
+        explanation:
+          type: string
+          title: Explanation
+          description: Why the correct answer is right — shown after the learner submits
+          examples:
+          - The text says 'treffen sich im Park', which means 'they meet in the park'.
+      type: object
+      required:
+      - question
+      - options
+      - explanation
+      title: ListeningQuestion
+    RagCorpusResponse:
+      properties:
+        topic:
+          type: string
+          title: Topic
+        pdf_count:
+          type: integer
+          title: Pdf Count
+        chunk_count:
+          type: integer
+          title: Chunk Count
+        corpus_dir:
+          type: string
+          title: Corpus Dir
+      type: object
+      required:
+      - topic
+      - pdf_count
+      - chunk_count
+      - corpus_dir
+      title: RagCorpusResponse
+    RagQueryRequest:
+      properties:
+        topic:
+          type: string
+          title: Topic
+          description: Folder name under RAG doc DB, e.g. 'job interview'
+          examples:
+          - job interview
+        question:
+          type: string
+          minLength: 1
+          title: Question
+          description: Question to answer from the topic corpus
+          examples:
+          - How should I answer behavioral interview questions?
+        top_k:
+          type: integer
+          maximum: 12.0
+          minimum: 1.0
+          title: Top K
+          description: Number of retrieved chunks to pass to the LLM
+          default: 5
+        rebuild_corpus:
+          type: boolean
+          title: Rebuild Corpus
+          description: Force rebuilding corpus files before retrieval
+          default: false
+      type: object
+      required:
+      - topic
+      - question
+      title: RagQueryRequest
+    RagQueryResponse:
+      properties:
+        topic:
+          type: string
+          title: Topic
+        question:
+          type: string
+          title: Question
+        answer:
+          type: string
+          title: Answer
+        sources:
+          items:
+            $ref: '#/components/schemas/RagSource'
+          type: array
+          title: Sources
+      type: object
+      required:
+      - topic
+      - question
+      - answer
+      - sources
+      title: RagQueryResponse
+    RagSource:
+      properties:
+        source:
+          type: string
+          title: Source
+        page:
+          type: integer
+          title: Page
+        chunk_index:
+          type: integer
+          title: Chunk Index
+        score:
+          type: number
+          title: Score
+        text:
+          type: string
+          title: Text
+      type: object
+      required:
+      - source
+      - page
+      - chunk_index
+      - score
+      - text
+      title: RagSource
+    RagTopicsResponse:
+      properties:
+        topics:
+          items:
+            type: string
+          type: array
+          title: Topics
+      type: object
+      required:
+      - topics
+      title: RagTopicsResponse
+    SpeakingEvaluationResponse:
+      properties:
+        transcription:
+          type: string
+          title: Transcription
+          description: Speech-to-text transcription of the learner's audio
+          examples:
+          - Die Katze ist an den Tisch
+        score:
+          type: number
+          maximum: 10.0
+          minimum: 0.0
+          title: Score
+          description: Numeric score 0–10 — maps to UserAnswer.score
+          examples:
+          - 6.5
+        is_correct:
+          type: boolean
+          title: Is Correct
+          description: True if the spoken answer is substantially correct
+        message:
+          type: string
+          title: Message
+          description: Full feedback covering what was wrong and why — maps to Feedback.message.
+            Should be a complete, helpful explanation suitable for storing as the
+            feedback record.
+          examples:
+          - 'Good attempt! You used ''an'' (contact/vertical surface) instead of ''auf''
+            (horizontal surface). Also check the case: ''Tisch'' requires the dative
+            ''dem'' here.'
+        weak_area:
+          type: string
+          title: Weak Area
+          description: Short category to improve — maps to Feedback.weakArea
+          examples:
+          - preposition usage
+        corrected_answer:
+          type: string
+          title: Corrected Answer
+          description: The corrected version of the learner's answer — for frontend
+            display
+          examples:
+          - Die Katze ist auf dem Tisch
+        feedback_audio_b64:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Feedback Audio B64
+          description: Base64-encoded WAV audio of corrected_answer spoken aloud (null
+            when TTS is disabled)
+      type: object
+      required:
+      - transcription
+      - score
+      - is_correct
+      - message
+      - weak_area
+      - corrected_answer
+      title: SpeakingEvaluationResponse
+      description: 'AI evaluation of a spoken answer.
+
+        score and feedback fields mirror WritingEvaluationResponse so both map to
+
+        the same UserAnswer + Feedback domain objects in the backend.
+
+        transcription is the raw Whisper output — useful for displaying what was heard.
+
+        feedback_audio_b64 is a base64-encoded WAV of the corrected answer spoken
+        aloud
+
+        (only present when TTS is enabled).'
+    SpeakingPracticeResponse:
+      properties:
+        transcription:
+          type: string
+          title: Transcription
+          description: Whisper transcription of the learner's audio for this turn
+        ai_response_text:
+          type: string
+          title: Ai Response Text
+          description: AI character's reply in the target language
+        ai_response_audio_b64:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ai Response Audio B64
+          description: Base64-encoded WAV of the AI's reply spoken aloud
+        session_corrections:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/TurnCorrection'
+            type: array
+          - type: 'null'
+          title: Session Corrections
+          description: Language errors found across the full session — only present
+            on the final turn
+        corrections_audio_b64:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Corrections Audio B64
+          description: Base64-encoded WAV of the corrections summary spoken aloud
+            — only on the final turn
+      type: object
+      required:
+      - transcription
+      - ai_response_text
+      title: SpeakingPracticeResponse
+      description: 'Response for one turn of a speaking practice conversation.
+
+        On normal turns only transcription + AI reply are populated.
+
+        On the final turn (end_session=true) session_corrections and corrections_audio_b64
+
+        are also populated.'
+    TurnCorrection:
+      properties:
+        original:
+          type: string
+          title: Original
+          description: What the learner actually said
+          examples:
+          - Ich möchte ein Kaffee
+        corrected:
+          type: string
+          title: Corrected
+          description: What they should have said
+          examples:
+          - Ich möchte einen Kaffee
+        explanation:
+          type: string
+          title: Explanation
+          description: Short grammar or vocabulary note
+          examples:
+          - '''Kaffee'' is masculine, so the accusative article is ''einen'' not ''ein'''
+      type: object
+      required:
+      - original
+      - corrected
+      - explanation
+      title: TurnCorrection
+      description: A single language error identified across the session.
     ValidationError:
       properties:
         loc:
