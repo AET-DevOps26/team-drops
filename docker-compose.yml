@@ -65,9 +65,15 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/teamdrops
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      LEARNING_SERVICE_URL: http://learning-service:8082
+      GENAI_SERVICE_URL: http://genai-service:8084
     depends_on:
       postgres:
         condition: service_healthy
+      learning-service:
+        condition: service_started
+      genai-service:
+        condition: service_started
 
   genai-service:
     build:
@@ -80,8 +86,8 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b}
       MONGO_URL: mongodb://mongo:27017
       RAG_DOC_DB_PATH: /app/RAG doc DB
       WHISPER_MODEL: ${WHISPER_MODEL:-base}
@@ -91,6 +97,7 @@ services:
       PREWARM_MODELS: ${PREWARM_MODELS:-false}
     depends_on:
       - mongo
+      - ollama-pull
 
   frontend:
     build:
@@ -111,12 +118,30 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
-    profiles:
-      - ollama
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    healthcheck:
+      test: [ "CMD-SHELL", "ollama list >/dev/null 2>&1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: ollama-pull
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b}
+    command:
+      - sh
+      - -c
+      - ollama pull ${OLLAMA_MODEL:-llama3.2:1b}
+    restart: "no"
 
 volumes:
   postgres_data:

@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+MAX_DATABASE_TEXT_LENGTH = 254
+
+
+def _shorten_for_database(value: str | None) -> str | None:
+    if value is None or len(value) <= MAX_DATABASE_TEXT_LENGTH:
+        return value
+
+    return value[: MAX_DATABASE_TEXT_LENGTH - 3].rstrip() + "..."
 
 
 class WritingEvaluationRequest(BaseModel):
@@ -24,7 +34,7 @@ class WritingEvaluationRequest(BaseModel):
     expected_answer: str = Field(
         ...,
         description="The canonical correct answer",
-        examples=["Je voudrais un café, s'il vous plaît"],
+        examples=["Je voudrais un cafe, s'il vous plait"],
     )
     user_answer: str = Field(
         ...,
@@ -46,7 +56,7 @@ class WritingEvaluationResponse(BaseModel):
         ...,
         ge=0.0,
         le=10.0,
-        description="Numeric score 0–10 — maps to UserAnswer.score",
+        description="Numeric score 0-10, maps to UserAnswer.score",
         examples=[6.5],
     )
     is_correct: bool = Field(
@@ -55,21 +65,28 @@ class WritingEvaluationResponse(BaseModel):
     )
     message: str = Field(
         ...,
+        max_length=MAX_DATABASE_TEXT_LENGTH,
         description=(
-            "Full feedback including what was wrong and why — maps to Feedback.message. "
-            "Should be a complete, helpful explanation suitable for storing as the feedback record."
+            "Brief feedback including what was wrong and why. Must be shorter "
+            "than 255 characters because it maps to Feedback.message."
         ),
         examples=[
-            "Good attempt! 'voudrais' needs a conditional ending (-ais not -ai), and French requires accents: 'café' not 'cafe'. Otherwise the structure is correct."
+            "Good attempt. Use the conditional 'voudrais' and include the accent in 'cafe'."
         ],
     )
     weak_area: str = Field(
         ...,
-        description="Short grammatical/lexical category to improve — maps to Feedback.weakArea",
+        description="Short grammatical or lexical category to improve",
         examples=["accents and diacritics"],
     )
     corrected_answer: str = Field(
         ...,
-        description="The corrected version of the learner's answer — for frontend display",
-        examples=["Je voudrais un café, s'il vous plaît"],
+        max_length=MAX_DATABASE_TEXT_LENGTH,
+        description="The corrected version of the learner's answer",
+        examples=["Je voudrais un cafe, s'il vous plait"],
     )
+
+    @field_validator("message", "corrected_answer", mode="before")
+    @classmethod
+    def shorten_database_text(cls, value: str) -> str:
+        return _shorten_for_database(value)

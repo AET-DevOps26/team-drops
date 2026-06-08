@@ -487,7 +487,9 @@ Request:
   "answer_text": "I am studying computer science and I enjoy building backend systems.",
   "client_context": {
     "lesson_id": 100,
-    "plan_id": 10
+    "plan_id": 10,
+    "target_language": "German",
+    "level": "A2"
   }
 }
 ```
