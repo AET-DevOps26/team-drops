@@ -31,7 +31,7 @@ public class ExerciseService {
     }
 
     public List<Exercise> findByLessonId(Long lessonId) {
-        return exerciseRepository.findByLessonId(lessonId);
+        return exerciseRepository.findByLessonIdOrderByIdAsc(lessonId);
     }
 
     public void deleteById(Long id) {
@@ -46,7 +46,7 @@ public class ExerciseService {
             exercise.getLessonId(),
             type,
             subtype,
-            buildTitle(type),
+            exercise.getQuestion(),
             exercise.getQuestion(),
             exercise.getDifficulty(),
             exercise.getExpectedAnswer(),
@@ -99,15 +99,6 @@ public class ExerciseService {
             case MULTIPLE_CHOICE, LISTENING_CHOICE -> ExerciseType.READING;
             case SPEAKING_PROMPT -> ExerciseType.SPEAKING;
             case TRANSLATION, FILL_IN_BLANK, SENTENCE_BUILDING, FREE_TEXT -> ExerciseType.WRITING;
-        };
-    }
-
-    private String buildTitle(ExerciseType type) {
-        return switch (type) {
-            case READING -> "Reading practice";
-            case LISTENING -> "Listening practice";
-            case SPEAKING -> "Speaking practice";
-            case WRITING -> "Writing practice";
         };
     }
 

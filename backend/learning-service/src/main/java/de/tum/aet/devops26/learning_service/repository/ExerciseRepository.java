@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ExerciseRepository extends JpaRepository<Exercise, Long> {
 
-    List<Exercise> findByLessonId(Long lessonId);
+    List<Exercise> findByLessonIdOrderByIdAsc(Long lessonId);
 }

@@ -97,7 +97,7 @@ export function AuthPage({ t, authErrorMessage, authPending, onAuthenticated, on
         </button>
         <div>
           <p className="app-label">{t.appLabel}</p>
-          <h1>APP_NAME</h1>
+          <h1>InterviewMate</h1>
         </div>
       </header>
 

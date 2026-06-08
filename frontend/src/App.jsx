@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  createDefaultLearningPlan,
   createUser,
   getLearningPlans,
   getLesson,
@@ -266,9 +267,25 @@ export function App() {
     const nextProfile = profileResult.status === 'fulfilled'
       ? toProfile(profileResult.value, currentSession.user)
       : toProfile(null, currentSession.user);
-    const nextLearningPlans = learningPlansResult.status === 'fulfilled'
+    let learningPlansError = learningPlansResult.status === 'rejected' ? learningPlansResult.reason : null;
+    let nextLearningPlans = learningPlansResult.status === 'fulfilled'
       ? toLearningPlans(learningPlansResult.value)
       : [];
+
+    if (learningPlansResult.status === 'rejected' && learningPlansResult.reason?.status === 404) {
+      try {
+        const defaultPlan = await createDefaultLearningPlan({
+          user_id: userId,
+          target_language: nextProfile.targetLanguage,
+          current_level: nextProfile.currentLevel,
+          learning_goal: nextProfile.learningGoal,
+        }, token);
+        nextLearningPlans = toLearningPlans([defaultPlan]);
+        learningPlansError = null;
+      } catch (error) {
+        learningPlansError = error;
+      }
+    }
     const nextProgress = progressResult.status === 'fulfilled'
       ? toProgressSummary(progressResult.value, nextLearningPlans)
       : createEmptyProgress(userId);
@@ -288,8 +305,8 @@ export function App() {
       setProfileError(profileResult.reason.message);
     }
 
-    if (learningPlansResult.status === 'rejected' && learningPlansResult.reason?.status !== 404) {
-      setDashboardError(learningPlansResult.reason.message);
+    if (learningPlansError) {
+      setDashboardError(learningPlansError.message);
     }
 
     if (progressResult.status === 'rejected' && progressResult.reason?.status !== 404) {
@@ -552,7 +569,7 @@ export function App() {
       <div className="phone-frame" aria-label="Phone app preview">
         <div className="phone-speaker" aria-hidden="true"></div>
 
-        <section className={`app-shell ${darkMode ? 'dark-mode' : ''}`} aria-label="APP_NAME">
+        <section className={`app-shell ${darkMode ? 'dark-mode' : ''}`} aria-label="InterviewMate">
           <div className="status-bar" aria-hidden="true">
             <span>9:41</span>
             <span>LTE 100%</span>

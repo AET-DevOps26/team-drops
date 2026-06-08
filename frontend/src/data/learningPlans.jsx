@@ -158,11 +158,6 @@ function createDefaultBlocks(config) {
       type: 'exercise',
       exerciseIndex: 3,
     },
-    {
-      type: 'summary',
-      title: 'Lesson summary',
-      text: config.summary,
-    },
   ];
 }
 
