@@ -52,6 +52,12 @@ public class UserAnswerService {
         return userAnswerRepository.findByUserId(userId);
     }
 
+    public List<UserAnswerResponse> findResponsesByUserId(Long userId) {
+        return findByUserId(userId).stream()
+            .map(this::toResponse)
+            .toList();
+    }
+
     public List<UserAnswer> findByExerciseId(Long exerciseId) {
         return userAnswerRepository.findByExerciseId(exerciseId);
     }
