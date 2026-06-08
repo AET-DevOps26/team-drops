@@ -61,7 +61,7 @@ jobs:
             image: team-drops-progress-feedback-service
             description: Team Drops progress and feedback service
           - service: genai-service
-            context: ./genai
+            context: .
             dockerfile: ./genai/Dockerfile
             image: team-drops-genai-service
             description: Team Drops GenAI service
