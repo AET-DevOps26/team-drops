@@ -11,6 +11,8 @@ info:
 servers:
 - url: http://localhost:8084
   description: GenAI Service (local)
+security:
+  - bearerAuth: []
 paths:
   /api/v1/genai/exercises/generate:
     post:
@@ -243,6 +245,7 @@ paths:
       - ops
       summary: Health
       operationId: health_health_get
+      security: []
       responses:
         '200':
           description: Successful Response
@@ -250,6 +253,11 @@ paths:
             application/json:
               schema: {}
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     Body_evaluateSpeaking:
       properties:

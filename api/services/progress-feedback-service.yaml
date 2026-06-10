@@ -5,6 +5,8 @@ info:
 servers:
   - url: http://localhost:8083
     description: Progress-Feedback Service
+security:
+  - bearerAuth: []
 paths:
   /api/v1/answers:
     post:
@@ -97,6 +99,11 @@ paths:
           $ref: '../base.yaml#/components/responses/NotFound'
       x-service: progress-feedback-service
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     LearningStatus:
       type: string
