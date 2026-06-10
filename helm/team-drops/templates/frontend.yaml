@@ -39,6 +39,15 @@ spec:
           ports:
             - name: frontend
               containerPort: {{ .Values.frontend.port }}
+          env:
+            - name: VITE_AUTH_ENABLED
+              value: {{ .Values.auth.enabled | quote }}
+            - name: VITE_KEYCLOAK_URL
+              value: {{ default "http://localhost:8090" .Values.frontend.keycloakUrl | quote }}
+            - name: VITE_KEYCLOAK_REALM
+              value: {{ .Values.keycloak.realm | quote }}
+            - name: VITE_KEYCLOAK_CLIENT_ID
+              value: {{ .Values.auth.clientId | quote }}
           readinessProbe:
             httpGet:
               path: /

@@ -6,10 +6,54 @@ image:
 
 imagePullSecrets: []
 
+auth:
+  enabled: false
+  # Public issuer URL expected in browser-issued tokens.
+  issuerUri: ""
+  # Internal/service JWKS URL used by backends to fetch signing keys.
+  jwksUri: ""
+  audience: ""
+  clientId: team-drops
+  clientSecret: ""
+
+keycloak:
+  enabled: false
+  image: quay.io/keycloak/keycloak:26.0
+  adminUsername: admin
+  adminPassword: admin
+  realm: team-drops
+  port: 8080
+  redirectUris:
+    - http://localhost:3000/*
+  webOrigins:
+    - "+"
+
+oauth2Proxy:
+  enabled: false
+  image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
+  replicaCount: 1
+  port: 4180
+  cookieSecret: ""
+  clientId: team-drops
+  clientSecret: ""
+  issuerUrl: ""
+  redirectUrl: ""
+  cookieSecure: true
+  emailDomains:
+    - "*"
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
 frontend:
   replicaCount: 1
   port: 80
   image: team-drops-frontend
+  keycloakUrl: ""
   resources:
     requests:
       cpu: 50m

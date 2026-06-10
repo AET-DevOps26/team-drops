@@ -1,0 +1,90 @@
+{{- if .Values.oauth2Proxy.enabled }}
+{{- $issuerUrl := default (printf "http://keycloak:%v/realms/%s" .Values.keycloak.port .Values.keycloak.realm) .Values.oauth2Proxy.issuerUrl }}
+{{- $redirectUrl := default (printf "https://%s/oauth2/callback" (include "team-drops.requiredIngressHost" .)) .Values.oauth2Proxy.redirectUrl }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth-proxy
+spec:
+  selector:
+    {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "oauth2-proxy") | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.oauth2Proxy.port }}
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth-proxy
+spec:
+  replicas: {{ .Values.oauth2Proxy.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "oauth2-proxy") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "team-drops.labels" . | nindent 8 }}
+        {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "oauth2-proxy") | nindent 8 }}
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: {{ .Values.oauth2Proxy.image | quote }}
+          args:
+            - --provider=oidc
+            - --oidc-issuer-url={{ $issuerUrl }}
+            - --redirect-url={{ $redirectUrl }}
+            - --http-address=0.0.0.0:{{ .Values.oauth2Proxy.port }}
+            - --upstream=static://202
+            - --reverse-proxy=true
+            - --cookie-secure={{ .Values.oauth2Proxy.cookieSecure }}
+            - --skip-provider-button=true
+            - --skip-auth-preflight=true
+            - --skip-jwt-bearer-tokens=true
+            {{- if .Values.auth.audience }}
+            - --oidc-extra-audience={{ .Values.auth.audience }}
+            {{- end }}
+            - --set-xauthrequest=true
+            - --pass-access-token=true
+            - --set-authorization-header=true
+            {{- range .Values.oauth2Proxy.emailDomains }}
+            - --email-domain={{ . }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.oauth2Proxy.port }}
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              value: {{ default .Values.auth.clientId .Values.oauth2Proxy.clientId | quote }}
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: OAUTH2_PROXY_CLIENT_SECRET
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: OAUTH2_PROXY_COOKIE_SECRET
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.oauth2Proxy.resources | nindent 12 }}
+{{- end }}

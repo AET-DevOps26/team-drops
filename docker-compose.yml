@@ -24,6 +24,20 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    command:
+      - start-dev
+      - --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/team-drops-realm.json:ro
+
   user-service:
     build:
       context: .
@@ -35,6 +49,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/teamdrops
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-http://localhost:8090/realms/team-drops}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs}
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,6 +67,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/teamdrops
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-http://localhost:8090/realms/team-drops}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs}
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,6 +87,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       LEARNING_SERVICE_URL: http://learning-service:8082
       GENAI_SERVICE_URL: http://genai-service:8084
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-http://localhost:8090/realms/team-drops}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs}
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,6 +113,10 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b}
       MONGO_URL: mongodb://mongo:27017
       RAG_DOC_DB_PATH: /app/RAG doc DB
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-http://localhost:8090/realms/team-drops}
+      KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs}
+      KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-}
       WHISPER_MODEL: ${WHISPER_MODEL:-base}
       TTS_ENABLED: ${TTS_ENABLED:-false}
       KOKORO_MODEL_PATH: ${KOKORO_MODEL_PATH:-}
@@ -102,6 +129,11 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_AUTH_ENABLED: ${AUTH_ENABLED:-false}
+        VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://localhost:8090}
+        VITE_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-team-drops}
+        VITE_KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-team-drops}
     container_name: frontend
     ports:
       - "3000:80"
@@ -109,6 +141,10 @@ services:
       VITE_USER_SERVICE_URL: http://user-service:8081
       VITE_LEARNING_SERVICE_URL: http://learning-service:8082
       VITE_PROGRESS_SERVICE_URL: http://progress-feedback-service:8083
+      VITE_AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://localhost:8090}
+      VITE_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-team-drops}
+      VITE_KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-team-drops}
     depends_on:
       - user-service
       - learning-service

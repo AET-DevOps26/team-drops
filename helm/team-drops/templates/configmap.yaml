@@ -7,6 +7,20 @@ metadata:
 data:
   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:{{ .Values.postgres.port }}/{{ .Values.postgres.database }}"
   MONGO_URL: "mongodb://mongo:{{ .Values.mongo.port }}"
+  AUTH_ENABLED: {{ .Values.auth.enabled | quote }}
+  {{- if .Values.auth.enabled }}
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: {{ default (printf "http://keycloak:%v/realms/%s" .Values.keycloak.port .Values.keycloak.realm) .Values.auth.issuerUri | quote }}
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: {{ default (printf "http://keycloak:%v/realms/%s/protocol/openid-connect/certs" .Values.keycloak.port .Values.keycloak.realm) .Values.auth.jwksUri | quote }}
+  KEYCLOAK_ISSUER_URI: {{ default (printf "http://keycloak:%v/realms/%s" .Values.keycloak.port .Values.keycloak.realm) .Values.auth.issuerUri | quote }}
+  KEYCLOAK_JWKS_URI: {{ default (printf "http://keycloak:%v/realms/%s/protocol/openid-connect/certs" .Values.keycloak.port .Values.keycloak.realm) .Values.auth.jwksUri | quote }}
+  {{- else }}
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ""
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ""
+  KEYCLOAK_ISSUER_URI: ""
+  KEYCLOAK_JWKS_URI: ""
+  {{- end }}
+  KEYCLOAK_CLIENT_ID: {{ .Values.auth.clientId | quote }}
+  KEYCLOAK_AUDIENCE: {{ .Values.auth.audience | quote }}
   LLM_PROVIDER: {{ .Values.genai.llmProvider | quote }}
   LLM_MODEL: {{ .Values.genai.llmModel | quote }}
   OLLAMA_BASE_URL: {{ ternary (printf "http://ollama:%v" .Values.ollama.port) .Values.genai.ollamaBaseUrl .Values.ollama.enabled | quote }}
