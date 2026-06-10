@@ -1,17 +1,24 @@
 import React from 'react';
 import {
   createDefaultLearningPlan,
-  createUser,
+  getCurrentUser,
   getLearningPlans,
   getLesson,
   getFeedbackByAnswerId,
   getProgress,
   getUserProfile,
   getUserAnswers,
-  login,
   submitAnswer,
   updateUserProfile,
 } from './api/client';
+import {
+  authEnabled,
+  getValidAccessToken,
+  initializeAuth,
+  loginWithKeycloak,
+  logoutFromKeycloak,
+  registerWithKeycloak,
+} from './auth/keycloak';
 import {
   attachSubmissionToLesson,
   attachSavedAnswersToLesson,
@@ -347,6 +354,64 @@ export function App() {
     return { nextLearningPlans, nextProgress };
   }, [targetLanguage]);
 
+  React.useEffect(() => {
+    if (!authEnabled) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function bootstrapOidcSession() {
+      setAuthPending(true);
+      setAuthError('');
+      setLoadingInitialData(true);
+
+      try {
+        const authenticated = await initializeAuth();
+        if (!authenticated || cancelled) {
+          return;
+        }
+
+        const accessToken = await getValidAccessToken();
+        if (!accessToken) {
+          return;
+        }
+
+        const user = await getCurrentUser(accessToken);
+        if (cancelled) {
+          return;
+        }
+
+        const nextSession = {
+          user,
+          accessToken,
+          tokenType: 'Bearer',
+        };
+
+        setSession(nextSession);
+        await syncLearningData(nextSession);
+        if (!cancelled) {
+          goToMain();
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setAuthError(error.message || 'Unable to complete Keycloak sign in.');
+        }
+      } finally {
+        if (!cancelled) {
+          setAuthPending(false);
+          setLoadingInitialData(false);
+        }
+      }
+    }
+
+    bootstrapOidcSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [syncLearningData]);
+
   const loadLessonDetail = React.useCallback(async (planIndex, lessonIndex, currentSession) => {
     const selectedPlanSummary = learningPlans[planIndex];
     const selectedLessonSummary = selectedPlanSummary?.lessons[lessonIndex];
@@ -416,7 +481,7 @@ export function App() {
     setScreen('main');
   };
 
-  const logout = () => {
+  const resetSessionState = () => {
     setSession(null);
     setAuthError('');
     setDashboardError('');
@@ -432,47 +497,32 @@ export function App() {
     setSettingsClosing(false);
   };
 
+  const logout = () => {
+    resetSessionState();
+    if (authEnabled) {
+      logoutFromKeycloak().catch(() => {
+        setAuthError('Unable to complete Keycloak logout.');
+      });
+    }
+  };
+
   const applyProfileState = React.useCallback((nextProfile) => {
     setProfile(nextProfile);
     setTargetLanguage(nextProfile.targetLanguage);
   }, []);
 
-  const handleAuthentication = async (mode, payload) => {
-    setAuthPending(true);
+  const handleLogin = () => {
     setAuthError('');
-    setDashboardError('');
-    setProfileError('');
+    loginWithKeycloak().catch((error) => {
+      setAuthError(error.message || 'Unable to start Keycloak sign in.');
+    });
+  };
 
-    try {
-      if (mode === 'register') {
-        await createUser({
-          name: payload.name,
-          email: payload.email,
-          password: payload.password,
-        });
-      }
-
-      const loginResponse = await login({
-        email: payload.email,
-        password: payload.password,
-      });
-
-      const nextSession = {
-        user: loginResponse.user,
-        accessToken: loginResponse.access_token,
-        tokenType: loginResponse.token_type,
-      };
-
-      setSession(nextSession);
-      setLoadingInitialData(true);
-      await syncLearningData(nextSession);
-      goToMain();
-    } catch (error) {
-      setAuthError(error.message || 'Unable to sign in.');
-    } finally {
-      setAuthPending(false);
-      setLoadingInitialData(false);
-    }
+  const handleRegister = () => {
+    setAuthError('');
+    registerWithKeycloak().catch((error) => {
+      setAuthError(error.message || 'Unable to start Keycloak registration.');
+    });
   };
 
   const openLessonFromDashboard = (planIndex, lessonIndex) => {
@@ -634,10 +684,12 @@ export function App() {
 
           {screen === 'auth' && (
             <AuthPage
+              authEnabled={authEnabled}
               authErrorMessage={authError}
               authPending={authPending}
               t={t}
-              onAuthenticated={handleAuthentication}
+              onLogin={handleLogin}
+              onRegister={handleRegister}
               onBypass={bypassAuth}
             />
           )}

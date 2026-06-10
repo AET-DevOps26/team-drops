@@ -1,3 +1,5 @@
+import { getValidAccessToken } from '../auth/keycloak';
+
 // Always use relative service paths from the browser so requests go through
 // the dev server proxy (or the same-origin server in production). Avoid
 // embedding Docker-internal hostnames into client-side code because the
@@ -42,11 +44,12 @@ async function parseResponse(response) {
 
 async function request(service, path, { method = 'GET', token, body } = {}) {
   let response;
+  const resolvedToken = token ? await getValidAccessToken().then((refreshedToken) => refreshedToken ?? token) : token;
 
   try {
     response = await fetch(`${serviceBaseUrls[service]}${path}`, {
       method,
-      headers: buildHeaders(token, body !== undefined),
+      headers: buildHeaders(resolvedToken, body !== undefined),
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (cause) {
@@ -59,18 +62,8 @@ async function request(service, path, { method = 'GET', token, body } = {}) {
   return parseResponse(response);
 }
 
-export function login(credentials) {
-  return request('user', '/api/v1/auth/login', {
-    method: 'POST',
-    body: credentials,
-  });
-}
-
-export function createUser(payload) {
-  return request('user', '/api/v1/users', {
-    method: 'POST',
-    body: payload,
-  });
+export function getCurrentUser(token) {
+  return request('user', '/api/v1/users/me', { token });
 }
 
 export function getUserProfile(userId, token) {

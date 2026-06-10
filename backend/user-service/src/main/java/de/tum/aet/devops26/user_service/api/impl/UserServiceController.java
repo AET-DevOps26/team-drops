@@ -2,9 +2,6 @@ package de.tum.aet.devops26.user_service.api.impl;
 
 import de.tum.aet.devops26.user_service.api.UserServiceApi;
 import de.tum.aet.devops26.user_service.dto.CreateUserProfileRequest;
-import de.tum.aet.devops26.user_service.dto.CreateUserRequest;
-import de.tum.aet.devops26.user_service.dto.LoginRequest;
-import de.tum.aet.devops26.user_service.dto.LoginResponse;
 import de.tum.aet.devops26.user_service.dto.UpsertUserProfileRequest;
 import de.tum.aet.devops26.user_service.dto.UserProfileResponse;
 import de.tum.aet.devops26.user_service.dto.UserResponse;
@@ -13,6 +10,8 @@ import de.tum.aet.devops26.user_service.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -21,13 +20,6 @@ public class UserServiceController implements UserServiceApi {
 
     private final UserService userService;
     private final UserProfileService userProfileService;
-
-    @Override
-    public ResponseEntity<UserResponse> createUser(CreateUserRequest createUserRequest) {
-        return userService.createUser(createUserRequest)
-            .map(user -> ResponseEntity.status(HttpStatus.CREATED).body(user))
-            .orElseGet(() -> ResponseEntity.status(409).build());
-    }
 
     @Override
     public ResponseEntity<UserProfileResponse> createUserProfile(
@@ -47,10 +39,9 @@ public class UserServiceController implements UserServiceApi {
     }
 
     @Override
-    public ResponseEntity<LoginResponse> loginUser(LoginRequest loginRequest) {
-        return userService.loginUser(loginRequest)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<UserResponse> getCurrentUser() {
+        JwtAuthenticationToken authentication = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(userService.getOrCreateOidcUser(authentication.getToken()));
     }
 
     @Override
