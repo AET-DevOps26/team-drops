@@ -20,8 +20,6 @@ servers:
     description: Progress-Feedback Service
   - url: http://localhost:8084
     description: GenAI Service
-security:
-  - bearerAuth: []
 tags:
   - name: User Service
     description: User and profile APIs
@@ -77,6 +75,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/writing/evaluate:
     post:
@@ -109,6 +109,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/speaking/evaluate:
     post:
@@ -141,6 +143,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/speaking/practice:
     post:
@@ -173,6 +177,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/listening/generate:
     post:
@@ -207,6 +213,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/rag/topics:
     get:
@@ -221,6 +229,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RagTopicsResponse'
+      security:
+        - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/rag/topics/{topic}/corpus:
     post:
@@ -231,6 +241,8 @@ paths:
         Reads PDFs from `RAG doc DB/{topic}` and writes corpus files under `RAG
         doc DB/{topic}/corpus`.
       operationId: buildRagCorpus
+      security:
+        - HTTPBearer: []
       parameters:
         - name: topic
           in: path
@@ -281,6 +293,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        - HTTPBearer: []
       x-service: genai-service
   /health:
     get:
@@ -288,7 +302,6 @@ paths:
         - ops
       summary: Health
       operationId: health_health_get
-      security: []
       responses:
         '200':
           description: Successful Response
@@ -317,6 +330,8 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
       x-service: learning-service
+      security:
+        - bearerAuth: []
   /api/v1/learning-plans/ai:
     post:
       tags:
@@ -343,6 +358,8 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
       x-service: learning-service
+      security:
+        - bearerAuth: []
   /api/v1/learning-plans/user/{user_id}:
     get:
       tags:
@@ -363,6 +380,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: learning-service
+      security:
+        - bearerAuth: []
   /api/v1/lessons/{lesson_id}:
     get:
       tags:
@@ -381,6 +400,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: learning-service
+      security:
+        - bearerAuth: []
   /api/v1/lessons/{lesson_id}/ai-exercises:
     post:
       tags:
@@ -410,6 +431,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: learning-service
+      security:
+        - bearerAuth: []
   /api/v1/answers:
     post:
       tags:
@@ -438,6 +461,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: progress-feedback-service
+      security:
+        - bearerAuth: []
   /api/v1/answers/{answer_id}/feedback:
     get:
       tags:
@@ -462,6 +487,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: progress-feedback-service
+      security:
+        - bearerAuth: []
   /api/v1/answers/user/{user_id}:
     get:
       tags:
@@ -482,6 +509,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: progress-feedback-service
+      security:
+        - bearerAuth: []
   /api/v1/progress/user/{user_id}:
     get:
       tags:
@@ -500,6 +529,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: progress-feedback-service
+      security:
+        - bearerAuth: []
   /api/v1/users/me:
     get:
       tags:
@@ -516,6 +547,8 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
       x-service: user-service
+      security:
+        - bearerAuth: []
   /api/v1/users/{user_id}:
     get:
       tags:
@@ -534,6 +567,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: user-service
+      security:
+        - bearerAuth: []
   /api/v1/users/{user_id}/profile:
     put:
       tags:
@@ -560,6 +595,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: user-service
+      security:
+        - bearerAuth: []
     post:
       tags:
         - User Service
@@ -585,6 +622,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: user-service
+      security:
+        - bearerAuth: []
     get:
       tags:
         - User Service
@@ -602,12 +641,17 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: user-service
+      security:
+        - bearerAuth: []
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    HTTPBearer:
+      type: http
+      scheme: bearer
   parameters:
     UserIdPath:
       name: user_id

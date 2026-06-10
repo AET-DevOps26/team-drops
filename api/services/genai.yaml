@@ -11,8 +11,6 @@ info:
 servers:
 - url: http://localhost:8084
   description: GenAI Service (local)
-security:
-  - bearerAuth: []
 paths:
   /api/v1/genai/exercises/generate:
     post:
@@ -42,6 +40,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/writing/evaluate:
     post:
@@ -72,6 +72,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/speaking/evaluate:
     post:
@@ -102,6 +104,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/speaking/practice:
     post:
@@ -133,6 +137,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/listening/generate:
     post:
@@ -166,6 +172,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/rag/topics:
     get:
@@ -180,6 +188,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RagTopicsResponse'
+      security:
+      - HTTPBearer: []
       x-service: genai-service
   /api/v1/genai/rag/topics/{topic}/corpus:
     post:
@@ -189,6 +199,8 @@ paths:
       description: Reads PDFs from `RAG doc DB/{topic}` and writes corpus files under
         `RAG doc DB/{topic}/corpus`.
       operationId: buildRagCorpus
+      security:
+      - HTTPBearer: []
       parameters:
       - name: topic
         in: path
@@ -238,6 +250,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
       x-service: genai-service
   /health:
     get:
@@ -245,7 +259,6 @@ paths:
       - ops
       summary: Health
       operationId: health_health_get
-      security: []
       responses:
         '200':
           description: Successful Response
@@ -253,11 +266,6 @@ paths:
             application/json:
               schema: {}
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
   schemas:
     Body_evaluateSpeaking:
       properties:
@@ -990,3 +998,7 @@ components:
         score maps to UserAnswer.score; message and weak_area map directly to
 
         the Feedback entity (Feedback.message, Feedback.weakArea) in the backend.'
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer
