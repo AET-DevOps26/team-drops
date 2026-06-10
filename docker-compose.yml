@@ -104,7 +104,7 @@ services:
       context: ./frontend
     container_name: frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
     environment:
       VITE_USER_SERVICE_URL: http://user-service:8081
       VITE_LEARNING_SERVICE_URL: http://learning-service:8082
