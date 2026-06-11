@@ -1,0 +1,59 @@
+[
+  {
+    "key": "job-interview",
+    "title": "Job Interview Preparation",
+    "description": "Fixed lessons for practicing professional job interview answers.",
+    "duration": "2 weeks",
+    "defaultGoal": "Prepare for a professional job interview",
+    "defaultLanguage": "English",
+    "defaultLevel": "A2",
+    "defaultExpectedAnswer": "Write a clear, professional answer using specific details and formal vocabulary.",
+    "lessons": [
+      {
+        "title": "Self Introduction",
+        "topic": "Introduce yourself professionally in an interview.",
+        "exercises": [
+          "Tell me about yourself.",
+          "Write a short professional introduction.",
+          "Improve your introduction using more formal vocabulary."
+        ]
+      },
+      {
+        "title": "Education and Background",
+        "topic": "Explain your studies, university, and academic background.",
+        "exercises": [
+          "Describe your degree and specialization.",
+          "Explain why you chose your field.",
+          "Practice saying your graduation status clearly."
+        ]
+      },
+      {
+        "title": "Work Experience and Internships",
+        "topic": "Talk about previous internships, jobs, or projects.",
+        "exercises": [
+          "Describe one internship or work experience.",
+          "Explain your responsibilities.",
+          "Mention what you learned from the experience."
+        ]
+      },
+      {
+        "title": "Project Explanation",
+        "topic": "Present a technical or academic project clearly.",
+        "exercises": [
+          "Describe one project you worked on.",
+          "Explain the problem, your solution, and your role.",
+          "Simplify a technical explanation for a non-technical interviewer."
+        ]
+      },
+      {
+        "title": "Strengths and Weaknesses",
+        "topic": "Answer common HR questions about strengths and weaknesses.",
+        "exercises": [
+          "Name two strengths with examples.",
+          "Explain one weakness professionally.",
+          "Rewrite weak answers into stronger interview answers."
+        ]
+      }
+    ]
+  }
+]
