@@ -29,8 +29,9 @@ team-drops/
 │   ├── user-service/               # Spring Boot — user registration, login, profiles (port 8081)
 │   ├── learning-service/           # Spring Boot — learning plans, lessons, exercises (port 8082)
 │   └── progress-feedback-service/  # Spring Boot — answers, feedback, progress (port 8083)
-├── frontend/                       # React + TypeScript (Vite) — client UI (port 3000)
+├── frontend/                       # React + TypeScript (Vite) — client UI, served by Nginx in Kubernetes
 ├── genai/                          # Python + FastAPI — LLM-powered generation and feedback (port 8084)
+├── helm/team-drops/                # Helm chart for Rancher/Kubernetes deployment
 ├── shared/                         # Shared TypeScript types mirroring the backend domain model
 ├── docs/                           # Architecture diagrams and project proposal
 ├── .env.example                    # Environment variable reference
@@ -133,7 +134,8 @@ npx openapi-typescript api/openapi.yaml -o frontend/src/api/types.ts
 
 Do not hand-write request or response types.
 
-### Frontend (TODO)
+For Kubernetes, the frontend image builds the Vite app into static files and
+serves them with Nginx.
 
 ## Mock Server
 
@@ -151,6 +153,62 @@ npx prism mock api/openapi.yaml
 docker compose up --build
 ```
 
+## Kubernetes Deployment
+
+The project is deployed to Rancher/Kubernetes with Helm. The chart lives in
+`helm/team-drops` and does not hardcode a namespace; pass the target namespace on
+the Helm command line.
+
+Render and validate without changing the cluster:
+
+```bash
+helm lint ./helm/team-drops \
+  -f helm/team-drops/values-rancher.yaml
+
+helm template team-drops ./helm/team-drops \
+  --namespace team-drops \
+  -f helm/team-drops/values-rancher.yaml \
+  | kubectl apply --dry-run=server -n team-drops -f -
+```
+
+Install or update the application:
+
+```bash
+helm upgrade --install team-drops ./helm/team-drops \
+  --namespace team-drops \
+  -f helm/team-drops/values-rancher.yaml
+```
+
+For a deploy with OpenAI, keep the API key out of Git and pass it at install
+time:
+
+```bash
+helm upgrade --install team-drops ./helm/team-drops \
+  --namespace team-drops \
+  -f helm/team-drops/values-rancher.yaml \
+  --set genai.llmProvider=openai \
+  --set genai.llmApiKey=<api-key>
+```
+
+For temporary tests with images built from a branch, add:
+
+```bash
+--set image.tag=kubernetes
+```
+
+After deployment, the ingress host exposes:
+
+```text
+/                         frontend
+/user-service/...          user-service
+/learning-service/...      learning-service
+/progress-service/...      progress-feedback-service
+/api/v1/genai/...          genai-service
+```
+
+See `helm/team-drops/README.md` for validation, private image pull secrets,
+GenAI configuration, TLS notes, and troubleshooting commands.
+
 ## CI/CD
 
 The repository includes GitHub Actions workflows for continuous integration.
@@ -158,5 +216,7 @@ The repository includes GitHub Actions workflows for continuous integration.
 Workflow files:
 
 ```text
-.github/workflows/backend-ci.yml   # Builds all three Spring Boot services and their Docker images
-.github/workflows/genai-ci.yml     # Builds the GenAI service Docker image
+.github/workflows/backend-ci.yml      # Builds all three Spring Boot services and their Docker images
+.github/workflows/genai-ci.yml        # Tests and builds the GenAI service Docker image
+.github/workflows/docker-publish.yml  # Builds all service images and publishes them to GHCR on main/tags/manual runs
+```

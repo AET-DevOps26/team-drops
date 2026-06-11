@@ -1,0 +1,8 @@
+.git
+.ruff_cache
+.vscode
+
+**/.pytest_cache
+**/.uv-cache
+**/.venv
+**/__pycache__

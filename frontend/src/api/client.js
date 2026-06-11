@@ -1,7 +1,12 @@
+// Always use relative service paths from the browser so requests go through
+// the dev server proxy (or the same-origin server in production). Avoid
+// embedding Docker-internal hostnames into client-side code because the
+// browser (running on the developer machine) cannot resolve container DNS
+// names like "user-service".
 const serviceBaseUrls = {
-  user: import.meta.env.VITE_USER_SERVICE_URL ?? '/user-service',
-  learning: import.meta.env.VITE_LEARNING_SERVICE_URL ?? '/learning-service',
-  progress: import.meta.env.VITE_PROGRESS_SERVICE_URL ?? '/progress-service',
+  user: '/user-service',
+  learning: '/learning-service',
+  progress: '/progress-service',
 };
 
 function buildHeaders(token, hasBody) {
@@ -84,6 +89,14 @@ export function getLearningPlans(userId, token) {
   return request('learning', `/api/v1/learning-plans/user/${userId}`, { token });
 }
 
+export function createDefaultLearningPlan(payload, token) {
+  return request('learning', '/api/v1/learning-plans/default', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+}
+
 export function getLesson(lessonId, token) {
   return request('learning', `/api/v1/lessons/${lessonId}`, { token });
 }
@@ -94,6 +107,14 @@ export function submitAnswer(payload, token) {
     token,
     body: payload,
   });
+}
+
+export function getUserAnswers(userId, token) {
+  return request('progress', `/api/v1/answers/user/${userId}`, { token });
+}
+
+export function getFeedbackByAnswerId(answerId, token) {
+  return request('progress', `/api/v1/answers/${answerId}/feedback`, { token });
 }
 
 export function getProgress(userId, token) {

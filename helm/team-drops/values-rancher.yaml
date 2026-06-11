@@ -1,0 +1,9 @@
+genai:
+  llmProvider: ollama
+
+ingress:
+  host: team-drops.stud.k8s.aet.cit.tum.de
+  tls:
+    enabled: true
+    secretName: team-drops-tls
+    clusterIssuer: letsencrypt-staging

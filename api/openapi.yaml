@@ -459,6 +459,26 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       x-service: progress-feedback-service
+  /api/v1/answers/user/{user_id}:
+    get:
+      tags:
+        - Progress & Feedback Service
+      summary: Get submitted answers by user
+      operationId: getAnswersByUserId
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: Submitted answers for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserAnswerResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-service: progress-feedback-service
   /api/v1/progress/user/{user_id}:
     get:
       tags:
@@ -1340,7 +1360,7 @@ components:
           title: Expected Answer
           description: The canonical correct answer
           examples:
-            - Je voudrais un café, s'il vous plaît
+            - Je voudrais un cafe, s'il vous plait
         user_answer:
           type: string
           title: User Answer
@@ -1381,7 +1401,7 @@ components:
           maximum: 10
           minimum: 0
           title: Score
-          description: Numeric score 0–10 — maps to UserAnswer.score
+          description: Numeric score 0-10, maps to UserAnswer.score
           examples:
             - 6.5
         is_correct:
@@ -1390,30 +1410,28 @@ components:
           description: True if the answer is substantially correct
         message:
           type: string
+          maxLength: 254
           title: Message
           description: >-
-            Full feedback including what was wrong and why — maps to
-            Feedback.message. Should be a complete, helpful explanation suitable
-            for storing as the feedback record.
+            Brief feedback including what was wrong and why. Must be shorter
+            than 255 characters because it maps to Feedback.message.
           examples:
             - >-
-              Good attempt! 'voudrais' needs a conditional ending (-ais not
-              -ai), and French requires accents: 'café' not 'cafe'. Otherwise
-              the structure is correct.
+              Good attempt. Use the conditional 'voudrais' and include the
+              accent in 'cafe'.
         weak_area:
           type: string
           title: Weak Area
-          description: >-
-            Short grammatical/lexical category to improve — maps to
-            Feedback.weakArea
+          description: Short grammatical or lexical category to improve
           examples:
             - accents and diacritics
         corrected_answer:
           type: string
+          maxLength: 254
           title: Corrected Answer
-          description: The corrected version of the learner's answer — for frontend display
+          description: The corrected version of the learner's answer
           examples:
-            - Je voudrais un café, s'il vous plaît
+            - Je voudrais un cafe, s'il vous plait
       type: object
       required:
         - score
@@ -1785,6 +1803,7 @@ components:
         - user_id
         - exercise_id
         - answer_text
+        - client_context
       properties:
         user_id:
           type: integer
@@ -1802,6 +1821,8 @@ components:
           $ref: '#/components/schemas/AnswerClientContext'
     AnswerClientContext:
       type: object
+      required:
+        - lesson_id
       properties:
         lesson_id:
           type: integer
@@ -1811,6 +1832,12 @@ components:
           type: integer
           format: int64
           example: 1
+        target_language:
+          type: string
+          example: German
+        level:
+          type: string
+          example: A2
     SubmitAnswerResponse:
       type: object
       required:

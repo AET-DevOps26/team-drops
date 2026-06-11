@@ -1,3 +1,3 @@
-from .client import get_llm
+from .client import LLMConfigurationError, get_llm, llm_configuration_status
 
-__all__ = ["get_llm"]
+__all__ = ["LLMConfigurationError", "get_llm", "llm_configuration_status"]

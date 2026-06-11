@@ -1,0 +1,70 @@
+{{- if .Values.ollama.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ai-runtime
+spec:
+  selector:
+    {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "ollama") | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.ollama.port }}
+      targetPort: ollama
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ollama
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ai-runtime
+spec:
+  serviceName: ollama
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "ollama") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "team-drops.labels" . | nindent 8 }}
+        {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "ollama") | nindent 8 }}
+    spec:
+      containers:
+        - name: ollama
+          image: {{ .Values.ollama.image | quote }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: ollama
+              containerPort: {{ .Values.ollama.port }}
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /root/.ollama
+          readinessProbe:
+            httpGet:
+              path: /
+              port: ollama
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: ollama
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.ollama.resources | nindent 12 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: ollama-data
+        labels:
+          {{- include "team-drops.labels" . | nindent 10 }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.ollama.storage.size | quote }}
+{{- end }}

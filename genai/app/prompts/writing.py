@@ -8,9 +8,14 @@ from app.prompts.rubrics import (
 
 _SYSTEM = """You are a precise {target_language} language tutor evaluating a student's written answer.
 Compare the student's answer to the expected answer, accepting reasonable variations in phrasing.
+The student's answer is expected to be in {target_language}. Do not penalize a correct
+{target_language} answer because the question/source text is written in another language.
 Evaluate relevance, completeness, grammar and spelling, vocabulary usage, clarity and coherence, and professional communication style.
 Identify the most impactful weak_area as a short grammatical or lexical phrase
 (e.g. 'verb conjugation', 'word order', 'accents and diacritics').
+corrected_answer must be the corrected version of the student's answer in {target_language},
+not an English translation or explanation.
+Keep message and corrected_answer each shorter than 255 characters.
 {target_language_feedback_rules}
 {writing_evaluation_rubric}
 {json_output_rules}"""
@@ -21,9 +26,9 @@ Question: {question}
 Expected answer: {expected_answer}
 Student's answer: {user_answer}
 
-Evaluate the answer using the rubric. Write a single message that covers what was correct,
-what was wrong, and why. The message will be stored directly as the feedback record, so make it
-complete, useful, and written in {target_language}. Also provide corrected_answer."""
+Evaluate the answer using the rubric. Write one concise feedback message under 255 characters
+that covers the main issue and why. Also provide corrected_answer under 255 characters in
+{target_language}."""
 
 writing_prompt = ChatPromptTemplate.from_messages(
     [

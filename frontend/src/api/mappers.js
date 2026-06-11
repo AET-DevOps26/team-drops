@@ -37,6 +37,69 @@ function formatPlanSummary(plan) {
   return plan.description || plan.goal || 'Guided language learning plan.';
 }
 
+function clampProgress(progress) {
+  return Math.max(0, Math.min(100, Math.round(progress ?? 0)));
+}
+
+function progressStatus(progress, fallbackStatus) {
+  if (progress >= 100) {
+    return 'finished';
+  }
+
+  if (progress > 0) {
+    return 'ongoing';
+  }
+
+  return fallbackStatus ?? 'not-started';
+}
+
+function withDerivedLessonProgress(lesson) {
+  const totalExercises = lesson.exerciseCount || lesson.exercises.length;
+
+  if (totalExercises === 0) {
+    const progress = clampProgress(lesson.progress);
+    return {
+      ...lesson,
+      progress,
+      status: progressStatus(progress, lesson.status),
+    };
+  }
+
+  const completedExerciseIds = new Set(
+    lesson.exercises
+      .filter((exercise) => exercise.status === 'finished' || exercise.score != null || exercise.answerText)
+      .map((exercise) => exercise.id),
+  );
+  const progress = clampProgress((completedExerciseIds.size / totalExercises) * 100);
+
+  return {
+    ...lesson,
+    progress,
+    status: progressStatus(progress, lesson.status),
+  };
+}
+
+function withDerivedPlanProgress(plan) {
+  if (plan.lessons.length === 0) {
+    const progress = clampProgress(plan.progress);
+    return {
+      ...plan,
+      progress,
+      status: progressStatus(progress, plan.status),
+    };
+  }
+
+  const progress = clampProgress(
+    plan.lessons.reduce((total, lesson) => total + (lesson.progress ?? 0), 0) / plan.lessons.length,
+  );
+
+  return {
+    ...plan,
+    progress,
+    status: progressStatus(progress, plan.status),
+  };
+}
+
 function fallbackBlocks(lesson) {
   return [
     {
@@ -53,11 +116,6 @@ function fallbackBlocks(lesson) {
       type: 'exercise',
       exerciseIndex: index,
     })),
-    {
-      type: 'summary',
-      title: 'Lesson summary',
-      text: lesson.topic,
-    },
   ];
 }
 
@@ -126,7 +184,7 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     lessonId: exercise.lesson_id,
     type: exercise.type,
     subtype: exercise.subtype,
-    title: exercise.title,
+    title: exercise.question || exercise.title,
     question: exercise.question,
     expectedAnswer: exercise.expected_answer,
     difficulty: exercise.difficulty,
@@ -189,10 +247,12 @@ export function mergeLessonIntoPlans(plans, lessonDetail) {
       return plan;
     }
 
-    return {
+    return withDerivedPlanProgress({
       ...plan,
-      lessons: plan.lessons.map((lesson) => (lesson.id === lessonDetail.id ? { ...lesson, ...lessonDetail } : lesson)),
-    };
+      lessons: plan.lessons.map((lesson) => (
+        lesson.id === lessonDetail.id ? withDerivedLessonProgress({ ...lesson, ...lessonDetail }) : lesson
+      )),
+    });
   });
 }
 
@@ -239,7 +299,7 @@ export function attachSubmissionToLesson(lesson, submission) {
     return lesson;
   }
 
-  return {
+  return withDerivedLessonProgress({
     ...lesson,
     progress: submission.lesson_progress ?? lesson.progress,
     exercises: lesson.exercises.map((exercise) => {
@@ -258,14 +318,66 @@ export function attachSubmissionToLesson(lesson, submission) {
               title: 'AI feedback',
               score: submission.answer.score,
               message: submission.feedback.message,
+              weakArea: submission.feedback.weak_area,
               strengths: submission.feedback.strengths ?? [],
-              improvements: submission.feedback.improvements ?? [],
+              improvements: submission.feedback.improvements
+                ?? (submission.feedback.weak_area ? [`Focus on: ${submission.feedback.weak_area}`] : []),
               improvedExample: submission.feedback.corrected_answer,
             }
-          : null,
+        : null,
       };
     }),
-  };
+  });
+}
+
+export function attachSavedAnswersToLesson(lesson, savedAnswers = [], feedbackByAnswerId = new Map()) {
+  if (!lesson || savedAnswers.length === 0) {
+    return withDerivedLessonProgress(lesson);
+  }
+
+  const answerByExerciseId = new Map(
+    savedAnswers.map((answer) => [answer.exercise_id, answer]),
+  );
+
+  return withDerivedLessonProgress({
+    ...lesson,
+    exercises: lesson.exercises.map((exercise) => {
+      const answer = answerByExerciseId.get(exercise.id);
+
+      if (!answer) {
+        return exercise;
+      }
+
+      const feedback = feedbackByAnswerId.get(answer.id);
+
+      return {
+        ...exercise,
+        status: 'finished',
+        score: answer.score,
+        grade: answer.score,
+        answerText: answer.answer_text,
+        feedback: feedback
+          ? {
+              title: 'AI feedback',
+              score: answer.score,
+              message: feedback.message,
+              weakArea: feedback.weak_area,
+              strengths: feedback.strengths ?? [],
+              improvements: feedback.improvements
+                ?? (feedback.weak_area ? [`Focus on: ${feedback.weak_area}`] : []),
+              improvedExample: feedback.corrected_answer,
+            }
+        : exercise.feedback,
+      };
+    }),
+  });
+}
+
+export function derivePlanProgress(plans) {
+  return plans.map((plan) => withDerivedPlanProgress({
+    ...plan,
+    lessons: plan.lessons.map(withDerivedLessonProgress),
+  }));
 }
 
 export function buildLessonLookup(learningPlans) {

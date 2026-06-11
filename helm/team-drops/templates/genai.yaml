@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: genai-service
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ai
+spec:
+  selector:
+    {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "genai-service") | nindent 4 }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: genai-service
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ai
+spec:
+  replicas: {{ .Values.genai.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "genai-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "team-drops.labels" . | nindent 8 }}
+        {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "genai-service") | nindent 8 }}
+    spec:
+      {{- include "team-drops.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: genai-service
+          image: {{ include "team-drops.image" (dict "root" . "image" .Values.genai.image) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: app
+              containerPort: {{ .Values.genai.port }}
+          envFrom:
+            - configMapRef:
+                name: team-drops-config
+            - secretRef:
+                name: team-drops-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: app
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: app
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.genai.resources | nindent 12 }}

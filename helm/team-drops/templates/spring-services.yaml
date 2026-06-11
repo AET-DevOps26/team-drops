@@ -1,0 +1,74 @@
+{{- range $key, $service := .Values.services }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $service.name }}
+  labels:
+    {{- include "team-drops.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  selector:
+    {{- include "team-drops.selectorLabels" (dict "Release" $.Release "component" $service.name) | nindent 4 }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $service.name }}
+  labels:
+    {{- include "team-drops.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ $service.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "team-drops.selectorLabels" (dict "Release" $.Release "component" $service.name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "team-drops.labels" $ | nindent 8 }}
+        {{- include "team-drops.selectorLabels" (dict "Release" $.Release "component" $service.name) | nindent 8 }}
+    spec:
+      {{- include "team-drops.imagePullSecrets" $ | nindent 6 }}
+      containers:
+        - name: {{ $service.name }}
+          image: {{ include "team-drops.image" (dict "root" $ "image" $service.image) | quote }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          ports:
+            - name: app
+              containerPort: {{ $service.port }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: team-drops-config
+                  key: SPRING_DATASOURCE_URL
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: SPRING_DATASOURCE_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: SPRING_DATASOURCE_PASSWORD
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: app
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: app
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            {{- toYaml $service.resources | nindent 12 }}
+---
+{{- end }}
