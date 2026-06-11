@@ -1,2 +1,5 @@
 *.pdf binary
+Dockerfile text eol=lf
+*.sh text eol=lf
+*.example text eol=lf
 "RAG doc DB/**/corpus/*.json" -diff
