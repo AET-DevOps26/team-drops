@@ -246,13 +246,13 @@ components:
           example: 1
         title:
           type: string
-          example: Job Interview Preparation
+          example: Machine Learning Interview Track
         description:
           type: string
-          example: A default plan for practicing job interview conversations.
+          example: German interview practice for explaining machine learning projects, systems, and production work.
         goal:
           type: string
-          example: Prepare for software engineering interviews
+          example: Prepare for machine learning interviews in German
         language:
           type: string
           example: German
@@ -261,7 +261,7 @@ components:
           example: A2
         duration:
           type: string
-          example: 2 weeks
+          example: 4 weeks
         status:
           $ref: '#/components/schemas/LearningStatus'
         progress:
@@ -297,10 +297,10 @@ components:
           example: 1
         title:
           type: string
-          example: Introducing Yourself
+          example: Presenting an ML Project
         topic:
           type: string
-          example: Interview introduction
+          example: Explain an ML project in German with the problem, dataset, model, result, and personal contribution.
         order_number:
           type: integer
           format: int32

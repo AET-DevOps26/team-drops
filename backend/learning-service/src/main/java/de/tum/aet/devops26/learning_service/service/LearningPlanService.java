@@ -18,57 +18,203 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class LearningPlanService {
 
-    private static final String DEFAULT_TITLE = "Job Interview Preparation";
-    private static final String DEFAULT_DESCRIPTION = "Fixed lessons for practicing professional job interview answers.";
-    private static final String DEFAULT_DURATION = "2 weeks";
-    private static final String DEFAULT_GOAL = "Prepare for a professional job interview";
-    private static final String DEFAULT_LANGUAGE = "English";
-    private static final String DEFAULT_LEVEL = "A2";
-    private static final String DEFAULT_EXPECTED_ANSWER = "Write a clear, professional answer using specific details and formal vocabulary.";
+    private static final String DEFAULT_TITLE = "Machine Learning Interview Track";
+    private static final String DEFAULT_DESCRIPTION = "German interview practice for explaining machine learning projects, systems, and production work.";
+    private static final String DEFAULT_DURATION = "4 weeks";
+    private static final String DEFAULT_GOAL = "Prepare for machine learning interviews in German";
+    private static final String DEFAULT_LANGUAGE = "German";
+    private static final String DEFAULT_LEVEL = "B1";
     private static final List<FixedLesson> FIXED_INTERVIEW_LESSONS = List.of(
         new FixedLesson(
-            "Self Introduction",
-            "Introduce yourself professionally in an interview.",
+            "Presenting an ML Project",
+            "Explain an ML project in German with the problem, dataset, model, result, and personal contribution.",
             List.of(
-                "Tell me about yourself.",
-                "Write a short professional introduction.",
-                "Improve your introduction using more formal vocabulary."
+                new FixedExercise(
+                    "Describe a machine learning project you worked on.",
+                    "Answer in German and explain the problem, dataset, model, and result."
+                ),
+                new FixedExercise(
+                    "What was your specific role in the project?",
+                    "Answer in German in 3-5 sentences."
+                ),
+                new FixedExercise(
+                    "What was the biggest technical challenge, and how did you solve it?",
+                    "Answer in German with a clear challenge-solution-result structure."
+                )
             )
         ),
         new FixedLesson(
-            "Education and Background",
-            "Explain your studies, university, and academic background.",
+            "Data Preparation",
+            "Discuss how training data is cleaned, transformed, and made suitable for machine learning.",
             List.of(
-                "Describe your degree and specialization.",
-                "Explain why you chose your field.",
-                "Practice saying your graduation status clearly."
+                new FixedExercise(
+                    "How did you prepare the data before training the model?",
+                    "Use useful German vocabulary such as die Daten bereinigen, Merkmale auswahlen, die Daten normalisieren, and Ausreisser entfernen."
+                ),
+                new FixedExercise(
+                    "How would you handle missing values in a dataset?",
+                    "Answer in German and include the phrase fehlende Werte."
+                ),
+                new FixedExercise(
+                    "What would you do if the dataset were imbalanced?",
+                    "Answer in German and include the phrase unausgeglichener Datensatz."
+                )
             )
         ),
         new FixedLesson(
-            "Work Experience and Internships",
-            "Talk about previous internships, jobs, or projects.",
+            "Model Selection",
+            "Compare models and justify choices using technical and practical tradeoffs.",
             List.of(
-                "Describe one internship or work experience.",
-                "Explain your responsibilities.",
-                "Mention what you learned from the experience."
+                new FixedExercise(
+                    "Why did you choose this machine learning model?",
+                    "Explain model complexity, interpretability, training time, dataset size, and performance."
+                ),
+                new FixedExercise(
+                    "How would you compare two different models?",
+                    "Answer in German and mention evaluation metrics plus practical constraints."
+                ),
+                new FixedExercise(
+                    "When would you use a decision tree instead of a neural network?",
+                    "Answer in German and contrast interpretability, data size, training time, and performance."
+                )
             )
         ),
         new FixedLesson(
-            "Project Explanation",
-            "Present a technical or academic project clearly.",
+            "Training and Overfitting",
+            "Explain training concepts, data splits, hyperparameters, and overfitting prevention.",
             List.of(
-                "Describe one project you worked on.",
-                "Explain the problem, your solution, and your role.",
-                "Simplify a technical explanation for a non-technical interviewer."
+                new FixedExercise(
+                    "What is overfitting, and how can it be prevented?",
+                    "Use German vocabulary such as Uberanpassung, Regularisierung, and Kreuzvalidierung."
+                ),
+                new FixedExercise(
+                    "What is the difference between training, validation, and test data?",
+                    "Use the terms Trainingsdaten, Validierungsdaten, and Testdaten."
+                ),
+                new FixedExercise(
+                    "How do hyperparameters affect model training?",
+                    "Answer in German and explain how hyperparameters are selected or tuned."
+                )
             )
         ),
         new FixedLesson(
-            "Strengths and Weaknesses",
-            "Answer common HR questions about strengths and weaknesses.",
+            "Model Evaluation",
+            "Evaluate ML models and explain metrics clearly in German.",
             List.of(
-                "Name two strengths with examples.",
-                "Explain one weakness professionally.",
-                "Rewrite weak answers into stronger interview answers."
+                new FixedExercise(
+                    "Which metrics did you use to evaluate your model?",
+                    "Cover relevant metrics such as Accuracy, Precision, Recall, F1-Score, confusion matrix, or ROC-AUC."
+                ),
+                new FixedExercise(
+                    "What is the difference between precision and recall?",
+                    "Answer in German and give a short practical example."
+                ),
+                new FixedExercise(
+                    "Why can accuracy be misleading?",
+                    "Answer in German and relate the explanation to imbalanced datasets."
+                ),
+                new FixedExercise(
+                    "How would you interpret a confusion matrix?",
+                    "Explain true positives, false positives, true negatives, and false negatives in German."
+                )
+            )
+        ),
+        new FixedLesson(
+            "Improving Model Performance",
+            "Diagnose weak model performance and improve it systematically.",
+            List.of(
+                new FixedExercise(
+                    "What would you do if the model performed poorly?",
+                    "Answer in German and follow this order: identify the problem, inspect the data, test a baseline, change one factor, evaluate again."
+                ),
+                new FixedExercise(
+                    "How would you improve the quality of the training data?",
+                    "Answer in German and discuss cleaning, labeling quality, coverage, and outliers."
+                ),
+                new FixedExercise(
+                    "How would you tune the model's hyperparameters?",
+                    "Answer in German and mention validation data, grid search, random search, or cross-validation."
+                )
+            )
+        ),
+        new FixedLesson(
+            "Deployment and Production",
+            "Describe how trained models are served, monitored, and maintained in production.",
+            List.of(
+                new FixedExercise(
+                    "How would you deploy a trained machine learning model?",
+                    "Answer in German and discuss Docker, cloud deployment, and inference."
+                ),
+                new FixedExercise(
+                    "How would another application communicate with the model?",
+                    "Answer in German and explain a REST API or similar service interface."
+                ),
+                new FixedExercise(
+                    "How would you monitor the model after deployment?",
+                    "Answer in German and mention latency, monitoring, retraining, and quality metrics."
+                ),
+                new FixedExercise(
+                    "What is model drift?",
+                    "Answer in German and explain why retraining may become necessary."
+                )
+            )
+        ),
+        new FixedLesson(
+            "ML System Design",
+            "Design practical ML systems from input data through monitoring.",
+            List.of(
+                new FixedExercise(
+                    "Design a system that recommends meals to users.",
+                    "Explain input data, preprocessing, model, API, database, deployment, and monitoring."
+                ),
+                new FixedExercise(
+                    "How would you build a spam detection system?",
+                    "Explain input data, preprocessing, model, API, database, deployment, and monitoring."
+                ),
+                new FixedExercise(
+                    "How would you design a real-time image classification service?",
+                    "Explain input data, preprocessing, model, API, database, deployment, and monitoring."
+                )
+            )
+        ),
+        new FixedLesson(
+            "Explaining ML to Non-Technical People",
+            "Translate ML concepts into clear German explanations for non-technical stakeholders.",
+            List.of(
+                new FixedExercise(
+                    "Explain overfitting to a non-technical manager.",
+                    "Answer in German without relying on technical jargon."
+                ),
+                new FixedExercise(
+                    "Explain how a recommendation system works without using technical terms.",
+                    "Answer in simple German and use an everyday analogy."
+                ),
+                new FixedExercise(
+                    "Explain why a model can make incorrect predictions.",
+                    "Answer in German and focus on data limits, uncertainty, and changing real-world behavior."
+                )
+            )
+        ),
+        new FixedLesson(
+            "ML Behavioral Questions",
+            "Practice behavioral interview answers for ML work, teamwork, and continuous learning.",
+            List.of(
+                new FixedExercise(
+                    "Tell me about a time when your model did not work as expected.",
+                    "Answer in German with situation, action, and result."
+                ),
+                new FixedExercise(
+                    "Describe a disagreement with a teammate about a technical decision.",
+                    "Answer in German and show how you communicated and reached a decision."
+                ),
+                new FixedExercise(
+                    "Tell me about a time when you had to learn a new ML technology quickly.",
+                    "Answer in German and explain your learning strategy."
+                ),
+                new FixedExercise(
+                    "How do you stay updated with developments in machine learning?",
+                    "Answer in German and mention concrete sources, habits, or projects."
+                )
             )
         )
     );
@@ -106,13 +252,13 @@ public class LearningPlanService {
                 .orderNumber(lessonIndex + 1)
                 .build());
 
-            for (String question : fixedLesson.exercises()) {
+            for (FixedExercise fixedExercise : fixedLesson.exercises()) {
                 exerciseService.save(Exercise.builder()
                     .lessonId(lesson.getId())
                     .type("free_text")
-                    .question(question)
+                    .question(fixedExercise.question())
                     .difficulty(plan.getLevel())
-                    .expectedAnswer(DEFAULT_EXPECTED_ANSWER)
+                    .expectedAnswer(fixedExercise.expectedAnswer())
                     .build());
             }
         }
@@ -193,6 +339,9 @@ public class LearningPlanService {
         return value == null || value.isBlank() ? defaultValue : value;
     }
 
-    private record FixedLesson(String title, String topic, List<String> exercises) {
+    private record FixedLesson(String title, String topic, List<FixedExercise> exercises) {
+    }
+
+    private record FixedExercise(String question, String expectedAnswer) {
     }
 }
