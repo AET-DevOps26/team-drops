@@ -77,8 +77,10 @@ Required repository secret:
   permission to manage Helm releases and workloads in the `team-drops`
   namespace.
 
-The workflow deploys the default image tag from `values.yaml`, currently
-`latest`, and runs Helm with `--atomic --wait --timeout 10m`.
+Automatic runs deploy the immutable `sha-<commit>` image tag published by the
+`Docker Publish` workflow. Manual runs default to `latest`, but allow choosing a
+specific image tag from the Actions tab. The workflow runs Helm with
+`--rollback-on-failure --wait --timeout 10m`.
 
 ## Check the deployment
 
