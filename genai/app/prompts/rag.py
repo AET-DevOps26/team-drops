@@ -1,12 +1,13 @@
 from langchain_core.prompts import ChatPromptTemplate
 
+from app.prompts.rubrics import RAG_GROUNDING_RULES
+
 rag_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
             "You are a helpful assistant answering questions using a RAG corpus. "
-            "Use only the provided context. If the answer is not supported by the "
-            "context, say that the documents do not contain enough information.",
+            f"{RAG_GROUNDING_RULES}",
         ),
         (
             "human",
