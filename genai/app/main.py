@@ -1,16 +1,21 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Depends
+from fastapi.security import HTTPBearer
 
 from app.config import settings
 from app.llm import llm_configuration_status
+from app.middleware.auth import add_auth_middleware
 from app.middleware.error_handler import add_error_handlers
 from app.routers.exercises import router as exercises_router
 from app.routers.listening import router as listening_router
 from app.routers.rag import router as rag_router
 from app.routers.speaking import router as speaking_router
 from app.routers.writing import router as writing_router
+
+
+bearer_auth = HTTPBearer(auto_error=False)
 
 
 @asynccontextmanager
@@ -43,8 +48,9 @@ app = FastAPI(
 )
 
 add_error_handlers(app)
+add_auth_middleware(app)
 
-api_v1 = APIRouter(prefix="/api/v1/genai")
+api_v1 = APIRouter(prefix="/api/v1/genai", dependencies=[Depends(bearer_auth)])
 api_v1.include_router(exercises_router)
 api_v1.include_router(writing_router)
 api_v1.include_router(speaking_router)

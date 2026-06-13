@@ -12,7 +12,6 @@ def default_rag_doc_db_path() -> str:
     return str(config_path.parents[1] / "RAG doc DB")
 
 
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", extra="ignore", populate_by_name=True
@@ -43,6 +42,11 @@ class Settings(BaseSettings):
     # If unset and TTS is enabled, the first /speaking/evaluate request will download them.
     kokoro_model_path: str = Field(default="", alias="KOKORO_MODEL_PATH")
     kokoro_voices_path: str = Field(default="", alias="KOKORO_VOICES_PATH")
+
+    auth_enabled: bool = Field(default=False, alias="AUTH_ENABLED")
+    keycloak_issuer_uri: str = Field(default="", alias="KEYCLOAK_ISSUER_URI")
+    keycloak_jwks_uri: str = Field(default="", alias="KEYCLOAK_JWKS_URI")
+    keycloak_audience: str = Field(default="", alias="KEYCLOAK_AUDIENCE")
 
 
 settings = Settings()

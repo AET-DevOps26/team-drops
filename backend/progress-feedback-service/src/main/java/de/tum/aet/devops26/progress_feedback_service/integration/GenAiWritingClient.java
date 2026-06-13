@@ -3,12 +3,14 @@ package de.tum.aet.devops26.progress_feedback_service.integration;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.tum.aet.devops26.progress_feedback_service.security.CurrentBearerTokenResolver;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,15 +26,21 @@ public class GenAiWritingClient {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final String baseUrl;
+    private final CurrentBearerTokenResolver currentBearerTokenResolver;
+    private final boolean authEnabled;
 
     public GenAiWritingClient(
             ObjectMapper objectMapper,
-            @Value("${services.genai.base-url}") String baseUrl) {
+            @Value("${services.genai.base-url}") String baseUrl,
+            CurrentBearerTokenResolver currentBearerTokenResolver,
+            @Value("${app.auth.enabled:false}") boolean authEnabled) {
         this.httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
         this.objectMapper = objectMapper;
         this.baseUrl = baseUrl;
+        this.currentBearerTokenResolver = currentBearerTokenResolver;
+        this.authEnabled = authEnabled;
     }
 
     public WritingEvaluationResponse evaluate(WritingEvaluationRequest request) {
@@ -40,6 +48,13 @@ public class GenAiWritingClient {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Writing evaluation request must not be null.");
+        }
+
+        Optional<String> bearerToken = currentBearerTokenResolver.resolveTokenValue();
+        if (authEnabled && bearerToken.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Authenticated writing evaluation requires a Bearer token.");
         }
 
         try {
@@ -56,11 +71,14 @@ public class GenAiWritingClient {
             LOGGER.info("Sending GenAI writing request body for exercise {}", request.exerciseId());
 
             String jsonBody = objectMapper.writeValueAsString(payload);
-            HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/genai/writing/evaluate"))
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/genai/writing/evaluate"))
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .build();
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody));
+
+            bearerToken.ifPresent(token -> requestBuilder.header("Authorization", "Bearer " + token));
+
+            HttpRequest httpRequest = requestBuilder.build();
 
             HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
@@ -80,6 +98,9 @@ public class GenAiWritingClient {
                     HttpStatus.BAD_REQUEST,
                     "Could not serialize or parse GenAI writing request.",
                     exception);
+
+        } catch (ResponseStatusException exception) {
+            throw exception;
 
         } catch (Exception exception) {
             throw new ResponseStatusException(

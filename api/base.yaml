@@ -20,7 +20,8 @@ servers:
     description: Progress-Feedback Service
   - url: http://localhost:8084
     description: GenAI Service
-security: []
+security:
+  - bearerAuth: []
 tags:
   - name: User Service
     description: User and profile APIs
@@ -32,6 +33,11 @@ tags:
     description: GenAI APIs
 paths: {}
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
     UserIdPath:
       name: user_id
@@ -64,6 +70,12 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     Conflict:
       description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication is required or the provided token is invalid
       content:
         application/json:
           schema:
