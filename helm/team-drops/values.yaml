@@ -7,7 +7,7 @@ image:
 imagePullSecrets: []
 
 auth:
-  enabled: false
+  enabled: true
   # Public issuer URL expected in browser-issued tokens.
   issuerUri: ""
   # Internal/service JWKS URL used by backends to fetch signing keys.
@@ -17,7 +17,7 @@ auth:
   clientSecret: ""
 
 keycloak:
-  enabled: false
+  enabled: true
   image: quay.io/keycloak/keycloak:26.0
   adminUsername: admin
   adminPassword: admin
@@ -29,7 +29,7 @@ keycloak:
     - "+"
 
 oauth2Proxy:
-  enabled: false
+  enabled: true
   image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
   replicaCount: 1
   port: 4180
