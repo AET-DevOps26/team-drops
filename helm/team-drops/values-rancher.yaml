@@ -6,4 +6,4 @@ ingress:
   tls:
     enabled: true
     secretName: team-drops-tls
-    clusterIssuer: letsencrypt-staging
+    clusterIssuer: letsencrypt-prod

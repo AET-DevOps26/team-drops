@@ -65,6 +65,23 @@ helm upgrade --install team-drops ./helm/team-drops \
   --set imagePullSecrets[0]=<secret-name>
 ```
 
+## Automatic deployment
+
+The `Deploy Kubernetes` GitHub Actions workflow deploys this chart after the
+`Docker Publish` workflow succeeds on `main`. It can also be started manually
+from the Actions tab.
+
+Required repository secret:
+
+- `KUBE_CONFIG`: kubeconfig content for a Rancher user or service account with
+  permission to manage Helm releases and workloads in the `team-drops`
+  namespace.
+
+Automatic runs deploy the immutable `sha-<commit>` image tag published by the
+`Docker Publish` workflow. Manual runs default to `latest`, but allow choosing a
+specific image tag from the Actions tab. The workflow runs Helm with
+`--rollback-on-failure --wait --timeout 10m`.
+
 ## Check the deployment
 
 ```bash

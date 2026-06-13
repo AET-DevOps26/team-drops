@@ -1,0 +1,75 @@
+name: Deploy Kubernetes
+
+on:
+  workflow_run:
+    workflows: ['Docker Publish']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to deploy
+        required: true
+        default: latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-kubernetes-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Helm chart
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Resolve image tag
+        id: image-tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "value=sha-${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          printf '%s' "${{ secrets.KUBE_CONFIG }}" > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Lint Helm chart
+        run: helm lint ./helm/team-drops -f helm/team-drops/values-rancher.yaml
+
+      - name: Deploy Team Drops
+        run: |
+          helm upgrade --install team-drops ./helm/team-drops \
+            --namespace team-drops \
+            -f helm/team-drops/values-rancher.yaml \
+            --set image.tag="${{ steps.image-tag.outputs.value }}" \
+            --rollback-on-failure \
+            --wait \
+            --timeout 10m
+
+      - name: Show release status
+        if: always()
+        run: |
+          helm status team-drops -n team-drops || true
+          kubectl -n team-drops get pods || true
+          kubectl -n team-drops get deployment frontend -o=jsonpath='{.spec.template.spec.containers[0].image}{"\n"}' || true
