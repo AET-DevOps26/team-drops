@@ -63,7 +63,6 @@ jobs:
             --namespace team-drops \
             -f helm/team-drops/values-rancher.yaml \
             --set image.tag="${{ steps.image-tag.outputs.value }}" \
-            --rollback-on-failure \
             --wait \
             --timeout 10m
 

@@ -89,6 +89,8 @@ spec:
             - name: keycloak-realm
               mountPath: /opt/keycloak/data/import
               readOnly: true
+          resources:
+            {{- toYaml .Values.keycloak.resources | nindent 12 }}
       volumes:
         - name: keycloak-realm
           configMap:
