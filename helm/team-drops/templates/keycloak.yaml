@@ -79,6 +79,12 @@ spec:
                 secretKeyRef:
                   name: team-drops-secret
                   key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_HOSTNAME
+              value: {{ include "team-drops.keycloakPublicUrl" . | quote }}
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: "xforwarded"
           volumeMounts:
             - name: keycloak-realm
               mountPath: /opt/keycloak/data/import

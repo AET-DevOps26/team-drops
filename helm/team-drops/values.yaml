@@ -29,7 +29,7 @@ keycloak:
     - "+"
 
 oauth2Proxy:
-  enabled: true
+  enabled: false
   image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
   replicaCount: 1
   port: 4180
