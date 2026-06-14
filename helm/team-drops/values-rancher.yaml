@@ -1,6 +1,19 @@
 genai:
   llmProvider: ollama
 
+auth:
+  issuerUri: https://team-drops.stud.k8s.aet.cit.tum.de/realms/team-drops
+  jwksUri: http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs
+
+keycloak:
+  redirectUris:
+    - https://team-drops.stud.k8s.aet.cit.tum.de/*
+  webOrigins:
+    - https://team-drops.stud.k8s.aet.cit.tum.de
+
+frontend:
+  keycloakUrl: https://team-drops.stud.k8s.aet.cit.tum.de
+
 ingress:
   host: team-drops.stud.k8s.aet.cit.tum.de
   tls:

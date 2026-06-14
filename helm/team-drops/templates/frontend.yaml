@@ -43,7 +43,7 @@ spec:
             - name: VITE_AUTH_ENABLED
               value: {{ .Values.auth.enabled | quote }}
             - name: VITE_KEYCLOAK_URL
-              value: {{ default "http://localhost:8090" .Values.frontend.keycloakUrl | quote }}
+              value: {{ include "team-drops.keycloakPublicUrl" . | quote }}
             - name: VITE_KEYCLOAK_REALM
               value: {{ .Values.keycloak.realm | quote }}
             - name: VITE_KEYCLOAK_CLIENT_ID
