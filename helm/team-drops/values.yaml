@@ -22,6 +22,7 @@ keycloak:
   adminUsername: admin
   adminPassword: admin
   realm: team-drops
+  theme: interviewmate
   port: 8080
   redirectUris:
     - http://localhost:3000/*

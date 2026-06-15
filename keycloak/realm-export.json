@@ -1,6 +1,7 @@
 {
   "realm": "team-drops",
   "enabled": true,
+  "loginTheme": "interviewmate",
   "registrationAllowed": true,
   "clients": [
     {
