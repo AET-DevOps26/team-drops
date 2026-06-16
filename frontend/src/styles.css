@@ -178,6 +178,42 @@ h1 {
   padding: 28px 0 20px;
 }
 
+.auth-processing {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  align-content: center;
+  gap: 18px;
+  min-height: 0;
+  text-align: center;
+}
+
+.auth-processing-mark {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border: 1px solid rgba(25, 103, 210, 0.2);
+  border-radius: 24px;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.auth-processing-mark svg {
+  animation: authSpin 900ms linear infinite;
+}
+
+.auth-processing-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.auth-processing-copy h2 {
+  color: var(--ink);
+  font-size: 1.52rem;
+  line-height: 1.08;
+}
+
 .auth-heading {
   margin-bottom: 26px;
 }
@@ -2286,6 +2322,12 @@ button.settings-row {
 
   to {
     opacity: 0;
+  }
+}
+
+@keyframes authSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

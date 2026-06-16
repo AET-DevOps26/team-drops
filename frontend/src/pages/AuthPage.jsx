@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogIn, UserPlus } from 'lucide-react';
+import { LoaderCircle, LogIn, UserPlus } from 'lucide-react';
 
 export function AuthPage({ t, authEnabled, authErrorMessage, authPending, onLogin, onRegister, onBypass }) {
   const [message, setMessage] = React.useState('');
@@ -7,6 +7,20 @@ export function AuthPage({ t, authEnabled, authErrorMessage, authPending, onLogi
   React.useEffect(() => {
     setMessage(authErrorMessage ?? '');
   }, [authErrorMessage]);
+
+  if (authPending) {
+    return (
+      <section className="auth-processing" aria-live="polite" aria-busy="true">
+        <div className="auth-processing-mark" aria-hidden="true">
+          <LoaderCircle size={34} />
+        </div>
+        <div className="auth-processing-copy">
+          <p className="eyebrow">{t.welcomeBack}</p>
+          <h2>Signing you in...</h2>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <>
