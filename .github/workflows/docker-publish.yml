@@ -4,23 +4,27 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'genai/**'
-      - 'api/**'
-      - '.github/workflows/docker-publish.yml'
-      - '!**/*.md'
+      - "backend/**"
+      - "frontend/**"
+      - "genai/**"
+      - "api/**"
+      - "keycloak/**"
+      - "helm/**"
+      - ".github/workflows/docker-publish.yml"
+      - "!**/*.md"
 
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ["v*"]
     paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'genai/**'
-      - 'api/**'
-      - '.github/workflows/docker-publish.yml'
-      - '!**/*.md'
+      - "backend/**"
+      - "frontend/**"
+      - "genai/**"
+      - "api/**"
+      - "keycloak/**"
+      - "helm/**"
+      - ".github/workflows/docker-publish.yml"
+      - "!**/*.md"
 
   workflow_dispatch:
 
