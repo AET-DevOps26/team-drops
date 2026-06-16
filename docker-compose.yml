@@ -37,6 +37,7 @@ services:
       - "8090:8080"
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/team-drops-realm.json:ro
+      - ./helm/team-drops/files/keycloak-theme/interviewmate:/opt/keycloak/themes/interviewmate:ro
 
   user-service:
     build:

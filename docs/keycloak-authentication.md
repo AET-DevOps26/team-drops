@@ -138,11 +138,19 @@ The imported local realm is defined in
 [`keycloak/realm-export.json`](../keycloak/realm-export.json). It enables:
 
 - realm `team-drops`
+- custom login theme `interviewmate`
 - public client `team-drops`
 - Authorization Code Flow
 - PKCE `S256`
 - self-registration
 - local redirect URIs for `localhost:3000` and `localhost:5173`
+
+The Keycloak login and registration pages use the InterviewMate frontend theme
+from
+[`helm/team-drops/files/keycloak-theme/interviewmate`](../helm/team-drops/files/keycloak-theme/interviewmate).
+Docker Compose mounts this theme into Keycloak for local development, and Helm
+packages the same files into a `keycloak-theme` ConfigMap for cluster
+deployments.
 
 Local development can still run with authentication disabled:
 

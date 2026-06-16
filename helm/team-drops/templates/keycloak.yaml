@@ -11,6 +11,7 @@ data:
     {
       "realm": {{ .Values.keycloak.realm | quote }},
       "enabled": true,
+      "loginTheme": {{ .Values.keycloak.theme | quote }},
       "registrationAllowed": true,
       "clients": [
         {
@@ -28,6 +29,21 @@ data:
         }
       ]
     }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-theme
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth
+data:
+  theme.properties: |-
+{{ .Files.Get "files/keycloak-theme/interviewmate/login/theme.properties" | indent 4 }}
+  login.css: |-
+{{ .Files.Get "files/keycloak-theme/interviewmate/login/resources/css/login.css" | indent 4 }}
+  messages_en.properties: |-
+{{ .Files.Get "files/keycloak-theme/interviewmate/login/messages/messages_en.properties" | indent 4 }}
 ---
 apiVersion: v1
 kind: Service
@@ -133,6 +149,9 @@ spec:
             - name: keycloak-realm
               mountPath: /opt/keycloak/data/import
               readOnly: true
+            - name: keycloak-theme
+              mountPath: /opt/keycloak/themes/{{ .Values.keycloak.theme }}
+              readOnly: true
           startupProbe:
             httpGet:
               path: /health/started
@@ -156,4 +175,14 @@ spec:
         - name: keycloak-realm
           configMap:
             name: keycloak-realm
+        - name: keycloak-theme
+          configMap:
+            name: keycloak-theme
+            items:
+              - key: theme.properties
+                path: login/theme.properties
+              - key: login.css
+                path: login/resources/css/login.css
+              - key: messages_en.properties
+                path: login/messages/messages_en.properties
 {{- end }}
