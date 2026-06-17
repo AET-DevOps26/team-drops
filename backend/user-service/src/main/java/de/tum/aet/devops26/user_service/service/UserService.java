@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final String OIDC_PASSWORD_HASH_PLACEHOLDER = "OIDC_USER_NO_LOCAL_PASSWORD";
+
     private final UserRepository userRepository;
 
     public User save(User user) {
@@ -59,6 +61,7 @@ public class UserService {
                 .keycloakSubject(subject)
                 .name(name)
                 .email(email)
+                .passwordHash(OIDC_PASSWORD_HASH_PLACEHOLDER)
                 .build())));
     }
 
