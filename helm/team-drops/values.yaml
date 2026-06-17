@@ -6,6 +6,10 @@ image:
 
 imagePullSecrets: []
 
+rollout:
+  maxSurge: 1
+  maxUnavailable: 0
+
 auth:
   enabled: true
   # Public issuer URL expected in browser-issued tokens.
@@ -22,6 +26,7 @@ keycloak:
   adminUsername: admin
   adminPassword: admin
   realm: team-drops
+  theme: interviewmate
   port: 8080
   redirectUris:
     - http://localhost:3000/*
@@ -29,10 +34,10 @@ keycloak:
     - "+"
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 200m
+      cpu: 300m
       memory: 512Mi
 
 oauth2Proxy:
@@ -63,11 +68,11 @@ frontend:
   keycloakUrl: ""
   resources:
     requests:
-      cpu: 50m
-      memory: 128Mi
+      cpu: 25m
+      memory: 64Mi
     limits:
-      cpu: 300m
-      memory: 256Mi
+      cpu: 150m
+      memory: 128Mi
 
 services:
   user:
@@ -79,10 +84,10 @@ services:
     resources:
       requests:
         cpu: 100m
-        memory: 384Mi
+        memory: 256Mi
       limits:
-        cpu: 500m
-        memory: 768Mi
+        cpu: 300m
+        memory: 384Mi
   learning:
     name: learning-service
     image: team-drops-learning-service
@@ -92,10 +97,10 @@ services:
     resources:
       requests:
         cpu: 100m
-        memory: 384Mi
+        memory: 256Mi
       limits:
-        cpu: 500m
-        memory: 768Mi
+        cpu: 300m
+        memory: 384Mi
   progress:
     name: progress-feedback-service
     image: team-drops-progress-feedback-service
@@ -105,10 +110,10 @@ services:
     resources:
       requests:
         cpu: 100m
-        memory: 384Mi
+        memory: 256Mi
       limits:
-        cpu: 500m
-        memory: 768Mi
+        cpu: 300m
+        memory: 384Mi
 
 genai:
   replicaCount: 1
@@ -129,10 +134,10 @@ genai:
   resources:
     requests:
       cpu: 100m
-      memory: 512Mi
+      memory: 256Mi
     limits:
-      cpu: 400m
-      memory: 1536Mi
+      cpu: 300m
+      memory: 512Mi
 
 postgres:
   image: postgres:16
@@ -147,8 +152,8 @@ postgres:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 300m
+      memory: 384Mi
 
 mongo:
   image: mongo:7
@@ -160,8 +165,8 @@ mongo:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 300m
+      memory: 384Mi
 
 ollama:
   enabled: false

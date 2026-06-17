@@ -513,14 +513,18 @@ export function App() {
 
   const handleLogin = () => {
     setAuthError('');
+    setAuthPending(true);
     loginWithKeycloak().catch((error) => {
+      setAuthPending(false);
       setAuthError(error.message || 'Unable to start Keycloak sign in.');
     });
   };
 
   const handleRegister = () => {
     setAuthError('');
+    setAuthPending(true);
     registerWithKeycloak().catch((error) => {
+      setAuthPending(false);
       setAuthError(error.message || 'Unable to start Keycloak registration.');
     });
   };

@@ -11,6 +11,7 @@ data:
     {
       "realm": {{ .Values.keycloak.realm | quote }},
       "enabled": true,
+      "loginTheme": {{ .Values.keycloak.theme | quote }},
       "registrationAllowed": true,
       "clients": [
         {
@@ -28,6 +29,21 @@ data:
         }
       ]
     }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-theme
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth
+data:
+  theme.properties: |-
+{{ .Files.Get "files/keycloak-theme/interviewmate/login/theme.properties" | indent 4 }}
+  login.css: |-
+{{ .Files.Get "files/keycloak-theme/interviewmate/login/resources/css/login.css" | indent 4 }}
+  messages_en.properties: |-
+{{ .Files.Get "files/keycloak-theme/interviewmate/login/messages/messages_en.properties" | indent 4 }}
 ---
 apiVersion: v1
 kind: Service
@@ -56,8 +72,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1
+      maxSurge: {{ .Values.rollout.maxSurge }}
+      maxUnavailable: {{ .Values.rollout.maxUnavailable }}
   selector:
     matchLabels:
       {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "keycloak") | nindent 6 }}
@@ -67,15 +83,31 @@ spec:
         {{- include "team-drops.labels" . | nindent 8 }}
         {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "keycloak") | nindent 8 }}
     spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - until nc -z postgres {{ .Values.postgres.port }}; do echo "waiting for postgres"; sleep 2; done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
       containers:
         - name: keycloak
           image: {{ .Values.keycloak.image | quote }}
           args:
-            - start-dev
+            - start
             - --import-realm
           ports:
             - name: http
               containerPort: {{ .Values.keycloak.port }}
+            - name: management
+              containerPort: 9000
           env:
             - name: KC_BOOTSTRAP_ADMIN_USERNAME
               value: {{ .Values.keycloak.adminUsername | quote }}
@@ -90,14 +122,67 @@ spec:
               value: "true"
             - name: KC_PROXY_HEADERS
               value: "xforwarded"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_DB
+              value: "postgres"
+            - name: KC_DB_URL_HOST
+              value: "postgres"
+            - name: KC_DB_URL_PORT
+              value: {{ .Values.postgres.port | quote }}
+            - name: KC_DB_URL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: POSTGRES_DB
+            - name: KC_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: POSTGRES_USER
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: POSTGRES_PASSWORD
           volumeMounts:
             - name: keycloak-realm
               mountPath: /opt/keycloak/data/import
               readOnly: true
+            - name: keycloak-theme
+              mountPath: /opt/keycloak/themes/{{ .Values.keycloak.theme }}
+              readOnly: true
+          startupProbe:
+            httpGet:
+              path: /health/started
+              port: management
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: management
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: management
+            initialDelaySeconds: 60
+            periodSeconds: 20
           resources:
             {{- toYaml .Values.keycloak.resources | nindent 12 }}
       volumes:
         - name: keycloak-realm
           configMap:
             name: keycloak-realm
+        - name: keycloak-theme
+          configMap:
+            name: keycloak-theme
+            items:
+              - key: theme.properties
+                path: login/theme.properties
+              - key: login.css
+                path: login/resources/css/login.css
+              - key: messages_en.properties
+                path: login/messages/messages_en.properties
 {{- end }}
