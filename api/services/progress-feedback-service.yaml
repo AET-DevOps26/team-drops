@@ -8,6 +8,38 @@ servers:
 security:
   - bearerAuth: []
 paths:
+  /api/v1/listening/generate:
+    post:
+      tags:
+        - Progress & Feedback Service
+      summary: Generate listening exercise content
+      description: >
+        Fetches or generates a listening comprehension exercise for the given exercise ID.
+        On first call, the GenAI service generates a script, TTS audio, and multiple-choice
+        questions; the result is cached per exercise ID. On subsequent calls, the cached
+        questions are returned (audio_b64 will be null after the first call).
+        The is_correct flag is stripped from options before returning to the client.
+      operationId: generateListeningContent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListeningGenerateRequest'
+      responses:
+        '200':
+          description: Listening exercise content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListeningContentResponse'
+        '400':
+          $ref: '../base.yaml#/components/responses/BadRequest'
+        '404':
+          $ref: '../base.yaml#/components/responses/NotFound'
+        '502':
+          description: GenAI or Learning service unavailable
+      x-service: progress-feedback-service
   /api/v1/answers:
     post:
       tags:
@@ -105,6 +137,70 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    ListeningGenerateRequest:
+      type: object
+      required:
+        - exercise_id
+        - lesson_id
+      properties:
+        exercise_id:
+          type: integer
+          format: int64
+          example: 5
+        lesson_id:
+          type: integer
+          format: int64
+          example: 2
+        target_language:
+          type: string
+          example: German
+          description: Target language for the exercise. Defaults to German if omitted.
+        level:
+          type: string
+          example: A2
+          description: CEFR level. Falls back to the exercise difficulty if omitted.
+    ListeningContentResponse:
+      type: object
+      required:
+        - script
+        - questions
+      properties:
+        script:
+          type: string
+          example: "Heute gehen wir in ein Café. Der Kellner fragt: Was möchten Sie trinken?"
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListeningQuestion'
+        audio_b64:
+          type:
+            - string
+            - 'null'
+          description: Base64-encoded WAV audio of the script. Null on cache-hit calls.
+    ListeningQuestion:
+      type: object
+      required:
+        - question
+        - options
+      properties:
+        question:
+          type: string
+          example: "Wo findet das Gespräch statt?"
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListeningOption'
+        explanation:
+          type: string
+          example: "Der Text erwähnt ein Café."
+    ListeningOption:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          example: "In einem Café"
     LearningStatus:
       type: string
       enum:

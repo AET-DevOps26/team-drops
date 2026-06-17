@@ -113,3 +113,11 @@ export function getFeedbackByAnswerId(answerId, token) {
 export function getProgress(userId, token) {
   return request('progress', `/api/v1/progress/user/${userId}`, { token });
 }
+
+export function generateListeningContent(exerciseId, lessonId, targetLanguage, level, token) {
+  return request('progress', '/api/v1/listening/generate', {
+    method: 'POST',
+    token,
+    body: { exercise_id: exerciseId, lesson_id: lessonId, target_language: targetLanguage, level },
+  });
+}
