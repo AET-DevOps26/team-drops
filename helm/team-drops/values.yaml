@@ -122,6 +122,7 @@ genai:
   llmProvider: openai
   llmApiKey: ""
   llmModel: ""
+  llmBaseUrl: ""
   ollamaBaseUrl: ""
   ollamaModel: llama3
   whisperModel: base

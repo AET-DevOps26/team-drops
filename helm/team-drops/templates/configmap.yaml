@@ -23,6 +23,7 @@ data:
   KEYCLOAK_AUDIENCE: {{ .Values.auth.audience | quote }}
   LLM_PROVIDER: {{ .Values.genai.llmProvider | quote }}
   LLM_MODEL: {{ .Values.genai.llmModel | quote }}
+  LLM_BASE_URL: {{ .Values.genai.llmBaseUrl | quote }}
   OLLAMA_BASE_URL: {{ ternary (printf "http://ollama:%v" .Values.ollama.port) .Values.genai.ollamaBaseUrl .Values.ollama.enabled | quote }}
   OLLAMA_MODEL: {{ .Values.genai.ollamaModel | quote }}
   WHISPER_MODEL: {{ .Values.genai.whisperModel | quote }}

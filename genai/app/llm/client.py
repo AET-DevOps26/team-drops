@@ -34,6 +34,7 @@ def get_llm() -> BaseChatModel:
         return ChatOpenAI(
             model=settings.llm_model or "gpt-4o-mini",
             api_key=settings.llm_api_key,
+            base_url=settings.llm_base_url or None,
             temperature=0,
         )
 
