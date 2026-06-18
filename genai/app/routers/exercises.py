@@ -2,7 +2,7 @@ import json
 
 from fastapi import APIRouter, HTTPException
 
-from app.llm import get_llm
+from app.llm import get_structured_llm
 from app.prompts.exercises import exercises_prompt
 from app.schemas.exercises import GenerateExercisesRequest, GenerateExercisesResponse
 
@@ -24,8 +24,7 @@ router = APIRouter(prefix="/exercises", tags=["exercises"])
 async def generate_exercises(
     body: GenerateExercisesRequest,
 ) -> GenerateExercisesResponse:
-    llm = get_llm()
-    chain = exercises_prompt | llm.with_structured_output(GenerateExercisesResponse)
+    chain = exercises_prompt | get_structured_llm(GenerateExercisesResponse)
 
     existing_json = json.dumps(
         [ex.model_dump() for ex in body.existing_exercises],

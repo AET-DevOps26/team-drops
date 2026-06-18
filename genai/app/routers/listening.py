@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from app.config import settings
-from app.llm import get_llm
+from app.llm import get_structured_llm
 from app.prompts.listening import listening_questions_prompt, listening_script_prompt
 from app.schemas.listening import (
     ListeningGenerateRequest,
@@ -39,10 +39,8 @@ _DEFAULT_QUESTION_COUNT = 4
     openapi_extra={"x-service": "genai-service"},
 )
 async def generate_listening(body: ListeningGenerateRequest) -> ListeningGenerateResponse:
-    llm = get_llm()
-
     # Step 1: generate the listening script — questions and TTS both depend on it
-    script_chain = listening_script_prompt | llm.with_structured_output(_ScriptLLMOutput)
+    script_chain = listening_script_prompt | get_structured_llm(_ScriptLLMOutput)
     try:
         script_result: _ScriptLLMOutput = await script_chain.ainvoke(
             {
@@ -58,7 +56,7 @@ async def generate_listening(body: ListeningGenerateRequest) -> ListeningGenerat
 
     # Step 2: generate comprehension questions and synthesise audio concurrently —
     # both are independent once the script text is available.
-    questions_chain = listening_questions_prompt | llm.with_structured_output(_QuestionsLLMOutput)
+    questions_chain = listening_questions_prompt | get_structured_llm(_QuestionsLLMOutput)
 
     questions_coro = questions_chain.ainvoke(
         {
