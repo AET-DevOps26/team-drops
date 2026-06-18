@@ -1,9 +1,8 @@
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 from langchain_core.runnables import RunnableLambda
 
-from tests.conftest import make_mock_llm
 from app.schemas.practice import _ConversationTurnLLM, _SessionCorrectionsLLM, TurnCorrection
 
 _CONV_LLM_RESPONSE = _ConversationTurnLLM(
@@ -35,21 +34,19 @@ _BASE_FORM = {
 
 
 def _make_dual_mock_llm(conv_response, corr_response):
-    """Return a mock LLM that dispatches by schema type, not call order."""
-    mock = MagicMock()
+    """Return a side_effect function for patching get_structured_llm by schema type."""
 
-    def _with_structured_output(schema):
+    def _side_effect(schema):
         if schema is _ConversationTurnLLM:
             return RunnableLambda(lambda _: conv_response)
         return RunnableLambda(lambda _: corr_response)
 
-    mock.with_structured_output.side_effect = _with_structured_output
-    return mock
+    return _side_effect
 
 
 def _post_practice(client, extra_form=None, conv_llm=None, corr_llm=None, tts_enabled=True):
     form = {**_BASE_FORM, **(extra_form or {})}
-    mock_llm = _make_dual_mock_llm(
+    side_effect = _make_dual_mock_llm(
         conv_llm or _CONV_LLM_RESPONSE,
         corr_llm or _CORRECTIONS_LLM_RESPONSE,
     )
@@ -57,7 +54,7 @@ def _post_practice(client, extra_form=None, conv_llm=None, corr_llm=None, tts_en
     with (
         patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
         patch("app.routers.speaking.synthesize", new=AsyncMock(return_value=_FAKE_AUDIO_B64)),
-        patch("app.routers.speaking.get_llm", return_value=mock_llm),
+        patch("app.routers.speaking.get_structured_llm", side_effect=side_effect),
         patch("app.routers.speaking.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = tts_enabled
@@ -125,7 +122,6 @@ def test_practice_history_is_accepted(client):
 def test_practice_invalid_history_returns_422(client):
     with (
         patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
-        patch("app.routers.speaking.get_llm", return_value=make_mock_llm(_CONV_LLM_RESPONSE)),
         patch("app.routers.speaking.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = False
@@ -160,21 +156,17 @@ def test_practice_stt_failure_returns_502(client):
 def test_practice_llm_failure_returns_502(client):
     with (
         patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
-        patch("app.routers.speaking.get_llm", return_value=make_mock_llm(RuntimeError("LLM down"))),
+        patch("app.routers.speaking.get_structured_llm", return_value=RunnableLambda(
+            lambda _: (_ for _ in ()).throw(RuntimeError("LLM down"))
+        )),
         patch("app.routers.speaking.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = False
-        # make the chain raise instead of return
-        failing_llm = MagicMock()
-        failing_llm.with_structured_output.return_value = RunnableLambda(
-            lambda _: (_ for _ in ()).throw(RuntimeError("LLM down"))
+        response = client.post(
+            "/api/v1/genai/speaking/practice",
+            data=_BASE_FORM,
+            files={"audio": ("test.wav", b"RIFF\x00\x00\x00\x00WAVE", "audio/wav")},
         )
-        with patch("app.routers.speaking.get_llm", return_value=failing_llm):
-            response = client.post(
-                "/api/v1/genai/speaking/practice",
-                data=_BASE_FORM,
-                files={"audio": ("test.wav", b"RIFF\x00\x00\x00\x00WAVE", "audio/wav")},
-            )
     assert response.status_code == 502
 
 

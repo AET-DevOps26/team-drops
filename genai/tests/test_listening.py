@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 from langchain_core.runnables import RunnableLambda
 
@@ -69,12 +69,11 @@ _REQUEST_BODY_NO_TOPIC = {"target_language": "German", "level": "B1"}
 
 
 def _make_two_call_llm(script_result=None, questions_result=None):
-    """Return a mock LLM keyed on the schema class name, not call order.
+    """Return a side_effect function for patching get_structured_llm.
 
-    Routing by __name__ means the mock stays correct if the router ever
+    Routes by schema class name so the mock stays correct if the router ever
     reorders its LLM calls.
     """
-    mock_llm = MagicMock()
     s_result = script_result or _ScriptLLMOutput(script=_FAKE_SCRIPT)
     q_result = questions_result or _FAKE_QUESTIONS_OUTPUT
 
@@ -83,16 +82,15 @@ def _make_two_call_llm(script_result=None, questions_result=None):
             return RunnableLambda(lambda _: s_result)
         return RunnableLambda(lambda _: q_result)
 
-    mock_llm.with_structured_output.side_effect = side_effect
-    return mock_llm
+    return side_effect
 
 
 def _post_listening(client, tts_enabled=True, body=None, mock_llm=None):
     payload = body if body is not None else _REQUEST_BODY
-    llm = mock_llm or _make_two_call_llm()
+    side_effect = mock_llm or _make_two_call_llm()
     with (
         patch("app.routers.listening.synthesize", new=AsyncMock(return_value=_FAKE_AUDIO_B64)),
-        patch("app.routers.listening.get_llm", return_value=llm),
+        patch("app.routers.listening.get_structured_llm", side_effect=side_effect),
         patch("app.routers.listening.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = tts_enabled
@@ -170,7 +168,7 @@ def test_generate_listening_tts_failure_degrades_gracefully(client):
     """A TTS error must not discard the generated script and questions."""
     with (
         patch("app.routers.listening.synthesize", new=AsyncMock(side_effect=RuntimeError("TTS down"))),
-        patch("app.routers.listening.get_llm", return_value=_make_two_call_llm()),
+        patch("app.routers.listening.get_structured_llm", side_effect=_make_two_call_llm()),
         patch("app.routers.listening.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = True
@@ -197,10 +195,8 @@ def _raise_questions_error(_):
 
 
 def test_generate_listening_script_llm_failure_returns_502(client):
-    failing_llm = MagicMock()
-    failing_llm.with_structured_output.return_value = RunnableLambda(_raise_llm_error)
     with (
-        patch("app.routers.listening.get_llm", return_value=failing_llm),
+        patch("app.routers.listening.get_structured_llm", return_value=RunnableLambda(_raise_llm_error)),
         patch("app.routers.listening.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = False
@@ -212,17 +208,14 @@ def test_generate_listening_script_llm_failure_returns_502(client):
 
 def test_generate_listening_questions_llm_failure_returns_502(client):
     """Script generation succeeds but questions LLM fails — must return 502."""
-    mock_llm = MagicMock()
 
     def side_effect(schema):
         if schema.__name__ == "_ScriptLLMOutput":
             return RunnableLambda(lambda _: _ScriptLLMOutput(script=_FAKE_SCRIPT))
         return RunnableLambda(_raise_questions_error)
 
-    mock_llm.with_structured_output.side_effect = side_effect
-
     with (
-        patch("app.routers.listening.get_llm", return_value=mock_llm),
+        patch("app.routers.listening.get_structured_llm", side_effect=side_effect),
         patch("app.routers.listening.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = False
@@ -249,11 +242,11 @@ def test_generate_listening_wrong_option_count_returns_502(client):
     )
     bad_questions = _QuestionsLLMOutput.model_construct(questions=[bad_question])
 
-    mock_llm = _make_two_call_llm(questions_result=bad_questions)
+    side_effect = _make_two_call_llm(questions_result=bad_questions)
 
     with (
         patch("app.routers.listening.synthesize", new=AsyncMock(return_value=_FAKE_AUDIO_B64)),
-        patch("app.routers.listening.get_llm", return_value=mock_llm),
+        patch("app.routers.listening.get_structured_llm", side_effect=side_effect),
         patch("app.routers.listening.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = False
