@@ -90,6 +90,16 @@ spec:
                 configMapKeyRef:
                   name: team-drops-config
                   key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
+            - name: GENAI_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: team-drops-config
+                  key: GENAI_SERVICE_URL
+            - name: LEARNING_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: team-drops-config
+                  key: LEARNING_SERVICE_URL
           readinessProbe:
             httpGet:
               path: /actuator/health

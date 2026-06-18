@@ -21,6 +21,10 @@ def llm_configuration_status() -> dict:
     }
 
 
+def get_structured_llm(schema):
+    return get_llm().with_structured_output(schema, method="json_mode")
+
+
 @lru_cache(maxsize=1)
 def get_llm() -> BaseChatModel:
     provider = settings.llm_provider.lower()

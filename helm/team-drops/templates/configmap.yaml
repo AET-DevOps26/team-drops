@@ -21,6 +21,8 @@ data:
   {{- end }}
   KEYCLOAK_CLIENT_ID: {{ .Values.auth.clientId | quote }}
   KEYCLOAK_AUDIENCE: {{ .Values.auth.audience | quote }}
+  GENAI_SERVICE_URL: {{ printf "http://genai-service:%v" .Values.genai.port | quote }}
+  LEARNING_SERVICE_URL: {{ printf "http://learning-service:%v" .Values.services.learning.port | quote }}
   LLM_PROVIDER: {{ .Values.genai.llmProvider | quote }}
   LLM_MODEL: {{ .Values.genai.llmModel | quote }}
   LLM_BASE_URL: {{ .Values.genai.llmBaseUrl | quote }}
