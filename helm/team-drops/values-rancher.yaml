@@ -1,5 +1,7 @@
 genai:
-  llmProvider: ollama
+  llmProvider: openai
+  llmModel: openai/gpt-oss-120b
+  llmBaseUrl: https://logos.aet.cit.tum.de/v1
 
 auth:
   issuerUri: https://team-drops.stud.k8s.aet.cit.tum.de/realms/team-drops

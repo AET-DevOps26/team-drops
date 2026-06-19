@@ -6,7 +6,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.config import settings
 from app.constants import MAX_AUDIO_BYTES, MAX_HISTORY_BYTES
-from app.llm import get_llm
+from app.llm import get_structured_llm
 from app.prompts.corrections import corrections_prompt
 from app.prompts.practice import practice_prompt
 from app.prompts.speaking import speaking_prompt
@@ -68,8 +68,7 @@ async def evaluate_speaking(
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"STT transcription failed: {exc}") from exc
 
-    llm = get_llm()
-    chain = speaking_prompt | llm.with_structured_output(_SpeakingEvaluationLLMOutput)
+    chain = speaking_prompt | get_structured_llm(_SpeakingEvaluationLLMOutput)
 
     try:
         llm_result: _SpeakingEvaluationLLMOutput = await chain.ainvoke(
@@ -155,9 +154,7 @@ async def speaking_practice(
     except Exception as exc:
         raise HTTPException(status_code=422, detail=f"Invalid history_json: {exc}") from exc
 
-    llm = get_llm()
-
-    conv_chain = practice_prompt | llm.with_structured_output(_ConversationTurnLLM)
+    conv_chain = practice_prompt | get_structured_llm(_ConversationTurnLLM)
     try:
         conv_result: _ConversationTurnLLM = await conv_chain.ainvoke(
             {
@@ -183,7 +180,7 @@ async def speaking_practice(
         history_json_full = json.dumps(
             [m.model_dump() for m in full_history], ensure_ascii=False
         )
-        corr_chain = corrections_prompt | llm.with_structured_output(_SessionCorrectionsLLM)
+        corr_chain = corrections_prompt | get_structured_llm(_SessionCorrectionsLLM)
 
         async def _no_tts() -> None:
             return None

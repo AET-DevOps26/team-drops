@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from langchain_core.runnables import RunnableLambda
 
-from tests.conftest import make_mock_llm
+from tests.conftest import make_mock_structured_llm
 from app.schemas.speaking import _SpeakingEvaluationLLMOutput
 
 _LLM_RESPONSE = _SpeakingEvaluationLLMOutput(
@@ -32,7 +32,7 @@ def _post_speaking(client, tts_enabled=True):
     with (
         patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
         patch("app.routers.speaking.synthesize", new=AsyncMock(return_value=_FAKE_AUDIO_B64)),
-        patch("app.routers.speaking.get_llm", return_value=make_mock_llm(_LLM_RESPONSE)),
+        patch("app.routers.speaking.get_structured_llm", return_value=make_mock_structured_llm(_LLM_RESPONSE)),
         patch("app.routers.speaking.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = tts_enabled
@@ -102,13 +102,11 @@ def test_evaluate_speaking_stt_failure_returns_502(client):
 
 
 def test_evaluate_speaking_llm_failure_returns_502(client):
-    failing_llm = MagicMock()
-    failing_llm.with_structured_output.return_value = RunnableLambda(
-        lambda _: (_ for _ in ()).throw(RuntimeError("LLM down"))
-    )
     with (
         patch("app.routers.speaking.transcribe", new=AsyncMock(return_value=_FAKE_TRANSCRIPTION)),
-        patch("app.routers.speaking.get_llm", return_value=failing_llm),
+        patch("app.routers.speaking.get_structured_llm", return_value=RunnableLambda(
+            lambda _: (_ for _ in ()).throw(RuntimeError("LLM down"))
+        )),
         patch("app.routers.speaking.settings") as mock_settings,
     ):
         mock_settings.tts_enabled = False

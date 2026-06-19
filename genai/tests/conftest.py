@@ -17,3 +17,8 @@ def make_mock_llm(response):
     mock = MagicMock()
     mock.with_structured_output.return_value = RunnableLambda(lambda _: response)
     return mock
+
+
+def make_mock_structured_llm(response):
+    """Return a chain (RunnableLambda) for patching get_structured_llm directly."""
+    return RunnableLambda(lambda _: response)

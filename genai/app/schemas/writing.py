@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 
 MAX_DATABASE_TEXT_LENGTH = 254
@@ -52,6 +52,8 @@ class WritingEvaluationResponse(BaseModel):
     the Feedback entity (Feedback.message, Feedback.weakArea) in the backend.
     """
 
+    model_config = ConfigDict(populate_by_name=True)
+
     score: float = Field(
         ...,
         ge=0.0,
@@ -65,6 +67,7 @@ class WritingEvaluationResponse(BaseModel):
     )
     message: str = Field(
         ...,
+        validation_alias=AliasChoices("message", "feedback"),
         max_length=MAX_DATABASE_TEXT_LENGTH,
         description=(
             "Brief feedback including what was wrong and why. Must be shorter "
