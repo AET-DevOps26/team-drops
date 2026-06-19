@@ -373,25 +373,25 @@ a:hover {
 
 .pf-v5-theme-dark body {
   background:
-    radial-gradient(circle at 16% 18%, rgba(96, 165, 250, 0.24), transparent 26%),
-    radial-gradient(circle at 84% 78%, rgba(47, 143, 98, 0.14), transparent 28%),
-    linear-gradient(135deg, #13213a 0%, #0f1d33 100%);
+    radial-gradient(circle at 16% 18%, rgba(96, 165, 250, 0.32), transparent 26%),
+    radial-gradient(circle at 84% 78%, rgba(47, 143, 98, 0.2), transparent 28%),
+    linear-gradient(135deg, #eaf4ff 0%, #cfe4ff 100%);
 }
 
 .pf-v5-theme-dark .pf-v5-c-login__main {
-  --im-ink: #eef6ff;
-  --im-muted: #a8bbd2;
-  --im-paper: #0f1d33;
-  --im-surface: #172a49;
-  --im-line: #29466d;
-  --im-blue-soft: #183d72;
+  --im-ink: #102033;
+  --im-muted: #64748b;
+  --im-paper: #ffffff;
+  --im-surface: #f7fbff;
+  --im-line: #d7e5f5;
+  --im-blue-soft: #d8eaff;
   background:
-    linear-gradient(180deg, rgba(96, 165, 250, 0.18), rgba(15, 29, 51, 0) 36%),
+    linear-gradient(180deg, rgba(25, 103, 210, 0.1), rgba(255, 255, 255, 0) 36%),
     var(--im-paper);
 }
 
 .pf-v5-theme-dark .pf-v5-c-button.pf-m-control {
-  background: #1d3354;
+  background: #eef6ff;
 }
 
 @media (max-width: 520px) {

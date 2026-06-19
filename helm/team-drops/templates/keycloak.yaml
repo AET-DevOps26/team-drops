@@ -79,6 +79,9 @@ spec:
       {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "keycloak") | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/keycloak-realm: {{ printf "%s-%s-%s-%s-%s" .Values.keycloak.realm .Values.keycloak.theme .Values.auth.clientId (toJson .Values.keycloak.redirectUris) (toJson .Values.keycloak.webOrigins) | sha256sum | quote }}
+        checksum/keycloak-theme: {{ printf "%s%s%s" (.Files.Get "files/keycloak-theme/interviewmate/login/theme.properties") (.Files.Get "files/keycloak-theme/interviewmate/login/resources/css/login.css") (.Files.Get "files/keycloak-theme/interviewmate/login/messages/messages_en.properties") | sha256sum | quote }}
       labels:
         {{- include "team-drops.labels" . | nindent 8 }}
         {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "keycloak") | nindent 8 }}
@@ -185,4 +188,84 @@ spec:
                 path: login/resources/css/login.css
               - key: messages_en.properties
                 path: login/messages/messages_en.properties
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-realm-configure
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "team-drops.labels" . | nindent 8 }}
+        app.kubernetes.io/component: keycloak-realm-configure
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: configure-realm
+          image: {{ .Values.keycloak.image | quote }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              attempts=0
+              until /opt/keycloak/bin/kcadm.sh config credentials \
+                --server "$KEYCLOAK_ADMIN_URL" \
+                --realm master \
+                --user "$KEYCLOAK_ADMIN_USER" \
+                --password "$KEYCLOAK_ADMIN_PASSWORD"; do
+                attempts=$((attempts + 1))
+                if [ "$attempts" -ge 60 ]; then
+                  echo "Keycloak admin API did not become available in time"
+                  exit 1
+                fi
+                echo "Waiting for Keycloak admin API..."
+                sleep 5
+              done
+
+              attempts=0
+              until /opt/keycloak/bin/kcadm.sh update "realms/${KEYCLOAK_REALM}" \
+                -s "loginTheme=${KEYCLOAK_THEME}" \
+                -s "registrationAllowed=true"; do
+                attempts=$((attempts + 1))
+                if [ "$attempts" -ge 60 ]; then
+                  echo "Realm ${KEYCLOAK_REALM} did not become available in time"
+                  exit 1
+                fi
+                echo "Waiting for realm ${KEYCLOAK_REALM}..."
+                sleep 5
+              done
+
+              echo "Configured realm ${KEYCLOAK_REALM} with login theme ${KEYCLOAK_THEME}"
+          env:
+            - name: KEYCLOAK_ADMIN_URL
+              value: {{ printf "http://keycloak:%v" .Values.keycloak.port | quote }}
+            - name: KEYCLOAK_ADMIN_USER
+              value: {{ .Values.keycloak.adminUsername | quote }}
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KEYCLOAK_REALM
+              value: {{ .Values.keycloak.realm | quote }}
+            - name: KEYCLOAK_THEME
+              value: {{ .Values.keycloak.theme | quote }}
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
 {{- end }}
