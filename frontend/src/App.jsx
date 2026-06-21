@@ -479,12 +479,29 @@ export function App() {
     setSettingsClosing(false);
   };
 
-  const bypassAuth = () => {
+  const bypassAuth = async () => {
     setAuthError('');
     setDashboardError('');
     setProfileError('');
     setLearningError('');
-    setScreen('main');
+    setLoadingInitialData(true);
+
+    try {
+      const user = await getCurrentUser();
+      const nextSession = {
+        user,
+        accessToken: null,
+        tokenType: 'None',
+      };
+
+      setSession(nextSession);
+      await syncLearningData(nextSession);
+      setScreen('main');
+    } catch (error) {
+      setAuthError(error.message || 'Unable to continue without authentication.');
+    } finally {
+      setLoadingInitialData(false);
+    }
   };
 
   const resetSessionState = () => {

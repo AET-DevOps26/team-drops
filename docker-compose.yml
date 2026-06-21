@@ -120,7 +120,7 @@ services:
       KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs}
       KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-}
       WHISPER_MODEL: ${WHISPER_MODEL:-base}
-      TTS_ENABLED: ${TTS_ENABLED:-false}
+      TTS_ENABLED: "true"
       KOKORO_MODEL_PATH: ${KOKORO_MODEL_PATH:-}
       KOKORO_VOICES_PATH: ${KOKORO_VOICES_PATH:-}
       PREWARM_MODELS: ${PREWARM_MODELS:-false}

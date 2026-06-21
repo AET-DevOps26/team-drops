@@ -690,10 +690,9 @@ function ListeningExerciseView({
               />
             ) : (
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted, #888)' }}>
-                Audio not available for cached exercises.
+                Audio is not available in the current configuration.
               </p>
             )}
-            <p style={{ fontSize: '0.85rem' }}>{listeningContent.script}</p>
           </section>
 
           <form onSubmit={handleSubmit}>

@@ -65,6 +65,17 @@ public class UserService {
                 .build())));
     }
 
+    public UserResponse getOrCreateLocalDevUser() {
+        String email = "local-dev@example.com";
+        return userRepository.findByEmail(email)
+            .map(this::toResponse)
+            .orElseGet(() -> toResponse(save(User.builder()
+                .name("Local Dev User")
+                .email(email)
+                .passwordHash(OIDC_PASSWORD_HASH_PLACEHOLDER)
+                .build())));
+    }
+
     private UserResponse toResponse(User user) {
         return new UserResponse(user.getId(), user.getName(), user.getEmail());
     }
