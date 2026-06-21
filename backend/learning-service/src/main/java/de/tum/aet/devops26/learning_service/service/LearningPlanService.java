@@ -103,11 +103,34 @@ public class LearningPlanService {
         return toResponse(plan);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<LearningPlanResponse> findResponsesByUserId(Long userId) {
+        ensureFixedPlans(userId);
         return learningPlanRepository.findByUserId(userId).stream()
             .map(this::toResponse)
             .toList();
+    }
+
+    private void ensureFixedPlans(Long userId) {
+        CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest().userId(userId);
+
+        try {
+            if (learningPlanRepository.findFirstByUserIdAndTitle(
+                    userId, LearningPlanSeeder.LISTENING_TITLE).isEmpty()) {
+                learningPlanSeeder.createListeningPlan(request);
+            }
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.info("Listening plan already exists for user {} (concurrent creation)", userId);
+        }
+
+        try {
+            if (learningPlanRepository.findFirstByUserIdAndTitle(
+                    userId, LearningPlanSeeder.DEFAULT_TITLE).isEmpty()) {
+                learningPlanSeeder.createDefaultPlan(request);
+            }
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.info("Default plan already exists for user {} (concurrent creation)", userId);
+        }
     }
 
     private LearningPlanResponse toResponse(LearningPlan plan) {

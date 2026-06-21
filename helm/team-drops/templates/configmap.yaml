@@ -30,7 +30,7 @@ data:
   OLLAMA_MODEL: {{ .Values.genai.ollamaModel | quote }}
   WHISPER_MODEL: {{ .Values.genai.whisperModel | quote }}
   WHISPER_DEVICE: {{ .Values.genai.whisperDevice | quote }}
-  TTS_ENABLED: {{ .Values.genai.ttsEnabled | quote }}
+  TTS_ENABLED: "true"
   PREWARM_MODELS: {{ .Values.genai.prewarmModels | quote }}
   KOKORO_MODEL_PATH: {{ .Values.genai.kokoroModelPath | quote }}
   KOKORO_VOICES_PATH: {{ .Values.genai.kokoroVoicesPath | quote }}
