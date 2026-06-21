@@ -32,12 +32,16 @@ class LearningPlanServiceTests {
     @Mock
     private ExerciseService exerciseService;
 
+    @Mock
+    private LearningPlanSeeder learningPlanSeeder;
+
     @Test
     void createDefaultLearningPlanReturnsExistingDefaultPlan() {
         LearningPlanService service = new LearningPlanService(
             learningPlanRepository,
             lessonService,
-            exerciseService
+            exerciseService,
+            learningPlanSeeder
         );
         CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest()
             .userId(42L)
