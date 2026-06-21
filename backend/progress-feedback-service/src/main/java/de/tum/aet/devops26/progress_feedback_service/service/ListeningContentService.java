@@ -6,6 +6,7 @@ import de.tum.aet.devops26.progress_feedback_service.integration.GenAiListeningC
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiListeningClient.ListeningGenerateRequest;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiListeningClient.ListeningGenerateResponse;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiListeningClient.ListeningQuestion;
+import de.tum.aet.devops26.progress_feedback_service.model.ListeningContent;
 import de.tum.aet.devops26.progress_feedback_service.repository.ListeningContentRepository;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,7 @@ public class ListeningContentService {
         return listeningContentRepository.findByExerciseId(exerciseId)
                 .map(cached -> {
                     LOGGER.info("Returning cached listening content for exercise {}", exerciseId);
-                    return deserializeQuestions(cached.getQuestionsJson());
+                    return deserializeQuestions(cached);
                 })
                 .orElseGet(() -> generateFresh(exerciseId, language, level, topic));
     }
@@ -51,7 +52,7 @@ public class ListeningContentService {
         if (!saved) {
             // A concurrent request won the race; load what it saved
             return listeningContentRepository.findByExerciseId(exerciseId)
-                    .map(cached -> deserializeQuestions(cached.getQuestionsJson()))
+                    .map(cached -> deserializeQuestions(cached))
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                             "Concurrent cache write failed and fallback read missed."));
         }
@@ -65,7 +66,7 @@ public class ListeningContentService {
                         "No listening content found for exercise " + exerciseId + ". Call generate first."))
                 .getQuestionsJson();
 
-        List<ListeningQuestion> questions = deserializeQuestions(questionsJson).questions();
+        List<ListeningQuestion> questions = deserializeQuestions(questionsJson, null).questions();
         if (questions == null || questions.isEmpty()) {
             return new ScoreResult(0, 0, 0);
         }
@@ -90,10 +91,14 @@ public class ListeningContentService {
                 total);
     }
 
-    private ListeningGenerateResponse deserializeQuestions(String questionsJson) {
+    private ListeningGenerateResponse deserializeQuestions(ListeningContent cached) {
+        return deserializeQuestions(cached.getQuestionsJson(), cached.getScriptAudioB64());
+    }
+
+    private ListeningGenerateResponse deserializeQuestions(String questionsJson, String scriptAudioB64) {
         try {
             ListeningGenerateResponse cached = objectMapper.readValue(questionsJson, ListeningGenerateResponse.class);
-            return new ListeningGenerateResponse(cached.script(), cached.questions(), null);
+            return new ListeningGenerateResponse(cached.script(), cached.questions(), scriptAudioB64);
         } catch (JsonProcessingException exception) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to deserialize cached listening content.", exception);

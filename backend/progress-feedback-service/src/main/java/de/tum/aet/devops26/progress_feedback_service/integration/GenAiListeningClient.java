@@ -63,7 +63,7 @@ public class GenAiListeningClient {
 
             HttpResponse<String> httpResponse = httpClient
                     .sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
-                    .orTimeout(90, TimeUnit.SECONDS)
+                    .orTimeout(180, TimeUnit.SECONDS)
                     .join();
 
             if (httpResponse.statusCode() < 200 || httpResponse.statusCode() >= 300) {

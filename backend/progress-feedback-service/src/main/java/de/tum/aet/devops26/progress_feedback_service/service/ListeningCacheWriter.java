@@ -40,6 +40,7 @@ public class ListeningCacheWriter {
                     .exerciseId(exerciseId)
                     .scriptText(scriptText)
                     .questionsJson(questionsJson)
+                    .scriptAudioB64(response.scriptAudioB64())
                     .build());
             return true;
         } catch (DataIntegrityViolationException e) {

@@ -65,9 +65,9 @@ class ListeningGenerateResponse(BaseModel):
         description="Multiple-choice comprehension questions about the script",
         min_length=1,
     )
-    script_audio_b64: str | None = Field(
-        default=None,
-        description="Base64-encoded WAV of the script spoken aloud (null when TTS is disabled)",
+    script_audio_b64: str = Field(
+        ...,
+        description="Base64-encoded WAV of the script spoken aloud",
     )
 
 

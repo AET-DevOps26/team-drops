@@ -17,8 +17,9 @@ _SCRIPT_HUMAN = """Language: {target_language}
 CEFR level: {level}
 Topic hint: {topic}
 
-Write a listening passage of 80–120 words in {target_language}.
-The passage must be self-contained so a listener can answer questions about it without outside knowledge."""
+Write a listening script of 80–120 words in {target_language}.
+The script must be self-contained so a listener can answer questions about it without outside knowledge.
+Return the result as a JSON object with a single key "script" containing the text."""
 
 listening_script_prompt = ChatPromptTemplate.from_messages(
     [

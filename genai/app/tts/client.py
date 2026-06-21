@@ -103,9 +103,11 @@ def _synthesize_local(text: str, language: str) -> str:
 async def synthesize(text: str, language: str) -> str:
     """Synthesize text to speech, returning base64-encoded WAV audio.
 
-    Uses kokoro-onnx locally (Ollama mode) or OpenAI TTS API (OpenAI mode).
+    Uses OpenAI TTS only for the official OpenAI API. OpenAI-compatible LLM
+    gateways commonly do not implement audio endpoints, so those use local
+    kokoro-onnx instead.
     """
-    if settings.llm_provider == "openai":
+    if settings.llm_provider == "openai" and not settings.llm_base_url:
         import openai
 
         client = openai.AsyncOpenAI(api_key=settings.llm_api_key)

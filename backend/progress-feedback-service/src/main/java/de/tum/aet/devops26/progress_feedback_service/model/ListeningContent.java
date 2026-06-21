@@ -37,6 +37,9 @@ public class ListeningContent {
     @Column(name = "questions_json", nullable = false, columnDefinition = "TEXT")
     private String questionsJson;
 
+    @Column(name = "script_audio_b64", columnDefinition = "TEXT")
+    private String scriptAudioB64;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
