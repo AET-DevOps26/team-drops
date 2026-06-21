@@ -17,7 +17,7 @@ paths:
         Fetches or generates a listening comprehension exercise for the given exercise ID.
         On first call, the GenAI service generates a script, TTS audio, and multiple-choice
         questions; the result is cached per exercise ID. On subsequent calls, the cached
-        questions are returned (audio_b64 will be null after the first call).
+        script, questions, and audio are returned.
         The is_correct flag is stripped from options before returning to the client.
       operationId: generateListeningContent
       requestBody:
@@ -25,7 +25,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ListeningGenerateRequest'
+              $ref: '#/components/schemas/ProgressListeningGenerateRequest'
       responses:
         '200':
           description: Listening exercise content
@@ -137,7 +137,7 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-    ListeningGenerateRequest:
+    ProgressListeningGenerateRequest:
       type: object
       required:
         - exercise_id
@@ -171,13 +171,11 @@ components:
         questions:
           type: array
           items:
-            $ref: '#/components/schemas/ListeningQuestion'
+            $ref: '#/components/schemas/ProgressListeningQuestion'
         audio_b64:
-          type:
-            - string
-            - 'null'
-          description: Base64-encoded WAV audio of the script. Null on cache-hit calls.
-    ListeningQuestion:
+          type: string
+          description: Base64-encoded WAV audio of the script.
+    ProgressListeningQuestion:
       type: object
       required:
         - question
@@ -189,11 +187,11 @@ components:
         options:
           type: array
           items:
-            $ref: '#/components/schemas/ListeningOption'
+            $ref: '#/components/schemas/ProgressListeningOption'
         explanation:
           type: string
           example: "Der Text erwähnt ein Café."
-    ListeningOption:
+    ProgressListeningOption:
       type: object
       required:
         - text
