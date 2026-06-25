@@ -149,9 +149,8 @@ paths:
         specified CEFR level. Once the script is ready, questions and audio are produced
         concurrently: the LLM generates multiple-choice comprehension questions while
         TTS synthesises the script as spoken audio. Returns the script text, questions
-        (four options each, exactly one correct), and an optional base64-encoded WAV
-        audio of the script (when TTS is enabled). TTS failure is non-fatal — the
-        exercise is returned without audio.'
+        (four options each, exactly one correct), and a base64-encoded WAV audio of
+        the script. TTS failure is fatal because listening exercises require audio.'
       operationId: generateListening
       requestBody:
         content:
@@ -551,16 +550,14 @@ components:
           title: Questions
           description: Multiple-choice comprehension questions about the script
         script_audio_b64:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Script Audio B64
-          description: Base64-encoded WAV of the script spoken aloud (null when TTS
-            is disabled)
+          description: Base64-encoded WAV of the script spoken aloud
       type: object
       required:
       - script
       - questions
+      - script_audio_b64
       title: ListeningGenerateResponse
     ListeningOption:
       properties:

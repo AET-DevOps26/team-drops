@@ -91,9 +91,7 @@ def _post_listening(client, tts_enabled=True, body=None, mock_llm=None):
     with (
         patch("app.routers.listening.synthesize", new=AsyncMock(return_value=_FAKE_AUDIO_B64)),
         patch("app.routers.listening.get_structured_llm", side_effect=side_effect),
-        patch("app.routers.listening.settings") as mock_settings,
     ):
-        mock_settings.tts_enabled = tts_enabled
         response = client.post("/api/v1/genai/listening/generate", json=payload)
     return response
 
@@ -158,27 +156,22 @@ def test_generate_listening_includes_audio_when_tts_enabled(client):
     assert response.json()["script_audio_b64"] == _FAKE_AUDIO_B64
 
 
-def test_generate_listening_no_audio_when_tts_disabled(client):
+def test_generate_listening_includes_audio_even_when_tts_setting_disabled(client):
     response = _post_listening(client, tts_enabled=False)
 
-    assert response.json()["script_audio_b64"] is None
+    assert response.json()["script_audio_b64"] == _FAKE_AUDIO_B64
 
 
-def test_generate_listening_tts_failure_degrades_gracefully(client):
-    """A TTS error must not discard the generated script and questions."""
+def test_generate_listening_tts_failure_returns_bad_gateway(client):
+    """A listening exercise is not useful without audio."""
     with (
         patch("app.routers.listening.synthesize", new=AsyncMock(side_effect=RuntimeError("TTS down"))),
         patch("app.routers.listening.get_structured_llm", side_effect=_make_two_call_llm()),
-        patch("app.routers.listening.settings") as mock_settings,
     ):
-        mock_settings.tts_enabled = True
         response = client.post("/api/v1/genai/listening/generate", json=_REQUEST_BODY)
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["script_audio_b64"] is None
-    assert body["script"] == _FAKE_SCRIPT
-    assert len(body["questions"]) > 0
+    assert response.status_code == 502
+    assert "TTS synthesis failed" in response.json()["message"]
 
 
 # ---------------------------------------------------------------------------
@@ -195,11 +188,7 @@ def _raise_questions_error(_):
 
 
 def test_generate_listening_script_llm_failure_returns_502(client):
-    with (
-        patch("app.routers.listening.get_structured_llm", return_value=RunnableLambda(_raise_llm_error)),
-        patch("app.routers.listening.settings") as mock_settings,
-    ):
-        mock_settings.tts_enabled = False
+    with patch("app.routers.listening.get_structured_llm", return_value=RunnableLambda(_raise_llm_error)):
         response = client.post("/api/v1/genai/listening/generate", json=_REQUEST_BODY)
 
     assert response.status_code == 502
@@ -215,10 +204,9 @@ def test_generate_listening_questions_llm_failure_returns_502(client):
         return RunnableLambda(_raise_questions_error)
 
     with (
+        patch("app.routers.listening.synthesize", new=AsyncMock(return_value=_FAKE_AUDIO_B64)),
         patch("app.routers.listening.get_structured_llm", side_effect=side_effect),
-        patch("app.routers.listening.settings") as mock_settings,
     ):
-        mock_settings.tts_enabled = False
         response = client.post("/api/v1/genai/listening/generate", json=_REQUEST_BODY)
 
     assert response.status_code == 502
@@ -247,9 +235,7 @@ def test_generate_listening_wrong_option_count_returns_502(client):
     with (
         patch("app.routers.listening.synthesize", new=AsyncMock(return_value=_FAKE_AUDIO_B64)),
         patch("app.routers.listening.get_structured_llm", side_effect=side_effect),
-        patch("app.routers.listening.settings") as mock_settings,
     ):
-        mock_settings.tts_enabled = False
         response = client.post("/api/v1/genai/listening/generate", json=_REQUEST_BODY)
 
     assert response.status_code == 502

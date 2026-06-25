@@ -127,7 +127,6 @@ genai:
   ollamaModel: llama3
   whisperModel: base
   whisperDevice: cpu
-  ttsEnabled: false
   prewarmModels: false
   kokoroModelPath: ""
   kokoroVoicesPath: ""

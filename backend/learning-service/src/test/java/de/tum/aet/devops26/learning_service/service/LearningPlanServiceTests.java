@@ -32,12 +32,16 @@ class LearningPlanServiceTests {
     @Mock
     private ExerciseService exerciseService;
 
+    @Mock
+    private LearningPlanSeeder learningPlanSeeder;
+
     @Test
     void createDefaultLearningPlanReturnsExistingDefaultPlan() {
         LearningPlanService service = new LearningPlanService(
             learningPlanRepository,
             lessonService,
-            exerciseService
+            exerciseService,
+            learningPlanSeeder
         );
         CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest()
             .userId(42L)
@@ -59,6 +63,8 @@ class LearningPlanServiceTests {
 
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
             .thenReturn(Optional.of(existingPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
+            .thenReturn(Optional.of(existingPlan));
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
 
         LearningPlanResponse response = service.createDefaultLearningPlan(request);
@@ -67,5 +73,40 @@ class LearningPlanServiceTests {
         verify(learningPlanRepository, never()).save(any(LearningPlan.class));
         verify(lessonService, never()).save(any(Lesson.class));
         verify(exerciseService, never()).save(any(Exercise.class));
+    }
+
+    @Test
+    void findResponsesByUserIdCreatesMissingFixedPlansForExistingUser() {
+        LearningPlanService service = new LearningPlanService(
+            learningPlanRepository,
+            lessonService,
+            exerciseService,
+            learningPlanSeeder
+        );
+        LearningPlan existingPlan = LearningPlan.builder()
+            .id(7L)
+            .userId(42L)
+            .title("Custom Plan")
+            .description("Existing user-created plan")
+            .goal("Practice")
+            .language("German")
+            .level("A2")
+            .duration("1 week")
+            .status(LearningStatus.NOT_STARTED.getValue())
+            .progress(0)
+            .build();
+
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(existingPlan));
+        when(lessonService.findByPlanId(7L)).thenReturn(List.of());
+
+        List<LearningPlanResponse> responses = service.findResponsesByUserId(42L);
+
+        assertThat(responses).hasSize(1);
+        verify(learningPlanSeeder).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanSeeder).createDefaultPlan(any(CreateDefaultLearningPlanRequest.class));
     }
 }

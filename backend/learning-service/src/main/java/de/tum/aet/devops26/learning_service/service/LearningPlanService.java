@@ -11,113 +11,56 @@ import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
 public class LearningPlanService {
 
-    private static final String DEFAULT_TITLE = "Job Interview Preparation";
-    private static final String DEFAULT_DESCRIPTION = "Fixed lessons for practicing professional job interview answers.";
-    private static final String DEFAULT_DURATION = "2 weeks";
-    private static final String DEFAULT_GOAL = "Prepare for a professional job interview";
-    private static final String DEFAULT_LANGUAGE = "English";
-    private static final String DEFAULT_LEVEL = "A2";
-    private static final String DEFAULT_EXPECTED_ANSWER = "Write a clear, professional answer using specific details and formal vocabulary.";
-    private static final List<FixedLesson> FIXED_INTERVIEW_LESSONS = List.of(
-        new FixedLesson(
-            "Self Introduction",
-            "Introduce yourself professionally in an interview.",
-            List.of(
-                "Tell me about yourself.",
-                "Write a short professional introduction.",
-                "Improve your introduction using more formal vocabulary."
-            )
-        ),
-        new FixedLesson(
-            "Education and Background",
-            "Explain your studies, university, and academic background.",
-            List.of(
-                "Describe your degree and specialization.",
-                "Explain why you chose your field.",
-                "Practice saying your graduation status clearly."
-            )
-        ),
-        new FixedLesson(
-            "Work Experience and Internships",
-            "Talk about previous internships, jobs, or projects.",
-            List.of(
-                "Describe one internship or work experience.",
-                "Explain your responsibilities.",
-                "Mention what you learned from the experience."
-            )
-        ),
-        new FixedLesson(
-            "Project Explanation",
-            "Present a technical or academic project clearly.",
-            List.of(
-                "Describe one project you worked on.",
-                "Explain the problem, your solution, and your role.",
-                "Simplify a technical explanation for a non-technical interviewer."
-            )
-        ),
-        new FixedLesson(
-            "Strengths and Weaknesses",
-            "Answer common HR questions about strengths and weaknesses.",
-            List.of(
-                "Name two strengths with examples.",
-                "Explain one weakness professionally.",
-                "Rewrite weak answers into stronger interview answers."
-            )
-        )
-    );
+    private static final Logger LOGGER = LoggerFactory.getLogger(LearningPlanService.class);
 
     private final LearningPlanRepository learningPlanRepository;
     private final LessonService lessonService;
     private final ExerciseService exerciseService;
+    private final LearningPlanSeeder learningPlanSeeder;
 
-    @Transactional
+    /**
+     * Ensures both the default interview plan and the listening plan exist for the user.
+     * Each plan is created in its own REQUIRES_NEW transaction (via LearningPlanSeeder) so that
+     * a concurrent DataIntegrityViolationException on the (user_id, title) unique constraint
+     * rolls back only that inner transaction and does not prevent the overall method from succeeding.
+     */
     public LearningPlanResponse createDefaultLearningPlan(CreateDefaultLearningPlanRequest request) {
-        return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), DEFAULT_TITLE)
-            .map(this::toResponse)
-            .orElseGet(() -> createFixedDefaultLearningPlan(request));
-    }
-
-    private LearningPlanResponse createFixedDefaultLearningPlan(CreateDefaultLearningPlanRequest request) {
-        LearningPlan plan = learningPlanRepository.save(LearningPlan.builder()
-            .userId(request.getUserId())
-            .title(DEFAULT_TITLE)
-            .description(DEFAULT_DESCRIPTION)
-            .goal(valueOrDefault(request.getLearningGoal(), DEFAULT_GOAL))
-            .language(valueOrDefault(request.getTargetLanguage(), DEFAULT_LANGUAGE))
-            .level(valueOrDefault(request.getCurrentLevel(), DEFAULT_LEVEL))
-            .duration(DEFAULT_DURATION)
-            .status(LearningStatus.NOT_STARTED.getValue())
-            .progress(0)
-            .build());
-
-        for (int lessonIndex = 0; lessonIndex < FIXED_INTERVIEW_LESSONS.size(); lessonIndex++) {
-            FixedLesson fixedLesson = FIXED_INTERVIEW_LESSONS.get(lessonIndex);
-            Lesson lesson = lessonService.save(Lesson.builder()
-                .planId(plan.getId())
-                .title(fixedLesson.title())
-                .topic(fixedLesson.topic())
-                .orderNumber(lessonIndex + 1)
-                .build());
-
-            for (String question : fixedLesson.exercises()) {
-                exerciseService.save(Exercise.builder()
-                    .lessonId(lesson.getId())
-                    .type("free_text")
-                    .question(question)
-                    .difficulty(plan.getLevel())
-                    .expectedAnswer(DEFAULT_EXPECTED_ANSWER)
-                    .build());
+        // Listening plan — failure due to concurrent creation is silently ignored
+        try {
+            if (learningPlanRepository.findFirstByUserIdAndTitle(
+                    request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isEmpty()) {
+                learningPlanSeeder.createListeningPlan(request);
             }
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.info("Listening plan already exists for user {} (concurrent creation)", request.getUserId());
         }
 
-        return toResponse(plan);
+        // Default interview plan — same pattern
+        try {
+            return learningPlanRepository.findFirstByUserIdAndTitle(
+                    request.getUserId(), LearningPlanSeeder.DEFAULT_TITLE)
+                .map(this::toResponse)
+                .orElseGet(() -> toResponse(learningPlanSeeder.createDefaultPlan(request)));
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.info("Default plan already exists for user {} (concurrent creation)", request.getUserId());
+            return learningPlanRepository.findFirstByUserIdAndTitle(
+                    request.getUserId(), LearningPlanSeeder.DEFAULT_TITLE)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Default plan creation failed and no existing plan found for user " + request.getUserId()));
+        }
     }
 
     @Transactional
@@ -160,11 +103,34 @@ public class LearningPlanService {
         return toResponse(plan);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<LearningPlanResponse> findResponsesByUserId(Long userId) {
+        ensureFixedPlans(userId);
         return learningPlanRepository.findByUserId(userId).stream()
             .map(this::toResponse)
             .toList();
+    }
+
+    private void ensureFixedPlans(Long userId) {
+        CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest().userId(userId);
+
+        try {
+            if (learningPlanRepository.findFirstByUserIdAndTitle(
+                    userId, LearningPlanSeeder.LISTENING_TITLE).isEmpty()) {
+                learningPlanSeeder.createListeningPlan(request);
+            }
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.info("Listening plan already exists for user {} (concurrent creation)", userId);
+        }
+
+        try {
+            if (learningPlanRepository.findFirstByUserIdAndTitle(
+                    userId, LearningPlanSeeder.DEFAULT_TITLE).isEmpty()) {
+                learningPlanSeeder.createDefaultPlan(request);
+            }
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.info("Default plan already exists for user {} (concurrent creation)", userId);
+        }
     }
 
     private LearningPlanResponse toResponse(LearningPlan plan) {
@@ -187,12 +153,5 @@ public class LearningPlanService {
 
     private LearningStatus toLearningStatus(String value) {
         return value == null ? LearningStatus.NOT_STARTED : LearningStatus.fromValue(value);
-    }
-
-    private String valueOrDefault(String value, String defaultValue) {
-        return value == null || value.isBlank() ? defaultValue : value;
-    }
-
-    private record FixedLesson(String title, String topic, List<String> exercises) {
     }
 }

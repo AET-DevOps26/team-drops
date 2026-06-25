@@ -1,9 +1,6 @@
 import asyncio
-import logging
-
 from fastapi import APIRouter, HTTPException
 
-from app.config import settings
 from app.llm import get_structured_llm
 from app.prompts.listening import listening_questions_prompt, listening_script_prompt
 from app.schemas.listening import (
@@ -17,7 +14,6 @@ from app.schemas.listening import (
 from app.tts import synthesize
 
 router = APIRouter(prefix="/listening", tags=["listening"])
-logger = logging.getLogger(__name__)
 
 _DEFAULT_QUESTION_COUNT = 4
 
@@ -33,8 +29,8 @@ _DEFAULT_QUESTION_COUNT = 4
         "the LLM generates multiple-choice comprehension questions while TTS synthesises "
         "the script as spoken audio. "
         "Returns the script text, questions (four options each, exactly one correct), "
-        "and an optional base64-encoded WAV audio of the script (when TTS is enabled). "
-        "TTS failure is non-fatal — the exercise is returned without audio."
+        "and a base64-encoded WAV audio of the script. "
+        "TTS failure is fatal because listening exercises require audio."
     ),
     openapi_extra={"x-service": "genai-service"},
 )
@@ -66,13 +62,7 @@ async def generate_listening(body: ListeningGenerateRequest) -> ListeningGenerat
             "count": _DEFAULT_QUESTION_COUNT,
         }
     )
-    # asyncio.sleep(0) is a no-op coroutine that resolves to None when TTS is off,
-    # keeping the gather call symmetric without a purpose-built helper function.
-    tts_coro = (
-        synthesize(script_result.script, body.target_language)
-        if settings.tts_enabled
-        else asyncio.sleep(0)
-    )
+    tts_coro = synthesize(script_result.script, body.target_language)
 
     questions_raw, audio_raw = await asyncio.gather(
         questions_coro, tts_coro, return_exceptions=True
@@ -84,15 +74,11 @@ async def generate_listening(body: ListeningGenerateRequest) -> ListeningGenerat
             detail=f"LLM questions generation failed: {questions_raw}",
         )
 
-    # TTS is best-effort — a synthesis failure must not discard the generated exercise
-    script_audio: str | None = None
-    if settings.tts_enabled:
-        if isinstance(audio_raw, BaseException):
-            logger.warning(
-                "TTS synthesis failed, returning exercise without audio: %s", audio_raw
-            )
-        else:
-            script_audio = audio_raw
+    if isinstance(audio_raw, BaseException):
+        raise HTTPException(
+            status_code=502,
+            detail=f"TTS synthesis failed: {audio_raw}",
+        )
 
     # Guard against malformed LLM output (e.g. wrong option count) that passes
     # _QuestionsLLMOutput deserialization but violates ListeningQuestion constraints.
@@ -115,5 +101,5 @@ async def generate_listening(body: ListeningGenerateRequest) -> ListeningGenerat
     return ListeningGenerateResponse(
         script=script_result.script,
         questions=questions,
-        script_audio_b64=script_audio,
+        script_audio_b64=audio_raw,
     )

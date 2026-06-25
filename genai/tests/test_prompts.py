@@ -88,6 +88,7 @@ def test_generation_prompts_include_quality_rules():
 
     assert "Listening script quality rules" in script_text
     assert "Do not require outside knowledge" in script_text
+    assert '"script"' in script_text
 
     assert "Listening question quality rules" in questions_text
     assert "Exactly one option must have is_correct=true" in questions_text
