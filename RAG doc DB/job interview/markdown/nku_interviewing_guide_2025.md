@@ -1,0 +1,776 @@
+## Page 1
+
+UC 225 | nku.edu/careerservices | 859-572-5680
+
+## Page 2
+
+General Information
+What is an Interview?
+An interview is an opportunity for applicants and employers to evaluate the fit between the
+applicant’s qualifications and the position being considered. It is not designed to be a process of
+interrogation but rather a mutual exchange of information based on two-way communication.
+Impressive resumes and cover letters will get you employment interviews; however, the
+interview itself will typically be the most significant aspect of the employment process.
+
+Objectives of the Interview:
+• To expand on experiences contained in your resume;
+• To provide information that is not in your resume (personality, oral communication skills,
+general style, etc.);
+• To gain additional information about the organization and the position you are considering;
+and,
+• To provide opportunity for both parties to discuss the possibility of employment.
+
+Types of Interviews
+Broadly speaking, there are two basic types of interviews: screening interviews and selection
+interviews.
+1. The screening interview is usually rather general and is relatively short (often 30-45
+minutes). It is intended primarily to eliminate unqualified candidates from further
+consideration. For example, when employers recruit on a college campus, they use
+screening interviews to decide which of numerous candidates are potentially best qualified
+to meet their organization’s needs. Screening interviews may also be conducted by phone
+or via videoconferencing software such as Skype. Once screening interviews have been
+conducted, it is typical for a portion of the candidates to be invited to the employer’s office or
+facility for a second, more detailed interview.
+2. The selection interview, a longer, more thorough interview, is designed to identify the most
+qualified candidate for the position. A selection interview may last up to one hour or more. It
+is not uncommon for a candidate to go through a sequence of four or five selection
+interviews with several different employment officials during the course of a day-long facility
+or office visit. This is also called a “second interview” and is discussed more thoroughly later
+in this guide.
+Regardless of the type of interview, both the interviewer and interviewee will have dual roles.
+Not only will you be presenting yourself and your qualifications, but you will also be evaluating
+whether or not you would consider working in the organization based on information and
+impressions you acquire in the interview. At the same time, the interviewer will be trying to
+discern your potential as an employee, as well as presenting his/her organization in an
+informative and appealing manner.
+
+TIP: Since the most common way to be contacted for an interview is by phone,
+you will want to have a professional-sounding message on your voicemail.
+1
+
+## Page 3
+
+Interview Preparation
+Most candidates interviewing for a given position will have the basic qualifications necessary to
+do that job. However, it is typically the candidates who do the best job of presenting them-
+selves who get job offers. Preparing thoroughly for your interview will better enable you to
+effectively present yourself and your qualifications as they relate to the position for which you
+are interviewing. Basic interview preparation should include:
+
+Knowing yourself.
+Think about how your interests, skills, education, experiences, and values fit in with the type of
+organization and position for which you are being interviewed.
+
+Knowing the organization.
+Knowledge of the organization, its products or services, locations, and needs is essential and
+expected. Be especially conscientious about researching the organization through both
+their website and other online news sources. The more you know about the organization, the
+industry it represents, the position under consideration, and how all this relates to your own
+career goals, the more effective you will be. Thorough preparation will strengthen your self-
+confidence and will demonstrate sincere interest in the job. A lack of knowledge of the
+organization could greatly hurt your chances of being hired.
+
+Clearly defining your goals prior to the interview.
+Employers look favorably upon candidates who have specific and well-defined career goals. For
+example, you may say to an interviewer, “Ms. Nicks, I am particularly interested in a sales
+representative position with your company. Eventually, I would like to advance to a sales
+management position.” Many mistakenly believe that the more general they are about what they
+want to do, the better their chances of getting a job. Focus as clearly as possible on your job
+objective.
+
+Practicing.
+You must be able to communicate information effectively to the employer. Strive to become as
+articulate and natural in your interview presentation as possible. There will probably be plenty of
+rough edges at first, but you’ll almost surely find that your interviewing skills will improve quickly
+with practice.
+You do not want to sound like a recording that recites a pre-recorded, word-for-word answer to
+an interviewer’s questions. However, you do want to be able to communicate readily and easily
+about yourself. Know your general points and supporting examples; allow them to come
+together as the questions are asked.
+
+TIP: Career Services has two great ways to practice your interview skills.
+Big Interview is an online mock interview system that is accessible through
+one.nku.edu. To schedule an in-person mock interview with Career Services staff,
+call us at 859-572-5680 or stop by University Center 225.
+
+2
+
+## Page 4
+
+Interviewing Basics
+Your interview, and your chance to make a positive first impression, begins long before you
+answer your first interview question. To get your interview off to a great start, consider the
+following suggestions:
+
+Dress appropriately
+A properly fitting business suit in a classic color is recommended. If in doubt, dress up.
+Distracting jewelry, nail polish, makeup, or perfume/cologne should be avoided. All clothing
+should be pressed and clean; hair, nails, and facial hair should be neatly groomed. A good
+appearance reinforces your many positive attributes! Additional professional dress tips are
+available on our website.
+
+Be punctual
+Never be late for an interview! Your first opportunity to make a favorable impression on the
+interviewer is to be punctual. Try to arrive early enough (10-15 minutes) to allow time to check
+your appearance, collect your thoughts, etc. If for some reason you will be late, be certain to
+call ahead. One way to help you arrive on time is to visit the interview site in advance of the
+appointment to be sure you know how to get there and where to park. Upon arrival for your
+interview, greet the employer’s receptionist and/or administrative staff courteously and with
+respect. First impressions really count!
+
+Handle introductions properly
+The introductions between you and your interviewer are an important part of getting the
+interview started on a positive note. Greet your interviewer with a smile, a firm handshake, and
+direct eye contact. The interview will generally begin with a social comment about the weather
+or current events to put you at ease. Expect it and react in a normal, cordial fashion. Be sure to
+note your interviewer’s name and use it during the interview.
+
+Prepare your materials
+Bring copies of your resume, list of references, academic transcript, and a notepad and pen in a
+professional portfolio or folder. Your list of references should indicate their names, titles,
+addresses, and telephone numbers. If appropriate (as in the case of advertising, journalism, art,
+or education), bring a portfolio containing samples or illustrations of your work.
+
+TIP: Building your professional wardrobe can take time and money, but there are
+cost-effective places to shop for an interview suit and business professional
+clothing. Try shopping at outlets, discount stores, and consignment shops for more
+reasonably priced clothing. See our Professional Clothing Guide handout on our
+website for more information.
+3
+
+## Page 5
+
+Types of Interview Questions
+There are four main types of questions you will face in an interview: direct, open-ended,
+behavioral, and company-specific. Below, we explore each of these types of questions and
+examples of each.
+
+Direct Questions
+These questions are focused, straight forward and related to the job. For example, “Which
+computer programming languages do you have experience using?” or “What leadership
+experience do you have?”
+
+Open-ended Questions
+These questions are broad and usually help the interviewer to better understand you as a
+person and as a potential employee. Some common examples include, “Tell me about
+yourself,” and “Where do you see yourself in five years?”
+
+Behavioral Questions
+These questions seek to understand your past behaviors as a predictor of future results by
+asking for specific, real examples or stories. For example, “Tell me about a time when you
+handled an upset customer,” or “Describe a situation when you went above and beyond what
+was required of you.”
+
+Company-specific Questions
+These questions will be directly related to the organization. Examples include, “Tell me what
+you know about our organization,” or “Why do you want to work for ABC Company?”
+
+TIPS: Appendix A includes a list of more questions designed to give you an idea of
+the types of questions you can expect to be asked. Study it carefully and prepare to
+respond effectively to these and similar questions.
+
+A list of sample behavioral interview questions is included as Appendix B. These sample
+questions have been organized by categories, such as leadership and problem solving.
+Consider the nature of the job for which you are interviewing, and practice questions from
+relevant categories.
+
+It is impossible to know exactly what questions you will be asked during an interview, but
+understanding the types of questions that are common and practicing your answers to them will
+help you feel more prepared and confident.
+
+
+
+4
+
+## Page 6
+
+Responding to Interview Questions
+The majority of the interview time is typically devoted to the employer asking you questions; it is
+the heart of the interview. Below, we consider best practices for answering interview questions.
+
+Try to discern what an employer is really asking you.
+What are the underlying questions? For example, if an employer asks what qualities you think
+are important for someone in the position you are applying for, they probably really want to
+know whether you have given thoughtful consideration to the skills and abilities necessary to
+succeed within their organization. Put yourself in the employer’s frame of reference and
+respond as directly as possible. Your goal is to put yourself in the best possible light and lessen
+any reservations the employer may have about your suitability for employment.
+
+Remember to be yourself and focus on your positive assets.
+If there are periods in your past that are difficult to explain, do not dwell on them. Respond to
+the interviewer’s questions honestly, indicating what you have learned from your mistakes.
+Take responsibility for your past actions and do not blame others. If something in your past is
+indicative of poor judgment, try to give examples of more recent things you have done that
+indicate good judgment. Consider the following example:
+Question: “Your GPA is a 2.3. That’s considerably lower than the other people interviewing for
+this position. Care to comment?”
+Response: “Yes, it is low. I’m convinced that my grades don’t adequately reflect the knowledge
+I’ve gained. The skills I have developed over the past four years both in and out of the
+classroom have prepared me for this position. For example, I have worked with a variety of
+people through the offices I’ve held in my fraternity. You’ll note that I was the chairperson of a
+successful charity fund-drive involving all fraternities and sororities on campus.”
+
+TIPS: When asked “Tell me about yourself,” answer with your education,
+experience, and passions relating to the job. Do not give your entire life history!
+
+As much as possible, provide details and relevant examples, such as job
+experiences, pertinent hobbies, travel, positions held, college and community
+organizations, school work, special projects, and honors. Answer questions by focusing on
+experiences, accomplishments, and skills you have that relate to the specific job for which you
+are interviewing. Keep your answer brief so that you don’t lose the interviewer’s attention.
+
+When asked about your weaknesses or opportunities for growth, be authentic and self-aware,
+and conclude with the steps you’re taking to improve this weakness. Avoid mentioning things
+that would hurt your chances of being hired. Be careful about weaknesses that are also
+strengths, such as caring too much or working too hard, which may seem like non-answers.
+5
+
+## Page 7
+
+Behavioral Interviews
+Behavioral interviews are based on the premise that the most accurate predictor of future
+performance is past performance in similar situations. Behavioral interview questions often
+begin with “Tell me a time when…” prompts. The interviewer wants you to share a real
+experience you’ve had that helps them better understand your approach to specific workplace
+situations, such as dealing with a difficult customer or taking initiative.
+
+Anticipating what you’ll be asked
+It is impossible to predict every question an interviewer will ask you, but you can make an
+educated guess by thinking about the aspects of the role for which you are interviewing. Is this
+a customer-facing role? You will probably be asked about customer service or communication.
+Is sales an aspect of this role? If so, then expect a question about persuading others. By
+researching the employer and requesting a detailed job description, you can better anticipate
+the type of questions that might be asked.
+Appendix B contains sample behavioral interview questions grouped under common key
+characteristics. Review these questions, especially the ones listed under the characteristics you
+believe are important for positions you seek.
+
+Preparing positive examples
+An excellent way to prepare for behavioral questions is to think of a few example stories that
+can be adapted to many different questions. Identify six to eight examples from your past where
+you positively demonstrate key characteristics that employers typically seek, such as
+leadership, communication, and problem solving.
+These examples don’t always come from work experience. Also think of examples from class
+projects, activities, internships, athletic team participation, community service and/or hobbies
+that allow you to demonstrate a moment when you really shined!
+
+Addressing a negative question
+Nobody is perfect, and sometimes interviewers want to know how you handle failure or set-
+backs in life. In addition to the positive stories you’ve gathered, you’ll also want to have one or
+two examples of negative experiences ready. As with any interview question that exposes
+weaknesses or negativity, try to pick examples with positive outcomes or where you learned
+from the experience.
+
+Behavioral interviews are challenging, but if you know what to expect and are prepared, you will
+be more confident and successful!
+
+TIP: Don’t try to memorize answers; instead prepare a mental outline to follow in
+responding to the questions.
+6
+
+## Page 8
+
+The C.A.R. Method
+Telling a compelling story
+Your responses to behavioral interview questions should provide the Context (background) of a
+specific situation, the Actions you took, and the Results you achieved. By using the C.A.R.
+method, you ensure that you are providing a thorough response without rambling.
+While your answers shouldn’t be too long, they also shouldn’t be too brief. You want to strike a
+balance between being succinct and providing important details. Your ability to provide
+appropriately detailed answers to interviewers’ questions will give you a substantial advantage
+over candidates who give more general answers. Here is an example:
+
+Interview Question:
+Describe a situation in which you successfully persuaded others to see your point of view.
+
+Interviewee Response:
+
+
+TIP: Be especially diligent in explaining your actions and the results! Don’t be
+surprised if the interviewer probes further for more depth or detail. But be careful—if
+you tell a story that is anything but totally honest, your response will not hold up
+through further questions.
+Context In my public speaking class I was asked to develop an impromptu persua-
+sive presentation. I was asked to convince my peers in the class to agree to
+come in on a Saturday morning to hear speakers during a panel discussion.
+This was an actual upcoming event being sponsored by the Communication
+Department.
+Action Taken I thought for a few minutes, developed my rationale, took a deep breath and
+stood up to speak to the class. I made a strong proposal and supported it
+with logical reasons, including the networking contacts we could make and
+the knowledge we would gain about jobs in our field. This was difficult to do,
+since most of us like to sleep in on Saturday if we can!
+Results While I was not able to persuade everyone, roughly half the class came to
+the panel discussion that Saturday. My instructor said it was the best turnout
+she had ever had for this event. I believe my arguments had something to do
+with its success.
+7
+
+## Page 9
+
+Selection Interviews
+Selection, or second, interviews are typically held at the organization’s office or facility and are
+usually the last step in the interviewing process. They are designed so that the employer and
+candidate can get to know each other in more depth than is possible in the campus or
+screening interview.
+
+Assessing “fit”
+The objective of second interviews is to ensure that there is a good "fit" between you and the
+organization and position. During these visits, you will learn and observe more about the
+position and the employer's culture. The interviewers will be assessing your fit in their
+organization, but you should also consider how well you would fit there.
+Reflect on the following questions:
+• Do you enjoy the people here?
+• What seems to be the work attitude? Positive?
+• Are people respectful and professional?
+• Can you see yourself enjoying your work here?
+
+Interviewing with multiple people
+During your second interview, it is common to have numerous interviews with various levels of
+employees, which could be in a one-on-one or group setting. The types of people involved may
+include managers, human resources officials, recent alumni, your prospective immediate
+supervisor, and people in departments with whom you would work closely. Having the chance
+to speak to a variety of people will give you a better understanding of the overall organization.
+
+Additional Preparation
+Before going into a second interview, take the time to do some additional, in-depth preparation.
+Here a few things to do:
+• Prepare questions to ask the interviewer, using Appendix C as a guide
+• Be very familiar with and up to date on information about the employer
+• Explore the employer’s website and social media presence
+• Search for relevant news about the employer
+• Talk with a former student who works for the employer and/or faculty and Career Services
+staff members who may be familiar with the organization
+• Confirm your meeting time and place with your primary contact several days prior to your
+interview
+• Review driving directions to interview site and identify parking options, if needed
+• Pick out appropriate interview attire
+• Review your activities, work experience, strengths, skills, and other qualifications that match
+what the employer is seeking
+• If you are going to an interview out of town, see Appendix D for information on how to
+handle the arrangements, expenses, and arrival with long distance travel.
+
+
+8
+
+## Page 10
+
+Concluding the Interview
+Questioning the interviewer
+As important as it is to provide good answers to interviewers’ questions, you must also be
+prepared to ask relevant questions during the interviewing process. In most cases, candidates
+are also evaluated on the basis of the questions they ask during employment interviews.
+Your questions should reflect a sincere interest in the organization and an awareness of the
+employer’s needs and how you can fulfill them. Don’t bring up salary or benefits unless they do.
+Examples of good questions to ask are located in Appendix C.
+
+Concluding the interview
+Most interviewers will conclude the interview by indicating when you can expect to receive
+further word on your status as an applicant. However, if the interviewer does not volunteer this
+information, be certain to ask. This will help you to follow up your interviews within a reasonable
+time frame. When employers are interviewing numerous candidates, your follow-up efforts will
+help distinguish you from less conscientious applicants.
+As a means of facilitating this follow-up process, ask the interviewer for a business card and
+keep it handy for future reference. If the employer does not have a business card, write down
+their full name, title, address, email address, and phone number for your records immediately
+after the interview.
+
+Thanking the interviewer
+As a matter of courtesy, it is important to send your interviewer a short thank-you letter within
+24 hours after the interview. Because hiring decisions can happen quickly, these letters are
+usually sent by email, but they can be typed or hand-written and mailed to the interviewer(s).
+A well-written thank-you letter will:
+• Remind the employer who you are
+• Impress him or her with your courtesy and follow-through
+• Remind the employer of your background and qualifications
+• Show your enthusiasm and continued interest in the field or specific position discussed
+• Convey to the employer your sincere appreciation for his or her time and consideration
+If the interviewer indicated a specific time frame by which you should learn of your status as an
+applicant, be sure to mention that you are looking forward to hearing from him or her by this
+time.
+
+TIPS: Did you interview with more than one person? Get business cards from each
+interviewer, and send a separate thank-you letter to each person.
+
+For an example of a thank-you letter, see our Cover Letter & Job-Search Letters
+Guide.
+
+
+9
+
+## Page 11
+
+Salary and Benefit Considerations
+Bringing up salary
+It is normally best to let employers take the initiative in bringing up the subject of salary.
+Questions relating to salary and benefits should be avoided during the initial screening interview
+unless brought up by the employer. Rather, these types of questions are more often discussed
+in second/selection interviews—after you and the employer have developed a greater degree of
+mutual interest or you have received a job offer.
+Before going into an interview situation, you should research the field to find out the salary
+range you can expect. The online Occupational Outlook Handbook, published by the U.S.
+Department of Labor, and the National Association of Colleges and Employers’ Salary Survey
+are good resources to learn reasonable salary expectations. Also see websites such as
+salary.com and payscale.com.
+
+Negotiating salary
+If you are seeking an entry-level position, you may have relatively little opportunity to negotiate
+your salary. Most employers, at least those of substantial size, have fairly standard salary
+packages for entry-level candidates. It is rare that these employers will deviate significantly from
+an established norm.
+However, some employers do include salary premiums for such things as previous internship or
+co-op experience, high academic achievement, etc. If in doubt about how the salary you are
+initially offered has been determined, simply ask the employer how the offer compares with
+offers being made to other entry-level candidates. This will open up an opportunity for you to
+mention any special “qualifiers” you may possess that may have been overlooked in the
+interviewing process.
+Also, ask when your performance and salary will be reviewed. It may well be that your salary
+will increase after you complete a formal or informal probationary period. In any case, if you
+engage in salary negotiations, strive for a “win-win” outcome and beware of the pitfalls of
+pushing too hard on the salary issue.
+
+Looking beyond salary
+Keep in mind that an employer can increase the "value" of an offer to you in many ways,
+including a starting bonus, company car, commissions, an expense account, temporary housing
+during your move and moving expenses (if relocating), tuition reimbursement, and others.
+You should also carefully evaluate the complete employee benefits package. Normally,
+employee benefit plans are described as part of the salary discussion, and literature detailing
+employee benefits is provided. In any case, be certain that you understand the benefits to which
+you would be entitled and how soon they would begin.
+
+TIPS: If questioned about salary, it is advisable to avoid giving an exact figure.
+Rather, you should indicate a broad salary range based on your research.
+
+Don’t scare off an interviewer by seeming to be overly concerned about salary,
+ benefits, and vacation time early in the interview process.
+
+
+
+10
+
+## Page 12
+
+Additional Considerations
+Testing
+An increasingly common part of the employment process is testing of some kind. This can
+include personality and interest inventories, mathematical and verbal tests, or drug tests. Many
+times, offers are contingent upon completion of these tests that can take place during a second
+interview. Usually there is not much preparation that can be done for these tests. With
+personality or interest inventories, keep in mind that there are no right or wrong answers. You
+should answer questions honestly in order to give an accurate profile of yourself.
+Drug tests have also become a standard part of the employment process. These tests usually
+take the form of a urine or blood sample that is analyzed for controlled substances. You should
+not be caught off guard if any of these tests are a part of your second interviews. In addition,
+you should keep in mind that failure to complete these tests might mean that you will not be
+considered further for employment.
+
+Evaluating Your interviews
+Immediately following your interview, take some time to evaluate your performance. Each
+interview should be a learning opportunity and a beneficial experience. You will find that the
+more you interview, the better you become at effectively presenting your career interests and
+qualifications to employers.
+However, if you consistently find yourself being overlooked by employers, consider the following
+factors:
+• Have you set realistic job goals for yourself?
+• Do you need to do your pre-interview research more thoroughly?
+• Are you presenting yourself in the best possible manner?
+• Does your resume reflect your career interests and support your claims? Does it represent
+the real you?
+• Are you conveying an enthusiastic and well-informed interest in the position and an
+eagerness to learn?
+• Are you utilizing Career Services mock interview service and/or Big Interview to practice
+your interview skills and receive feedback for how to improve?
+Ultimately, as you evaluate your interviews, you will develop new skills in the process of
+interviewing. Remember, the number one rule in any hiring situation is to convince the
+organization that you are worth more than they will be paying you. Be confident in yourself, and
+don’t give up trying.
+
+
+
+
+
+
+11
+
+## Page 13
+
+Appendix A
+General Sample Interview Questions
+• Tell me about yourself.
+• What are your major strengths/weaknesses?
+• Why should I hire you over other candidates?
+• What kind of professors did you like?
+• Do you work well under pressure? How do you handle it?
+• What have you done to show initiative and innovation?
+• What supervisory or leadership roles have you had?
+• What have been your most satisfying and most disappointing experiences?
+• Why did you decide to interview with us?
+• Why are your grades low? Do they reflect your ability?
+• What do you know about our organization?
+• What interests you about this specific position?
+• What qualifications do you have that make you feel you would be successful?
+• What have you learned from some of the jobs you have held?
+• What is not on your resume that you would like to tell me?
+• What have you read recently?
+• In what school activities have you participated? Why?
+• Which school activities did you enjoy the most?
+• How did you spend your vacations while in school?
+• If you were starting college all over again, what would you do differently?
+• Do you think your extracurricular activities were worth the time you devoted to them?
+Why?
+• What are your long-range/short-range goals? How do you plan to achieve them?
+• What do you see yourself doing five years from now?
+• Why did you choose the career for which you are preparing?
+• If you were hiring a graduate for this position, what qualities would you look for?
+• Why did you select NKU?
+• What major problem have you encountered and how did you deal with it?
+• What have you learned from your mistakes?
+• What criteria are you using to evaluate the organization for which you hope to work?
+• What other employers are you interviewing with?
+• What types of positions are you considering?
+• What would be your ideal job?
+• Why did you select your particular major?
+12
+
+## Page 14
+
+Appendix B
+Sample Behavioral Interview Questions
+Motivation
+• Tell me a time when you set a goal and were able to meet or achieve it.
+• Describe a situation when you were able to have a positive influence on the actions of others.
+Planning and Organizing
+• Describe how you handle having your schedule suddenly interrupted.
+• Tell me about a time when you worked effectively under pressure.
+Decision Making
+• Give me an example of a time when you had to be quick in coming to a decision.
+• Tell me about a time when you made a bad decision.
+Leadership
+• Tell me about a time when you had difficulty getting others to accept your ideas. What was
+your approach?
+• Give an example of your ability to build motivation in your co-workers, classmates, or other
+group members.
+Interpersonal Skills
+• Tell me about a time when you had to deal with a very upset customer or co-worker.
+• Describe a situation in which you were able to effectively “read” another person and guide
+your actions by your understanding of their needs and values.
+Initiative
+• Describe a situation when you had to go above and beyond the call of duty in order to get the
+job done.
+• Give me examples of projects/tasks you started on your own.
+Communication
+• Tell me about a situation when you had to speak up (be assertive) in order to get a point
+across.
+• Give an example of a time when you had to use your presentation skills to influence
+someone’s opinion.
+Teamwork
+• Tell me about a team experience you found rewarding.
+• Describe a team experience you found disappointing. What could you have done to prevent
+this?
+Problem Solving
+• Tell me about a time you were creative in solving a problem.
+• Describe an instance when you missed an obvious solution to a problem.
+13
+
+## Page 15
+
+Appendix C
+Questions for the Interviewer
+• What qualities are you looking for in your new hires?
+• Could you describe a typical first-year assignment?
+• Could you tell me about your initial and future training programs?
+• Do you have in-house professional development seminars? If so, what topics are typically
+covered?
+• What are some of the typical career paths followed by others who have been in this
+position? What is a realistic time frame for advancement?
+• How is an employee evaluated and promoted?
+• What are the opportunities for personal growth?
+• What is the retention rate of people in the position for which I am interviewing?
+• What are the most challenging facets of the position?
+• What are your expectations for new hires?
+• What is the overall structure of the department where the position is located?
+• What is the work environment like?
+• How often can I expect to relocate during the initial years of employment with your
+company?
+• What are the organization’s plans for future growth?
+• Is the organization stable and financially sound?
+• What assurance about employment stability can I expect?
+• Is it company policy to promote from within? What is the work history of your top
+management?
+• What distinguishes your firm from its competitors?
+• What industry-wide trends are likely to affect your organization?
+• What are your company’s strengths and weaknesses?
+• How would you describe your corporation’s personality and management style?
+• How is the work environment affected by the company’s management style?
+• If you were to name three values this organization represents, what would they be?
+• Why should I want to work for your organization instead of another?
+• Why did you join and stay with the firm?
+• What do you like about working for this organization? What don’t you like?
+14
+
+## Page 16
+
+Appendix D
+Tips for Long Distance Interviews
+Arrangements and Expenses
+• Determine your primary contact to work with regarding arrangements. If possible, you
+should confirm the arrangements in writing, regardless of the method an employer used to
+contact you.
+• Be sure to discuss who is paying for the trip. If you are travelling to an interview, employers
+may reimburse you for your transportation, meals, hotel, and parking. Alternately, employers
+may be willing to pre-pay travel and lodging expenses if you do not have a credit card or
+sufficient cash. Ask about any expense forms that need completion and keep any receipts.
+• Transportation may be by car or plane depending on the distance involved and your
+preference. The employer may make the arrangements or ask you to make them. If you
+make them, ask the employer for recommendations on airlines, hotels, ground
+transportation, etc.
+• The employer may suggest that you rent a car upon arrival. That is fine if you meet the
+minimum age requirement and have a major credit card, but you may not, so be certain to
+inquire about this to avoid embarrassment. It also shows that you plan ahead.
+• Visits can be at least one full day, so overnight accommodations may be necessary. Most
+times an employer will want to work around your schedule but will also appreciate your
+flexibility. On occasion, a married student's spouse will be invited, but the employer should
+take the initiative in such cases.
+• Be sure to confirm arrangements several days prior to your visit and get any necessary
+directions as well as the name and telephone number of your host. This will enable you to
+avoid any miscommunication.
+• Keep your expenses within a reasonable range. Using common sense and good judgment
+is very important. Never double-charge two or more employers for the same trip. Rather,
+prorate your expenses among employers visited on the same trip.
+
+Arrival
+This will vary depending upon whether you are driving or flying, but it is a good idea to arrive in
+or near your destination the evening before the interview. If you fly, it is especially important that
+you confirm your flight a few days ahead of your visit. A representative may meet you at the
+airport, or you might take a courtesy van or taxi. In either case, you should dress
+professionally—as you would for an interview. You may be going to dinner or to the employer's
+office before going to the hotel.
+If you drive, be sure to allow yourself plenty of time. Plan extra time for delays such as road
+construction or detours. You should also keep a record of your mileage and receipts for
+gasoline.
+
+15
+
+## Page 17
+
+Appendix E
+How to Handle Improper or Illegal Interview Questions
+During an interview, you are expected to answer questions that relate to the job and your
+qualifications for the position. It can be very alarming to be asked an interview question about
+your private life or personal matters. Questions about personal matters may not be illegal per
+se, but employers risk violating Equal Employment Opportunity laws by mentioning certain
+topics, even in casual conversation. These laws prohibit employers from discriminating in hiring
+on the basis of race, color, religion, sex (including pregnancy, gender identity, and sexual
+orientation), national origin, age, disability or genetic information; however, the laws do not
+specifically indicate questions that cannot be asked.
+
+Why Might an Employer Ask an Illegal Question?
+• Employment laws change frequently. Sometimes it is difficult for employers to keep up with
+new developments in this area
+• Recruiters may not have received extensive training in personnel practices
+• Employers may have legitimate concerns about reliability, dependability, willingness to
+travel or relocate, but may not have been trained in how to assess these issues through
+appropriate questions
+• Employers legitimately want to reduce the likelihood of untimely turnover of new employees.
+It is expensive to hire and train a new employee only to have him or her leave the job in a
+short time because of conflicts with personal or family responsibilities and obligations
+While you may justifiably feel offended, frustrated or even angry when asked an illegal question,
+you do not want to overreact, especially if you are genuinely interested in the job. In fact,
+handling the issue in a professional manner will be a credit to you.
+
+How Should You Respond if You are Asked an Improper Question?
+An article in an issue of the college edition of the National Business Employment Weekly by
+James M. Jenks, suggests three alternatives on how to respond when you feel the interviewer
+has asked an illegal question:
+• You Can Refuse to Answer—tell the employer you think the question is improper. Using this
+response may make you feel better, but chances are you will not get the job.
+• You Can Answer the Question as Asked—swallow your pride to stay in the running for the
+job.
+• You Can Answer the Legitimate Concern of the Employer—ignore the improper question
+itself, and respond instead to the concern underlying the question.
+The third choice allows you to present yourself in a positive manner and control the way you
+answer the question. You might want to rephrase the question or simply ignore it and answer
+the issue behind the question. You can address an interviewer’s reservations directly, correct
+erroneous assumptions about the real issue of concern, and resolve it.
+
+
+16
+
+## Page 18
+
+Appendix E, continued
+The following are some improper questions and sample responses:
+Q: Are you planning to get married soon?
+A: If you are concerned about my staying in the area or my ability to travel, I can assure you
+that I am looking forward to living in this area and travel has always been part of my job
+expectations.
+Q: Do you plan to have children?
+A: Regardless of whether I have children, my career will always be an important part of my life.
+Q: What do your parents do? (Sometimes asked to find out how many contacts you
+might have for a sales job, typically in financial services.)
+A: I’m not sure how this relates to this job. Can you explain?
+Q: Where were you born? (Sometimes asked of international students.)
+A: I am a permanent resident of the United States and have a legal permit to work.
+-or-
+A: I have an F1 (or J1) visa and can obtain practical training experience before returning home.
+(The concern is about your work eligibility and you should respond to that concern.)
+Q: Have you ever been arrested?
+A: I have never done anything that would give your organization cause for concern about my
+honesty or personal integrity. (It is illegal to ask if you have been arrested. An individual might
+have been arrested, but not convicted of a crime. In some states, employers are allowed to ask
+if you have been convicted of any crime. If you were arrested for a minor charge, you might
+respond to the question assuming that the unstated concern is about your moral character.)
+
+TIPS: If you feel there are sensitive areas for you, be prepared to answer them
+before you go into the interview. Make a list of possible responses and practice your
+answers so they will feel natural.
+
+Questions that were inappropriate before the hire, such as date of birth, marital status, etc.,
+may be perfectly legal after you are hired. Employers often need such information for tax,
+insurance, Social Security and other such purposes.
+
+If an interviewer consistently asks improper questions, you might want to think twice about
+working for that organization. Career Services staff would like to know if you experience what
+you consider to be illegal or improper questions in a campus interview. Career Services
+does not condone such unprofessional conduct, so notifying us will allow us to pursue the
+matter with the employer.
+
+Although we have tried to highlight some improper questions and appropriate responses, this
+information is not intended to cover all possible areas where illegal questions or discrimination
+might be an issue. If you need additional information about this subject, call Career Services for
+an appointment with a career advisor.
+17
+
+## Page 19
+
+Successful Interview Checklist
+BEFORE THE INTERVIEW
+ Know Yourself: what do you have to offer; knowledge, skills, and abilities; your goals
+ Research the Company:
+ What questions will you ask the interviewer? (See Appendix C)
+ Learn as much as you can about the company beforehand
+ Ask the recruiter for a list of people you’ll meet, learn about them on LinkedIn, and
+prepare some questions that are specific to each interviewer.
+ Practice Your Interviewing Skills:
+ Practice alone and with family and friends
+ Practice using Big Interview and/or a mock interview in Career Services
+DAY OF THE INTERVIEW
+ First Impressions:
+ Be prompt and prepared; arrive 10-15 minutes before the interview
+ Have printed documents (extra copies of resume, academic transcript, list of
+references, your questions for the interviewer)
+ Dress appropriately (including having your clothing pressed, shoes polished, and
+attention to personal grooming)
+ Give a firm handshake with a smile and a good introduction
+ Questions and Answers:
+ Answer the interviewers’ questions thoroughly, yet concisely (CAR method)
+ Ask questions
+ Be yourself and focus on your positive qualities
+CONCLUSION/AFTER THE INTERVIEW
+ Leave a Positive Impression:
+ Be prepared with your closing statement expressing interest
+ Ask the interviewer for a business card
+ Thank the interviewer
+ Follow-Up: Send a short thank-you note (email or handwritten)
+ Evaluate: Critique yourself (were you prepared, what would you do differently, did you
+present yourself in the best possible manner, etc.)

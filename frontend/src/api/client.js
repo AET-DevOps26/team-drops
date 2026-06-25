@@ -9,6 +9,7 @@ const serviceBaseUrls = {
   user: '/user-service',
   learning: '/learning-service',
   progress: '/progress-service',
+  genai: '/genai-service',
 };
 
 function buildHeaders(token, hasBody) {
@@ -42,7 +43,7 @@ async function parseResponse(response) {
   throw error;
 }
 
-async function request(service, path, { method = 'GET', token, body } = {}) {
+async function request(service, path, { method = 'GET', token, body, signal } = {}) {
   let response;
   const resolvedToken = token ? await getValidAccessToken().then((refreshedToken) => refreshedToken ?? token) : token;
 
@@ -51,6 +52,7 @@ async function request(service, path, { method = 'GET', token, body } = {}) {
       method,
       headers: buildHeaders(resolvedToken, body !== undefined),
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
     });
   } catch (cause) {
     const error = new Error(`Unable to reach the ${service} service.`);
@@ -112,4 +114,17 @@ export function getFeedbackByAnswerId(answerId, token) {
 
 export function getProgress(userId, token) {
   return request('progress', `/api/v1/progress/user/${userId}`, { token });
+}
+
+export function getRagTopics(token) {
+  return request('genai', '/api/v1/genai/rag/topics', { token });
+}
+
+export function queryRag(payload, token, signal) {
+  return request('genai', '/api/v1/genai/rag/query', {
+    method: 'POST',
+    token,
+    body: payload,
+    signal,
+  });
 }

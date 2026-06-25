@@ -21,6 +21,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/progress-service/, ''),
       },
+      '/genai-service': {
+        target: process.env.VITE_GENAI_SERVICE_URL ?? 'http://127.0.0.1:8084',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/genai-service/, ''),
+      },
     },
   },
 })

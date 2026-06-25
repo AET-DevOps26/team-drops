@@ -1,0 +1,278 @@
+## Page 1
+
+www.winthrop.edu/cdi 312 Bancroft Hall
+ @winthropcdi
+
+
+PREPARING FOR INTERVIEWS
+An interview is an opportunity for you to convey to an employer that you have the skills, qualifications, and
+motivation to perform a job or internship. An interview is also an opportunity for you to determine if you are
+interested in the position, the organization, and its mission. An interview gives an employer the opportunity to
+determine if your skills, training, and personality align well with their position, team, and mission.
+
+There are three main things employers want to determine:
+• Can you do the job? How have your experiences, education and training prepared you for the work?
+• Will you do the job? Are you genuinely interested in the role and motivated to do the work?
+• Will you be compatible with the existing team? How well do your values and work culture preferences
+align with the organization’s? Do your personality and work style characteristics mesh with the team?
+
+INTERVIEW MEDIUMS
+• Phone Interview: telephone interviews are common first-round interviews. Employers seek to screen
+candidates, confirm their qualifications (determined via career fairs and applications) and their interest
+in the role.
+• In-person Interview: being invited on-site is typically the second round of the interview process; it can
+be the only interview as well. Conversations are face-to-face at a specific location, sometimes one-
+onone but often with multiple potential team members and managers/leaders.
+• Virtual Interview: an interview using video conferencing software such as Zoom, Microsoft Teams,
+Cisco WebEx, and more can be a first- or second-round interview. Some employers use asynchronous
+video interviews for screening: you must record your answers to pre-recorded questions, with no live
+interaction with an interviewer.
+
+BEFORE THE INTERVIEW
+• Research: Spend time looking up information on the organization and the position. Review the
+website, social media (especially LinkedIn). Talk with people in your network to familiarize
+yourself with the organization; alumni can be found on LinkedIn and Winthrop Connect. Browse
+the Internet for recent news stories or other information of note. Explore glassdoor.com or
+payscale.com for more information on organizations and typical interview questions. Things to
+consider in your research:
+• Locations (main office/headquarters, other sites including non-U.S. operations)
+• Size, including the number of employees at various locations
+• Services or products, including new products and projects
+• Competitors within the industry
+• Growth pattern, Reputation, Sales / Assets / Earnings
+• Divisions and subsidiaries
+
+## Page 2
+
+www.winthrop.edu/cdi 312 Bancroft Hall
+ @winthropcdi
+
+
+• Practice: Interviewing is a skill you can build! Preparation is key. Practice answering general
+interview questions. You can do this by looking up general interview questions in your industry
+of interest, use the Big Interview online resource to practice virtually, or make a mock interview
+appointment with a career coach through Handshake. The point of practicing is not to know
+every question that is going to be asked in the interview, but to become more comfortable
+answering diverse types of questions.
+o Ask a friend or family member for help and give them the list of sample questions. Ask them to
+evaluate you on things like your tone, speed of speech, eye contact, body language, and if any
+nervous habits appeared while answering questions.
+o Schedule an appointment for ‘Interviewing Preparation’ or ‘Mock Interview’ with a member of
+the CDI team.
+o Utilize Big Interview, Winthrop’s online mock interview platform that combines training and
+practice to help improve interview skills and build confidence.
+
+• Draft Questions: The end of the interview is your opportunity to ask the interviewer questions about
+the position and the organization. The research you conduct ahead of time can inform some of the
+questions you could ask. Not asking questions at the end of your interview could come across as being
+disinterested in the position, so be sure to draft up to 3-5 questions ahead of time.
+
+• Confirm Details: Make sure to confirm the time, location, and platform the interview will be held. If the
+interview is virtual, be sure to test the technology ahead of time to minimize the chances of any
+technical difficulties. There may be multiple rounds of interviews with different teams. Make sure to
+clarify the format and ask whom you will be interviewing with ahead of time.
+
+DURING THE INTERVIEW
+• Arrive Ahead of Time: It is recommended to show up 10 minutes early for an in-person interview
+and 2-5 minutes early for a virtual interview.
+• Bring your Materials: Have a few copies of your resume, your portfolio, and a notepad to take
+notes.
+• Eliminate Distractions: Turn off or silence electronic devices such as cell phones and smartwatches
+to prevent them from going off during the interview.
+• Be Positive and Confident: Remember, you would not be offered an interview if the employer did
+not believe you were qualified for the position. Listen to the questions, focus on positive aspects of
+your experiences, and relate them to the position as much as you can. A wonderful way to do this is
+by using the STAR method to answer questions.
+• Situation: Describe the background, provide context. Where and when?
+• Task: Describe the challenge and expectations. What did you do and why?
+
+## Page 3
+
+www.winthrop.edu/cdi 312 Bancroft Hall
+ @winthropcdi
+
+• Action: Elaborate on your specific action. What did you do and how?
+• Result: Explain the results, accomplishments, recognition, savings, etc. and give data!
+
+
+AFTER THE INTERVIEW
+Interview follow-up is important for several reasons. It helps you reinforce your professionalism and communication
+skills; it keeps your name front of mind with the interviewer; and it demonstrates your interest and enthusiasm to be
+hired. Common things to do after an interview include:
+• Send thank-you notes via email 24-48 hours after the interview. Handwritten notes take a long time in the mail
+but can be appreciated in certain situations. A note of gratitude to the employer who took the time to interview
+you is essential.
+• Reflect on your experience and take notes on your experience, what you heard and what you learned. Write
+down anything you want to remember, including people’s names! If you realize you have a follow-up question,
+that could be included in the thank-you note.
+• Send any supporting documents or information that were requested during the interview.
+• Contact your references to let them know about your interview. Even if you aren’t certain whether they will be
+contacted, put it on their radar; it also gives you the opportunity to potentially talk about the pros and cons of
+the opportunity with your reference, to help you prepare for what you will do when you receive an offer.
+• If invited to connect on social media (i.e., LinkedIn), do it! Not all recruiters will connect with candidates so don’t
+take it as a bad sign if this is not offered.
+
+COMMON QUESTIONS
+There are many fundamental questions that get asked in almost all interviews. They are designed to help the
+interviewer get to know you and your background better. These are the easiest questions to prepare for
+because you can expect them, and they are based on YOU.
+• Tell me about yourself.
+• Why did you choose your major? How have your college courses prepared you for the workforce?
+• Tell me about one of your accomplishments?
+• What is something you’ve been involved in that you’re proud of?
+• What are your top three strengths?
+• What is an area that you can improve in?
+• Where do you see yourself in 5 years?
+• What influenced you to pursue the career you want?
+• Why should we hire you?
+
+BEHAVIORAL QUESTIONS
+Behavioral interview questions are common and considered the most effective by recruiting professionals. A
+behavioral interview question is when you are asked to describe past behavior(s) for the interviewer to predict
+or determine your potential for future success. Examples include:
+
+## Page 4
+
+www.winthrop.edu/cdi 312 Bancroft Hall
+ @winthropcdi
+
+• Give me an example of a time when you set a goal and were able to achieve it.
+• Tell me about a time when you had to manage multiple competing priorities and projects. How did you
+go about fulfilling your obligations?
+• Describe a time when you had to make a split-second decision.
+• What is your typical way of dealing with conflict? Give me an example.
+
+When answering behavioral questions, use the STAR method to structure your response.
+• Situation: Describe the situation you were in or the example's context (e.g., a social work field
+placement, a data analytics capstone project, a part-time job). You must describe a specific event or
+situation, not a generalized. If you were collaborating with others, who and how many? Paint a picture,
+give details!
+• Task: What goal were you working toward? What problem or challenge did you need to solve? What
+were you being asked to do or accomplish?
+• Action: Describe the actions you took to address the situation and task and keep the focus on YOU.
+What steps did you take and what was your contribution? Be careful that you don't describe only what
+the team or group did when talking about a project, but what *you* did. Use the word "I", not "we"
+when describing actions.
+• Result: Describe the outcome(s) of your actions and don't be shy about taking credit for your behavior.
+What happened? How did the event end? What did you accomplish? What did you learn? Make sure
+your answer contains multiple positive results. If the outcome was unexpected or not positive,
+acknowledge that then focus on what you learned and how you would improve or change approaches
+in the future.
+
+TYPES OF INTERVIEWS
+When you are invited for an interview, always ask questions to be certain you know what to expect and how to
+prepare! The most important questions to ask if unclear:
+• What is the format and length of the interview?
+• With whom will I be interviewing?
+• Do you need any additional materials or information from me prior to the interview?
+• Confirm telephone and email contact information for the interviewer, particularly in the event of
+technical difficulties for a planned video interview.
+• If travel is involved, ask if the interview travel expenses will be reimbursed and if so, what
+documentation you need to provide.
+
+Screening Interview
+• Brief (15-30 minutes), typically conducted by an HR or recruiting professional over telephone or video.
+Screening interviews are used to confirm whether you are still interested in the opportunity, and you're
+likely to be asked to answer fundamental questions about your background and what motivated you to
+
+## Page 5
+
+www.winthrop.edu/cdi 312 Bancroft Hall
+ @winthropcdi
+
+apply. You may be presented with information such as the maximum salary or a change in the job
+description, so you can consider whether you'd like to continue or withdraw from consideration.
+
+First Round or Initial Interview
+• The first interview may be with a recruiter or a manager/supervisor. While formats can vary, these are
+typically 30-60 minutes and provide the employer with the opportunity to get to know more about the
+skills and experiences listed in your application materials. Preparing for Common Questions and
+Behavioral Interview Questions that relate to the job description is most important.
+
+Second Round, On-site, Team Interviews
+• For most professional positions and many internships, it is common to have at least two rounds of
+interviews. In a second or third round, you are typically interviewing directly with the manager or
+supervisor of the position, meeting potential colleagues and teammates, and touring the office where
+you would be working. You may be asked to deliver a presentation, perform a technical task, or
+participate in a case study. The type of interview experience you have will be influenced by the industry
+and the role. It is critically important to research what to expect in your field or discipline.
+
+Case Interview
+• A case interview is a type of job interview in which you must analyze and solve a particular
+business/work scenario (“case study”). It is used to simulate an on-the-job situation to learn more
+about your analytical and communications skills.
+• Case interviews are highly interactive; you will be provided not only with a scenario but with data and
+ambiguous information. Rather than dive into answering the main question, it is important that you ask
+questions, gather more information, articulate your thought process and approaches to the interviewer.
+• The interviewer is looking for an analytical and creative thought process, and there is not necessarily a
+right or wrong answer. It will be essential for you to process the scenario aloud so the interviewer can
+understand your thought process in solving the problem.
+• Utilize case interview preparation guides and materials, such as those found on Vault.com, to practice
+and prepare.
+• Sample Case Interview Questions:
+▪ A chef and business partner are setting up a new restaurant; they are exploring restroom facilities
+design, specifically the options for customers to dry their hands. Initial research suggests three
+options: paper towels, roller towels, and hot air dryers. They need to decide today. What should
+they consider in their decision-making process?
+▪ Volvo claims it is the safest car in the world because fewer people die in a Volvo than in a car made
+by any other manufacturer in the world. What's wrong with this conclusion?
+
+## Page 6
+
+www.winthrop.edu/cdi 312 Bancroft Hall
+ @winthropcdi
+
+Technical Interviews
+• Technical interviews are common for employers recruiting for STEM fields (e.g., engineering, IT, science,
+or software). It is an interview to assess your technical ability for the role, and the depth and breadth of
+your knowledge in your chosen field.
+• Technical interviews are designed to assess your problem-solving skills, communication skills, and
+ability to think under pressure. As with case interviews, the process is important. How you go about
+solving a given challenge is of interest to employers; it gives them a glimpse into how you would solve a
+real problem at work.
+• Technical Phone Interview: There may be a technical component to a phone interview. For coding
+positions, you may be asked to type answers into a Google Doc or collaborate on a shared editor.
+• Technical On-site Interview: You may have to answer questions related to knowledge about a particular
+topic, process, or product. You may be asked to outline a solution to a problem on a whiteboard or to
+deliver a presentation. For coding interviews, be prepared to write code on a whiteboard, on a
+company-provided computer, or engage in a pair programmer assignment.
+
+Panel Interviews
+• A panel interview is when two or more people interview you at the same time. Panel members can
+include potential managers, team members, HR specialists, and other decision-makers.
+• It is important to make eye contact with and speak to all participants. Do not speak exclusively to the
+person who asks a question or to the person with the highest title/seniority in the room.
+• When you know in advance who is on the panel, you will want to look them up by title and role. This
+will help you anticipate their potential questions and tailor them according to who is in the room.
+• Treat it as a conversation – how do you interact and mesh with a team? It is not an inquisition!
+
+QUESTIONS TO ASK DURING AN INTERVIEW
+A job interview should be a two-way conversation. Interviewers expect you to ask questions! Asking thoughtful
+questions will: polish your image by showing you have researched the organization; demonstrate your curiosity
+and that you are interested in the role; help you evaluate how the job and the organization fit into your goals.
+When preparing, your first stop should be the organization's website; don't ask questions that are covered
+online. Review the job posting. Pay close attention to details that become known during the interview; ask
+follow-up questions about information you learned throughout the process.
+
+Examples of questions to ask:
+• What does a typical workday look like? What is a typical week like in this job?
+• What are the challenges facing the person in this position?
+• What are your expectations for the first 90 days/the first year for this role?
+• What is your supervisory and leadership style?
+• How would you describe the organizational culture?
+
+## Page 7
+
+www.winthrop.edu/cdi 312 Bancroft Hall
+ @winthropcdi
+
+• What is the natural career progression for employees with my skill sets?
+• Does the organization have a formal mentoring or coaching program? How is it structured?
+• What kind of internal and external training (professional development opportunities) do you provide?
+• What do you most enjoy about working with this organization?
+
+Finally, always ask questions to confirm what’s next:
+• What are the next steps in the hiring process?
+• When do you anticipate making your decision?
+• May I follow up with you if I have additional questions? What is the best time and method (phone,
+email) to follow up with you?

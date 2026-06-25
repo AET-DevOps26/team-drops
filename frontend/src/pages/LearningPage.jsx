@@ -1,5 +1,9 @@
 import React from 'react';
 import {
+  getRagTopics,
+  queryRag,
+} from '../api/client';
+import {
   BookOpen,
   BrainCircuit,
   CalendarRange,
@@ -161,6 +165,22 @@ const ragTopics = [
   },
 ];
 
+const ragTopicDescriptions = {
+  'job interview': 'Practice answers, interview etiquette, follow-up, and preparation.',
+  'Reisen in der Schweiz': 'Routen, Regionen, Wandern, Unterkunfte und Reiseideen in der Schweiz.',
+};
+
+function toRagTopic(topicName) {
+  return {
+    id: topicName,
+    title: topicName
+      .split(' ')
+      .map((word) => (word.length > 0 ? `${word[0].toUpperCase()}${word.slice(1)}` : word))
+      .join(' '),
+    description: ragTopicDescriptions[topicName] ?? 'Ask questions grounded in this document topic.',
+  };
+}
+
 function AiTrainingPlaceholder({ t }) {
   return (
     <section className="ai-plan-form" aria-label="AI training">
@@ -180,13 +200,58 @@ function AiTrainingPlaceholder({ t }) {
 
 function RagLearningFlow({ t }) {
   const [selectedTopic, setSelectedTopic] = React.useState(null);
+  const [topics, setTopics] = React.useState(ragTopics);
+  const [topicsPending, setTopicsPending] = React.useState(false);
+  const [topicsError, setTopicsError] = React.useState('');
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function loadTopics() {
+      setTopicsPending(true);
+      setTopicsError('');
+
+      try {
+        const response = await getRagTopics();
+        if (cancelled) {
+          return;
+        }
+
+        const nextTopics = (response?.topics ?? []).map(toRagTopic);
+        setTopics(nextTopics.length > 0 ? nextTopics : ragTopics);
+      } catch (error) {
+        if (!cancelled) {
+          setTopicsError(error.message || 'Unable to load RAG topics.');
+          setTopics(ragTopics);
+        }
+      } finally {
+        if (!cancelled) {
+          setTopicsPending(false);
+        }
+      }
+    }
+
+    loadTopics();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!selectedTopic) {
-    return <RagTopicPicker t={t} onSelectTopic={setSelectedTopic} />;
+    return (
+      <RagTopicPicker
+        pending={topicsPending}
+        t={t}
+        topics={topics}
+        topicsError={topicsError}
+        onSelectTopic={setSelectedTopic}
+      />
+    );
   }
 
   return (
-    <AiLearningPlanForm
+    <RagQuestionForm
       selectedTopic={selectedTopic}
       t={t}
       onBackToTopics={() => setSelectedTopic(null)}
@@ -194,7 +259,7 @@ function RagLearningFlow({ t }) {
   );
 }
 
-function RagTopicPicker({ t, onSelectTopic }) {
+function RagTopicPicker({ pending, t, topics, topicsError, onSelectTopic }) {
   return (
     <section className="rag-topic-section" aria-label="RAG learning topics">
       <section className="ai-form-hero">
@@ -207,8 +272,11 @@ function RagTopicPicker({ t, onSelectTopic }) {
         </div>
       </section>
 
+      {topicsError && <p className="auth-error ai-plan-notice" role="status">{topicsError}</p>}
+      {pending && <p className="empty-state no-plan-empty-state">Loading document topics...</p>}
+
       <div className="rag-topic-list">
-        {ragTopics.map((topic) => (
+        {topics.map((topic) => (
           <button
             className="rag-topic-card"
             key={topic.id}
@@ -229,34 +297,50 @@ function RagTopicPicker({ t, onSelectTopic }) {
   );
 }
 
-function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
-  const [selectedExerciseTypes, setSelectedExerciseTypes] = React.useState(
-    exerciseTypeOptions.filter((type) => !isComingSoonType(type.id)).map((type) => type.id),
-  );
-  const aiUnavailableMessage = 'RAG plan generation needs the backend learning service and GenAI integration to be available.';
+function RagQuestionForm({ selectedTopic, t, onBackToTopics }) {
+  const [question, setQuestion] = React.useState('');
+  const [topK, setTopK] = React.useState('4');
+  const [answer, setAnswer] = React.useState(null);
+  const [pending, setPending] = React.useState(false);
+  const [error, setError] = React.useState('');
 
-  const toggleExerciseType = (exerciseType) => {
-    if (isComingSoonType(exerciseType)) {
-      window.alert(t.comingSoon);
+  const askQuestion = async (event) => {
+    event.preventDefault();
+
+    if (!question.trim()) {
+      setError('Add a question before asking the RAG corpus.');
       return;
     }
 
-    setSelectedExerciseTypes((currentTypes) =>
-      currentTypes.includes(exerciseType)
-        ? currentTypes.filter((type) => type !== exerciseType)
-        : [...currentTypes, exerciseType],
-    );
+    setPending(true);
+    setError('');
+    setAnswer(null);
+    const sourceCount = Math.max(1, Math.min(8, Number(topK) || 4));
+
+    try {
+      const result = await queryRag({
+        topic: selectedTopic.id,
+        question: question.trim(),
+        top_k: sourceCount,
+        rebuild_corpus: false,
+      });
+      setAnswer(result);
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to query this RAG topic.');
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
-    <form className="ai-plan-form" aria-label="AI learning plan generator">
+    <form className="ai-plan-form" aria-label="RAG question answering" onSubmit={askQuestion}>
       <section className="ai-form-hero">
         <span className="ai-form-icon">
           <Target size={24} aria-hidden="true" />
         </span>
         <div>
           <p>{t.ragLearning}</p>
-          <h3>{t.generateLearningPlan}</h3>
+          <h3>{selectedTopic.title}</h3>
         </div>
       </section>
 
@@ -265,78 +349,59 @@ function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
         {selectedTopic.title}
       </button>
 
-      <p className="auth-error ai-plan-notice" role="status">{aiUnavailableMessage}</p>
-
       <label className="ai-form-field ai-form-field-full">
-        <span>Main learning plan description / goal</span>
+        <span>Question</span>
         <textarea
-          name="learningGoal"
-          placeholder="Example: Prepare for a German job interview with technical project questions."
+          name="ragQuestion"
+          onChange={(event) => setQuestion(event.target.value)}
+          placeholder="Example: What can I do in Basel-Land?"
           rows={4}
+          value={question}
         />
       </label>
 
-      <div className="ai-form-grid">
-        <label className="ai-form-field">
-          <span>
-            <CalendarRange size={15} aria-hidden="true" />
-            Duration
-          </span>
-          <input inputMode="numeric" min="1" name="durationWeeks" placeholder="4" type="number" />
-          <small>weeks</small>
-        </label>
+      <label className="ai-form-field">
+        <span>
+          <ListChecks size={15} aria-hidden="true" />
+          Sources
+        </span>
+        <input
+          inputMode="numeric"
+          max="8"
+          min="1"
+          name="topK"
+          onChange={(event) => setTopK(event.target.value)}
+          type="number"
+          value={topK}
+        />
+        <small>retrieved chunks</small>
+      </label>
 
-        <label className="ai-form-field">
-          <span>
-            <Clock3 size={15} aria-hidden="true" />
-            Study time
-          </span>
-          <input inputMode="numeric" min="1" name="studyHoursPerWeek" placeholder="5" type="number" />
-          <small>hrs / week</small>
-        </label>
+      {error && <p className="auth-error ai-plan-notice" role="alert">{error}</p>}
 
-        <label className="ai-form-field">
-          <span>
-            <ListChecks size={15} aria-hidden="true" />
-            Maximum lessons
-          </span>
-          <input inputMode="numeric" min="1" name="maximumLessons" placeholder="12" type="number" />
-        </label>
-
-        <label className="ai-form-field">
-          <span>
-            <ListChecks size={15} aria-hidden="true" />
-            Minimum lessons
-          </span>
-          <input inputMode="numeric" min="1" name="minimumLessons" placeholder="6" type="number" />
-        </label>
-      </div>
-
-      <fieldset className="ai-exercise-types">
-        <legend>Exercise types</legend>
-        <div className="ai-checkbox-grid">
-          {exerciseTypeOptions.map((type) => (
-            <label className={`ai-checkbox-option ${isComingSoonType(type.id) ? 'is-disabled' : ''}`} key={type.id}>
-              <input
-                checked={selectedExerciseTypes.includes(type.id)}
-                name="exerciseTypes"
-                onChange={() => toggleExerciseType(type.id)}
-                type="checkbox"
-                value={type.id}
-              />
-              <span className={`exercise-type-icon ${type.id}`}>
-                <ExerciseTypeIcon type={type.id} />
-              </span>
-              <strong>{type.label}</strong>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <button className="ai-generate-button" disabled type="button">
+      <button className="ai-generate-button" disabled={pending} type="submit">
         <Sparkles size={18} aria-hidden="true" />
-        Backend required
+        {pending ? 'Asking RAG...' : 'Ask RAG'}
       </button>
+
+      {answer && (
+        <section className="rag-answer-card" aria-label="RAG answer">
+          <h4>Answer</h4>
+          <p>{answer.answer}</p>
+          {answer.sources?.length > 0 && (
+            <div className="rag-source-list">
+              {answer.sources.map((source) => (
+                <details className="rag-source-item" key={`${source.source}-${source.page}-${source.chunk_index}`}>
+                  <summary>
+                    {source.source}, page {source.page}
+                  </summary>
+                  <p>{source.text}</p>
+                </details>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </form>
   );
 }
