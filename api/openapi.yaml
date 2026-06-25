@@ -371,7 +371,9 @@ paths:
         - name: language
           in: query
           required: false
-          description: Preferred language for translated default lesson and exercise content.
+          description: >-
+            Preferred language for translated default lesson and exercise
+            content.
           schema:
             type: string
             example: German
