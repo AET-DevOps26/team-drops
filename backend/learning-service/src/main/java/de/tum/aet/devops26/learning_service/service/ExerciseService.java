@@ -106,7 +106,8 @@ public class ExerciseService {
 
     private ExerciseType inferExerciseType(ExerciseSubtype subtype) {
         return switch (subtype) {
-            case MULTIPLE_CHOICE, LISTENING_CHOICE -> ExerciseType.READING;
+            case MULTIPLE_CHOICE -> ExerciseType.READING;
+            case LISTENING_CHOICE -> ExerciseType.LISTENING;
             case SPEAKING_PROMPT -> ExerciseType.SPEAKING;
             case TRANSLATION, FILL_IN_BLANK, SENTENCE_BUILDING, FREE_TEXT -> ExerciseType.WRITING;
         };

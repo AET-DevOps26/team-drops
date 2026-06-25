@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from tests.conftest import make_mock_llm
+from tests.conftest import make_mock_structured_llm
 from app.schemas.exercises import GenerateExercisesResponse, GeneratedExercise
 
 _EXERCISE = GeneratedExercise(
@@ -15,7 +15,7 @@ _LLM_RESPONSE = GenerateExercisesResponse(exercises=[_EXERCISE])
 
 def test_generate_exercises_returns_exercises(client):
     with patch(
-        "app.routers.exercises.get_llm", return_value=make_mock_llm(_LLM_RESPONSE)
+        "app.routers.exercises.get_structured_llm", return_value=make_mock_structured_llm(_LLM_RESPONSE)
     ):
         response = client.post(
             "/api/v1/genai/exercises/generate",
@@ -55,7 +55,7 @@ def test_generate_exercises_passes_lesson_id_through(client):
     llm_response = GenerateExercisesResponse(exercises=[exercise_without_id])
 
     with patch(
-        "app.routers.exercises.get_llm", return_value=make_mock_llm(llm_response)
+        "app.routers.exercises.get_structured_llm", return_value=make_mock_structured_llm(llm_response)
     ):
         response = client.post(
             "/api/v1/genai/exercises/generate",

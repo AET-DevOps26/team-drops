@@ -42,3 +42,13 @@ imagePullSecrets:
 {{- define "team-drops.requiredIngressHost" -}}
 {{- required "ingress.host is required when ingress.enabled=true" .Values.ingress.host -}}
 {{- end -}}
+
+{{- define "team-drops.keycloakPublicUrl" -}}
+{{- if .Values.frontend.keycloakUrl -}}
+{{- trimSuffix "/" .Values.frontend.keycloakUrl -}}
+{{- else if and .Values.ingress.enabled .Values.ingress.host -}}
+{{- printf "https://%s" .Values.ingress.host -}}
+{{- else -}}
+{{- "http://localhost:8090" -}}
+{{- end -}}
+{{- end -}}

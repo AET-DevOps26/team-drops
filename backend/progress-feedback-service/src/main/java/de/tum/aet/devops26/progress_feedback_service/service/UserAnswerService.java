@@ -1,5 +1,7 @@
 package de.tum.aet.devops26.progress_feedback_service.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tum.aet.devops26.progress_feedback_service.dto.FeedbackResponse;
 import de.tum.aet.devops26.progress_feedback_service.dto.LearningStatus;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerRequest;
@@ -17,8 +19,11 @@ import de.tum.aet.devops26.progress_feedback_service.repository.UserAnswerReposi
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +33,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class UserAnswerService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserAnswerService.class);
     private static final int MAX_SCORE = 100;
 
     private final UserAnswerRepository userAnswerRepository;
@@ -35,6 +41,8 @@ public class UserAnswerService {
     private final ProgressRecordService progressRecordService;
     private final LearningServiceClient learningServiceClient;
     private final GenAiWritingClient genAiWritingClient;
+    private final ListeningContentService listeningContentService;
+    private final ObjectMapper objectMapper;
 
     public UserAnswer save(UserAnswer userAnswer) {
         return userAnswerRepository.save(userAnswer);
@@ -77,6 +85,15 @@ public class UserAnswerService {
             request.getExerciseId(),
             request.getClientContext().getTargetLanguage()
         );
+
+        if ("LISTENING".equalsIgnoreCase(exercise.type())) {
+            return submitListeningAnswer(request, exercise);
+        }
+
+        return submitWritingAnswer(request, exercise);
+    }
+
+    private SubmitAnswerResponse submitWritingAnswer(SubmitAnswerRequest request, ExerciseContext exercise) {
         WritingEvaluationResponse evaluation = genAiWritingClient.evaluate(new WritingEvaluationRequest(
             request.getUserId(),
             request.getExerciseId(),
@@ -89,14 +106,13 @@ public class UserAnswerService {
         ));
         int score = Math.max(0, Math.min(MAX_SCORE, (int) Math.round(evaluation.score() * 10)));
 
-        UserAnswer userAnswer = UserAnswer.builder()
+        UserAnswer savedAnswer = save(UserAnswer.builder()
             .userId(request.getUserId())
             .exerciseId(request.getExerciseId())
             .answerText(request.getAnswerText())
             .score((double) score)
-            .build();
+            .build());
 
-        UserAnswer savedAnswer = save(userAnswer);
         Feedback savedFeedback = feedbackRepository.save(Feedback.builder()
             .answerId(savedAnswer.getId())
             .message(evaluation.message())
@@ -106,11 +122,43 @@ public class UserAnswerService {
         progressRecordService.recordSubmittedAnswer(savedAnswer.getUserId(), score);
 
         SubmitAnswerResponse response = new SubmitAnswerResponse(
-            toResponse(savedAnswer),
-            LearningStatus.FINISHED,
-            score,
-            score
-        );
+            toResponse(savedAnswer), LearningStatus.FINISHED, score, score);
+        response.setFeedback(toFeedbackResponse(savedFeedback));
+        return response;
+    }
+
+    private SubmitAnswerResponse submitListeningAnswer(SubmitAnswerRequest request, ExerciseContext exercise) {
+        Map<Integer, String> selections;
+        try {
+            selections = objectMapper.readValue(request.getAnswerText(), new TypeReference<>() {});
+        } catch (Exception exception) {
+            LOGGER.warn("Failed to parse listening answer_text as JSON for exercise {}: {}",
+                request.getExerciseId(), exception.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "answer_text for a listening exercise must be a JSON object mapping question index to selected option text.");
+        }
+
+        ListeningContentService.ScoreResult scoreResult = listeningContentService.scoreAnswers(request.getExerciseId(), selections);
+        int score = scoreResult.score();
+        String feedbackMessage = score == 100
+            ? "Excellent! All answers correct."
+            : String.format("You got %d out of %d correct (%d%%).", scoreResult.correct(), scoreResult.total(), scoreResult.score());
+
+        UserAnswer savedAnswer = save(UserAnswer.builder()
+            .userId(request.getUserId())
+            .exerciseId(request.getExerciseId())
+            .answerText(request.getAnswerText())
+            .score((double) score)
+            .build());
+
+        Feedback savedFeedback = feedbackRepository.save(Feedback.builder()
+            .answerId(savedAnswer.getId())
+            .message(feedbackMessage)
+            .build());
+        progressRecordService.recordSubmittedAnswer(savedAnswer.getUserId(), score);
+
+        SubmitAnswerResponse response = new SubmitAnswerResponse(
+            toResponse(savedAnswer), LearningStatus.FINISHED, score, score);
         response.setFeedback(toFeedbackResponse(savedFeedback));
         return response;
     }

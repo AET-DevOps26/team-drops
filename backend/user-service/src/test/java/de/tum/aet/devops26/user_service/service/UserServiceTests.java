@@ -48,7 +48,7 @@ class UserServiceTests {
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(userCaptor.capture());
         assertThat(userCaptor.getValue().getKeycloakSubject()).isEqualTo("keycloak-subject");
-        assertThat(userCaptor.getValue().getPasswordHash()).isNull();
+        assertThat(userCaptor.getValue().getPasswordHash()).isEqualTo("OIDC_USER_NO_LOCAL_PASSWORD");
     }
 
     @Test

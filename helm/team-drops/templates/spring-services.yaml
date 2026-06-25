@@ -23,6 +23,11 @@ metadata:
     app.kubernetes.io/component: backend
 spec:
   replicas: {{ $service.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ $.Values.rollout.maxSurge }}
+      maxUnavailable: {{ $.Values.rollout.maxUnavailable }}
   selector:
     matchLabels:
       {{- include "team-drops.selectorLabels" (dict "Release" $.Release "component" $service.name) | nindent 6 }}
@@ -33,6 +38,20 @@ spec:
         {{- include "team-drops.selectorLabels" (dict "Release" $.Release "component" $service.name) | nindent 8 }}
     spec:
       {{- include "team-drops.imagePullSecrets" $ | nindent 6 }}
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - until nc -z postgres {{ $.Values.postgres.port }}; do echo "waiting for postgres"; sleep 2; done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
       containers:
         - name: {{ $service.name }}
           image: {{ include "team-drops.image" (dict "root" $ "image" $service.image) | quote }}
@@ -71,6 +90,16 @@ spec:
                 configMapKeyRef:
                   name: team-drops-config
                   key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
+            - name: GENAI_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: team-drops-config
+                  key: GENAI_SERVICE_URL
+            - name: LEARNING_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: team-drops-config
+                  key: LEARNING_SERVICE_URL
           readinessProbe:
             httpGet:
               path: /actuator/health

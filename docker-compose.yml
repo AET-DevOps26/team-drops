@@ -37,6 +37,7 @@ services:
       - "8090:8080"
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/team-drops-realm.json:ro
+      - ./helm/team-drops/files/keycloak-theme/interviewmate:/opt/keycloak/themes/interviewmate:ro
 
   user-service:
     build:
@@ -109,6 +110,7 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b}
       MONGO_URL: mongodb://mongo:27017
@@ -118,7 +120,7 @@ services:
       KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs}
       KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-}
       WHISPER_MODEL: ${WHISPER_MODEL:-base}
-      TTS_ENABLED: ${TTS_ENABLED:-false}
+      TTS_ENABLED: "true"
       KOKORO_MODEL_PATH: ${KOKORO_MODEL_PATH:-}
       KOKORO_VOICES_PATH: ${KOKORO_VOICES_PATH:-}
       PREWARM_MODELS: ${PREWARM_MODELS:-false}

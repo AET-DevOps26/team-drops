@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from app.prompts.writing import writing_prompt
-from tests.conftest import make_mock_llm
+from tests.conftest import make_mock_structured_llm
 from app.schemas.writing import MAX_DATABASE_TEXT_LENGTH, WritingEvaluationResponse
 
 _LLM_RESPONSE = WritingEvaluationResponse(
@@ -26,7 +26,7 @@ _REQUEST = {
 
 def test_evaluate_writing_returns_score_and_feedback(client):
     with patch(
-        "app.routers.writing.get_llm", return_value=make_mock_llm(_LLM_RESPONSE)
+        "app.routers.writing.get_structured_llm", return_value=make_mock_structured_llm(_LLM_RESPONSE)
     ):
         response = client.post("/api/v1/genai/writing/evaluate", json=_REQUEST)
 
@@ -41,7 +41,7 @@ def test_evaluate_writing_returns_score_and_feedback(client):
 
 def test_evaluate_writing_score_within_range(client):
     with patch(
-        "app.routers.writing.get_llm", return_value=make_mock_llm(_LLM_RESPONSE)
+        "app.routers.writing.get_structured_llm", return_value=make_mock_structured_llm(_LLM_RESPONSE)
     ):
         response = client.post("/api/v1/genai/writing/evaluate", json=_REQUEST)
 
@@ -59,7 +59,7 @@ def test_evaluate_writing_shortens_database_text_fields(client):
         corrected_answer=long_text,
     )
 
-    with patch("app.routers.writing.get_llm", return_value=make_mock_llm(llm_response)):
+    with patch("app.routers.writing.get_structured_llm", return_value=make_mock_structured_llm(llm_response)):
         response = client.post("/api/v1/genai/writing/evaluate", json=_REQUEST)
 
     assert response.status_code == 200

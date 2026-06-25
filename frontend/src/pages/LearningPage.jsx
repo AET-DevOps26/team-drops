@@ -27,6 +27,10 @@ export function LearningPage({
   learningMode,
   learningPlans,
   learningStep,
+  listeningContent,
+  listeningError,
+  listeningLoading,
+  listeningSelections,
   t,
   onBack,
   onLearningMode,
@@ -35,6 +39,7 @@ export function LearningPage({
   onOpenPlan,
   onOpenPlanDetail,
   onOpenSettings,
+  onListeningSelect,
   onSubmitAnswer,
   onOpenLesson,
 }) {
@@ -120,14 +125,26 @@ export function LearningPage({
             {learningStep === 'lesson' && (
               <LessonDetailView activeLesson={activeLesson} t={t} onOpenExercise={onOpenExercise} />
             )}
-            {learningStep === 'exercise' && (
+            {learningStep === 'exercise' && activeExercise?.type === 'listening' ? (
+              <ListeningExerciseView
+                activeExercise={activeExercise}
+                answerError={answerError}
+                answerPending={answerPending}
+                listeningContent={listeningContent}
+                listeningError={listeningError}
+                listeningLoading={listeningLoading}
+                listeningSelections={listeningSelections}
+                onListeningSelect={onListeningSelect}
+                onSubmitAnswer={onSubmitAnswer}
+              />
+            ) : learningStep === 'exercise' ? (
               <ExerciseDetailView
                 activeExercise={activeExercise}
                 answerError={answerError}
                 answerPending={answerPending}
                 onSubmitAnswer={onSubmitAnswer}
               />
-            )}
+            ) : null}
           </>
         ) : learningMode === 'rag' ? (
           <RagLearningFlow t={t} />
@@ -606,7 +623,134 @@ function ExerciseCard({ exercise, index, t, onOpenExercise }) {
 }
 
 function isComingSoonType(type) {
-  return type === 'listening' || type === 'speaking';
+  return type === 'speaking';
+}
+
+function ListeningExerciseView({
+  activeExercise,
+  answerError,
+  answerPending,
+  listeningContent,
+  listeningError,
+  listeningLoading,
+  listeningSelections,
+  onListeningSelect,
+  onSubmitAnswer,
+}) {
+  const allAnswered = listeningContent
+    && listeningContent.questions.length > 0
+    && listeningContent.questions.every((_, i) => listeningSelections[i] !== undefined);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    await onSubmitAnswer(activeExercise, null);
+  };
+
+  return (
+    <section className="exercise-detail" aria-label="Listening exercise">
+      <div className="exercise-detail-header">
+        <span className="exercise-type-icon listening">
+          <Headphones size={18} aria-hidden="true" />
+        </span>
+        <div>
+          <p>listening</p>
+          <h3>{activeExercise.title}</h3>
+        </div>
+      </div>
+
+      <div className="exercise-status-row">
+        <span className="status-pill">{formatStatus(activeExercise.status)}</span>
+        {activeExercise.status === 'finished' && (
+          <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
+        )}
+      </div>
+
+      {listeningLoading && (
+        <section className="summary-card">
+          <p>Generating listening exercise…</p>
+        </section>
+      )}
+
+      {listeningError && (
+        <p className="auth-error" role="alert">{listeningError}</p>
+      )}
+
+      {listeningContent && !listeningLoading && (
+        <>
+          <section className="summary-card">
+            <div className="section-heading">
+              <h3>Listen</h3>
+              <span>Audio passage</span>
+            </div>
+            {listeningContent.audio_b64 ? (
+              <audio
+                controls
+                src={`data:audio/wav;base64,${listeningContent.audio_b64}`}
+                style={{ width: '100%', marginBottom: '0.5rem' }}
+              />
+            ) : (
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted, #888)' }}>
+                Audio is not available in the current configuration.
+              </p>
+            )}
+          </section>
+
+          <form onSubmit={handleSubmit}>
+            {listeningContent.questions.map((question, qIndex) => (
+              <section className="summary-card" key={qIndex}>
+                <div className="section-heading">
+                  <h3>Question {qIndex + 1}</h3>
+                </div>
+                <p style={{ marginBottom: '0.75rem' }}>{question.question}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {question.options.map((option, oIndex) => {
+                    const selected = listeningSelections[qIndex] === option.text;
+                    return (
+                      <label
+                        key={oIndex}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '8px',
+                          border: `1px solid ${selected ? '#2f8f62' : 'var(--border-color, #ddd)'}`,
+                          background: selected ? 'rgba(47,143,98,0.08)' : 'transparent',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${qIndex}`}
+                          value={option.text}
+                          checked={selected}
+                          onChange={() => onListeningSelect(qIndex, option.text)}
+                        />
+                        {option.text}
+                      </label>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+
+            {answerError && <p className="auth-error" role="alert">{answerError}</p>}
+            <button
+              className="auth-button register-button"
+              disabled={answerPending || !allAnswered}
+              type="submit"
+              style={{ marginTop: '0.5rem' }}
+            >
+              {answerPending ? 'Submitting…' : 'Submit answers'}
+            </button>
+          </form>
+        </>
+      )}
+
+      {activeExercise.feedback && <ExerciseFeedback feedback={activeExercise.feedback} />}
+    </section>
+  );
 }
 
 function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubmitAnswer }) {

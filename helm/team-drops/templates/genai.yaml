@@ -22,6 +22,11 @@ metadata:
     app.kubernetes.io/component: ai
 spec:
   replicas: {{ .Values.genai.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.rollout.maxSurge }}
+      maxUnavailable: {{ .Values.rollout.maxUnavailable }}
   selector:
     matchLabels:
       {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "genai-service") | nindent 6 }}

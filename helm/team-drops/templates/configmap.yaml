@@ -21,13 +21,16 @@ data:
   {{- end }}
   KEYCLOAK_CLIENT_ID: {{ .Values.auth.clientId | quote }}
   KEYCLOAK_AUDIENCE: {{ .Values.auth.audience | quote }}
+  GENAI_SERVICE_URL: "http://genai-service"
+  LEARNING_SERVICE_URL: "http://learning-service"
   LLM_PROVIDER: {{ .Values.genai.llmProvider | quote }}
   LLM_MODEL: {{ .Values.genai.llmModel | quote }}
+  LLM_BASE_URL: {{ .Values.genai.llmBaseUrl | quote }}
   OLLAMA_BASE_URL: {{ ternary (printf "http://ollama:%v" .Values.ollama.port) .Values.genai.ollamaBaseUrl .Values.ollama.enabled | quote }}
   OLLAMA_MODEL: {{ .Values.genai.ollamaModel | quote }}
   WHISPER_MODEL: {{ .Values.genai.whisperModel | quote }}
   WHISPER_DEVICE: {{ .Values.genai.whisperDevice | quote }}
-  TTS_ENABLED: {{ .Values.genai.ttsEnabled | quote }}
+  TTS_ENABLED: "true"
   PREWARM_MODELS: {{ .Values.genai.prewarmModels | quote }}
   KOKORO_MODEL_PATH: {{ .Values.genai.kokoroModelPath | quote }}
   KOKORO_VOICES_PATH: {{ .Values.genai.kokoroVoicesPath | quote }}

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.llm import get_llm
+from app.llm import get_structured_llm
 from app.prompts.writing import writing_prompt
 from app.schemas.writing import WritingEvaluationRequest, WritingEvaluationResponse
 
@@ -21,8 +21,7 @@ router = APIRouter(prefix="/writing", tags=["writing"])
     openapi_extra={"x-service": "genai-service"},
 )
 async def evaluate_writing(body: WritingEvaluationRequest) -> WritingEvaluationResponse:
-    llm = get_llm()
-    chain = writing_prompt | llm.with_structured_output(WritingEvaluationResponse)
+    chain = writing_prompt | get_structured_llm(WritingEvaluationResponse)
 
     try:
         result: WritingEvaluationResponse = await chain.ainvoke(

@@ -8,8 +8,10 @@ import de.tum.aet.devops26.user_service.dto.UserResponse;
 import de.tum.aet.devops26.user_service.service.UserProfileService;
 import de.tum.aet.devops26.user_service.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +22,8 @@ public class UserServiceController implements UserServiceApi {
 
     private final UserService userService;
     private final UserProfileService userProfileService;
+    @Value("${app.auth.enabled:false}")
+    private boolean authEnabled;
 
     @Override
     public ResponseEntity<UserProfileResponse> createUserProfile(
@@ -40,7 +44,12 @@ public class UserServiceController implements UserServiceApi {
 
     @Override
     public ResponseEntity<UserResponse> getCurrentUser() {
-        JwtAuthenticationToken authentication = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        Authentication currentAuthentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!authEnabled && !(currentAuthentication instanceof JwtAuthenticationToken)) {
+            return ResponseEntity.ok(userService.getOrCreateLocalDevUser());
+        }
+
+        JwtAuthenticationToken authentication = (JwtAuthenticationToken) currentAuthentication;
         return ResponseEntity.ok(userService.getOrCreateOidcUser(authentication.getToken()));
     }
 

@@ -6,8 +6,12 @@ image:
 
 imagePullSecrets: []
 
+rollout:
+  maxSurge: 1
+  maxUnavailable: 0
+
 auth:
-  enabled: false
+  enabled: true
   # Public issuer URL expected in browser-issued tokens.
   issuerUri: ""
   # Internal/service JWKS URL used by backends to fetch signing keys.
@@ -17,16 +21,24 @@ auth:
   clientSecret: ""
 
 keycloak:
-  enabled: false
+  enabled: true
   image: quay.io/keycloak/keycloak:26.0
   adminUsername: admin
   adminPassword: admin
   realm: team-drops
+  theme: interviewmate
   port: 8080
   redirectUris:
     - http://localhost:3000/*
   webOrigins:
     - "+"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
 
 oauth2Proxy:
   enabled: false
@@ -56,11 +68,11 @@ frontend:
   keycloakUrl: ""
   resources:
     requests:
-      cpu: 50m
-      memory: 128Mi
+      cpu: 25m
+      memory: 64Mi
     limits:
-      cpu: 300m
-      memory: 256Mi
+      cpu: 150m
+      memory: 128Mi
 
 services:
   user:
@@ -72,10 +84,10 @@ services:
     resources:
       requests:
         cpu: 100m
-        memory: 384Mi
+        memory: 256Mi
       limits:
-        cpu: 500m
-        memory: 768Mi
+        cpu: 300m
+        memory: 384Mi
   learning:
     name: learning-service
     image: team-drops-learning-service
@@ -85,10 +97,10 @@ services:
     resources:
       requests:
         cpu: 100m
-        memory: 384Mi
+        memory: 256Mi
       limits:
-        cpu: 500m
-        memory: 768Mi
+        cpu: 300m
+        memory: 384Mi
   progress:
     name: progress-feedback-service
     image: team-drops-progress-feedback-service
@@ -98,10 +110,10 @@ services:
     resources:
       requests:
         cpu: 100m
-        memory: 384Mi
+        memory: 256Mi
       limits:
-        cpu: 500m
-        memory: 768Mi
+        cpu: 300m
+        memory: 384Mi
 
 genai:
   replicaCount: 1
@@ -110,21 +122,21 @@ genai:
   llmProvider: openai
   llmApiKey: ""
   llmModel: ""
+  llmBaseUrl: ""
   ollamaBaseUrl: ""
   ollamaModel: llama3
   whisperModel: base
   whisperDevice: cpu
-  ttsEnabled: false
   prewarmModels: false
   kokoroModelPath: ""
   kokoroVoicesPath: ""
   resources:
     requests:
-      cpu: 200m
-      memory: 512Mi
+      cpu: 100m
+      memory: 256Mi
     limits:
-      cpu: 1000m
-      memory: 1536Mi
+      cpu: 300m
+      memory: 512Mi
 
 postgres:
   image: postgres:16
@@ -139,8 +151,8 @@ postgres:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 300m
+      memory: 384Mi
 
 mongo:
   image: mongo:7
@@ -152,8 +164,8 @@ mongo:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 300m
+      memory: 384Mi
 
 ollama:
   enabled: false

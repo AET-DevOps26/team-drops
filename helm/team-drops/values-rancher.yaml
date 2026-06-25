@@ -1,9 +1,24 @@
 genai:
-  llmProvider: ollama
+  llmProvider: openai
+  llmModel: openai/gpt-oss-120b
+  llmBaseUrl: https://logos.aet.cit.tum.de/v1
+
+auth:
+  issuerUri: https://team-drops.stud.k8s.aet.cit.tum.de/realms/team-drops
+  jwksUri: http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs
+
+keycloak:
+  redirectUris:
+    - https://team-drops.stud.k8s.aet.cit.tum.de/*
+  webOrigins:
+    - https://team-drops.stud.k8s.aet.cit.tum.de
+
+frontend:
+  keycloakUrl: https://team-drops.stud.k8s.aet.cit.tum.de
 
 ingress:
   host: team-drops.stud.k8s.aet.cit.tum.de
   tls:
     enabled: true
     secretName: team-drops-tls
-    clusterIssuer: letsencrypt-staging
+    clusterIssuer: letsencrypt-prod

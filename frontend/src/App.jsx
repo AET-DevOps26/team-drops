@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   createDefaultLearningPlan,
+  generateListeningContent,
   getCurrentUser,
   getLearningPlans,
   getLesson,
@@ -225,6 +226,11 @@ export function App() {
   const [selectedExercise, setSelectedExercise] = React.useState(0);
   const [learningMode, setLearningMode] = React.useState('training');
   const [learningStep, setLearningStep] = React.useState('plans');
+  const [listeningContent, setListeningContent] = React.useState(null);
+  const [listeningSelections, setListeningSelections] = React.useState({});
+  const [listeningLoading, setListeningLoading] = React.useState(false);
+  const [listeningError, setListeningError] = React.useState('');
+  const listeningRequestIdRef = React.useRef(0);
 
   const activePlan = learningPlans[selectedPlan] ?? {
     accent: 'blue',
@@ -481,12 +487,29 @@ export function App() {
     setSettingsClosing(false);
   };
 
-  const bypassAuth = () => {
+  const bypassAuth = async () => {
     setAuthError('');
     setDashboardError('');
     setProfileError('');
     setLearningError('');
-    setScreen('main');
+    setLoadingInitialData(true);
+
+    try {
+      const user = await getCurrentUser();
+      const nextSession = {
+        user,
+        accessToken: null,
+        tokenType: 'None',
+      };
+
+      setSession(nextSession);
+      await syncLearningData(nextSession);
+      setScreen('main');
+    } catch (error) {
+      setAuthError(error.message || 'Unable to continue without authentication.');
+    } finally {
+      setLoadingInitialData(false);
+    }
   };
 
   const resetSessionState = () => {
@@ -521,14 +544,18 @@ export function App() {
 
   const handleLogin = () => {
     setAuthError('');
+    setAuthPending(true);
     loginWithKeycloak().catch((error) => {
+      setAuthPending(false);
       setAuthError(error.message || 'Unable to start Keycloak sign in.');
     });
   };
 
   const handleRegister = () => {
     setAuthError('');
+    setAuthPending(true);
     registerWithKeycloak().catch((error) => {
+      setAuthPending(false);
       setAuthError(error.message || 'Unable to start Keycloak registration.');
     });
   };
@@ -586,6 +613,29 @@ export function App() {
   const openExercise = (exerciseIndex) => {
     setSelectedExercise(exerciseIndex);
     setLearningStep('exercise');
+
+    const exercise = activeLesson.exercises[exerciseIndex];
+    if (exercise?.type === 'listening' && exercise?.id && activeLesson?.id) {
+      const requestId = ++listeningRequestIdRef.current;
+      setListeningContent(null);
+      setListeningSelections({});
+      setListeningError('');
+      setListeningLoading(true);
+      generateListeningContent(
+        exercise.id,
+        activeLesson.id,
+        profile.targetLanguage,
+        profile.currentLevel,
+        session?.accessToken,
+      ).then((content) => {
+        if (listeningRequestIdRef.current === requestId) setListeningContent(content);
+      }).catch((error) => {
+        if (listeningRequestIdRef.current === requestId)
+          setListeningError(error.message || 'Unable to load listening exercise.');
+      }).finally(() => {
+        if (listeningRequestIdRef.current === requestId) setListeningLoading(false);
+      });
+    }
   };
 
   const changeLearningMode = (nextMode) => {
@@ -674,11 +724,15 @@ export function App() {
     setAnswerPending(true);
     setAnswerError('');
 
+    const resolvedAnswerText = exercise.type === 'listening'
+      ? JSON.stringify(listeningSelections)
+      : answerText;
+
     try {
       const submission = await submitAnswer({
         user_id: session.user.id,
         exercise_id: exercise.id,
-        answer_text: answerText,
+        answer_text: resolvedAnswerText,
         client_context: {
           lesson_id: activeLesson.id,
           plan_id: activePlan.id,
@@ -768,6 +822,10 @@ export function App() {
               learningMode={learningMode}
               learningPlans={learningPlans}
               learningStep={learningStep}
+              listeningContent={listeningContent}
+              listeningError={listeningError}
+              listeningLoading={listeningLoading}
+              listeningSelections={listeningSelections}
               t={t}
               onBack={goBackInLearning}
               onLearningMode={changeLearningMode}
@@ -777,6 +835,9 @@ export function App() {
               onOpenPlan={openPlan}
               onOpenPlanDetail={() => setLearningStep('planDetail')}
               onOpenSettings={openSettings}
+              onListeningSelect={(qIndex, optionText) =>
+                setListeningSelections((prev) => ({ ...prev, [qIndex]: optionText }))
+              }
               onSubmitAnswer={handleSubmitAnswer}
             />
           )}

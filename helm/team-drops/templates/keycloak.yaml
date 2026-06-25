@@ -11,6 +11,7 @@ data:
     {
       "realm": {{ .Values.keycloak.realm | quote }},
       "enabled": true,
+      "loginTheme": {{ .Values.keycloak.theme | quote }},
       "registrationAllowed": true,
       "clients": [
         {
@@ -28,6 +29,21 @@ data:
         }
       ]
     }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-theme
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth
+data:
+  theme.properties: |-
+{{ .Files.Get "files/keycloak-theme/interviewmate/login/theme.properties" | indent 4 }}
+  login.css: |-
+{{ .Files.Get "files/keycloak-theme/interviewmate/login/resources/css/login.css" | indent 4 }}
+  messages_en.properties: |-
+{{ .Files.Get "files/keycloak-theme/interviewmate/login/messages/messages_en.properties" | indent 4 }}
 ---
 apiVersion: v1
 kind: Service
@@ -53,24 +69,48 @@ metadata:
     app.kubernetes.io/component: auth
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.rollout.maxSurge }}
+      maxUnavailable: {{ .Values.rollout.maxUnavailable }}
   selector:
     matchLabels:
       {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "keycloak") | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/keycloak-realm: {{ printf "%s-%s-%s-%s-%s" .Values.keycloak.realm .Values.keycloak.theme .Values.auth.clientId (toJson .Values.keycloak.redirectUris) (toJson .Values.keycloak.webOrigins) | sha256sum | quote }}
+        checksum/keycloak-theme: {{ printf "%s%s%s" (.Files.Get "files/keycloak-theme/interviewmate/login/theme.properties") (.Files.Get "files/keycloak-theme/interviewmate/login/resources/css/login.css") (.Files.Get "files/keycloak-theme/interviewmate/login/messages/messages_en.properties") | sha256sum | quote }}
       labels:
         {{- include "team-drops.labels" . | nindent 8 }}
         {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "keycloak") | nindent 8 }}
     spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - until nc -z postgres {{ .Values.postgres.port }}; do echo "waiting for postgres"; sleep 2; done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
       containers:
         - name: keycloak
           image: {{ .Values.keycloak.image | quote }}
           args:
-            - start-dev
+            - start
             - --import-realm
           ports:
             - name: http
               containerPort: {{ .Values.keycloak.port }}
+            - name: management
+              containerPort: 9000
           env:
             - name: KC_BOOTSTRAP_ADMIN_USERNAME
               value: {{ .Values.keycloak.adminUsername | quote }}
@@ -79,12 +119,153 @@ spec:
                 secretKeyRef:
                   name: team-drops-secret
                   key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_HOSTNAME
+              value: {{ include "team-drops.keycloakPublicUrl" . | quote }}
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: "xforwarded"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_DB
+              value: "postgres"
+            - name: KC_DB_URL_HOST
+              value: "postgres"
+            - name: KC_DB_URL_PORT
+              value: {{ .Values.postgres.port | quote }}
+            - name: KC_DB_URL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: POSTGRES_DB
+            - name: KC_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: POSTGRES_USER
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: POSTGRES_PASSWORD
           volumeMounts:
             - name: keycloak-realm
               mountPath: /opt/keycloak/data/import
               readOnly: true
+            - name: keycloak-theme
+              mountPath: /opt/keycloak/themes/{{ .Values.keycloak.theme }}
+              readOnly: true
+          startupProbe:
+            httpGet:
+              path: /health/started
+              port: management
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: management
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: management
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.keycloak.resources | nindent 12 }}
       volumes:
         - name: keycloak-realm
           configMap:
             name: keycloak-realm
+        - name: keycloak-theme
+          configMap:
+            name: keycloak-theme
+            items:
+              - key: theme.properties
+                path: login/theme.properties
+              - key: login.css
+                path: login/resources/css/login.css
+              - key: messages_en.properties
+                path: login/messages/messages_en.properties
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-realm-configure
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "team-drops.labels" . | nindent 8 }}
+        app.kubernetes.io/component: keycloak-realm-configure
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: configure-realm
+          image: {{ .Values.keycloak.image | quote }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              attempts=0
+              until /opt/keycloak/bin/kcadm.sh config credentials \
+                --server "$KEYCLOAK_ADMIN_URL" \
+                --realm master \
+                --user "$KEYCLOAK_ADMIN_USER" \
+                --password "$KEYCLOAK_ADMIN_PASSWORD"; do
+                attempts=$((attempts + 1))
+                if [ "$attempts" -ge 60 ]; then
+                  echo "Keycloak admin API did not become available in time"
+                  exit 1
+                fi
+                echo "Waiting for Keycloak admin API..."
+                sleep 5
+              done
+
+              attempts=0
+              until /opt/keycloak/bin/kcadm.sh update "realms/${KEYCLOAK_REALM}" \
+                -s "loginTheme=${KEYCLOAK_THEME}" \
+                -s "registrationAllowed=true"; do
+                attempts=$((attempts + 1))
+                if [ "$attempts" -ge 60 ]; then
+                  echo "Realm ${KEYCLOAK_REALM} did not become available in time"
+                  exit 1
+                fi
+                echo "Waiting for realm ${KEYCLOAK_REALM}..."
+                sleep 5
+              done
+
+              echo "Configured realm ${KEYCLOAK_REALM} with login theme ${KEYCLOAK_THEME}"
+          env:
+            - name: KEYCLOAK_ADMIN_URL
+              value: {{ printf "http://keycloak:%v" .Values.keycloak.port | quote }}
+            - name: KEYCLOAK_ADMIN_USER
+              value: {{ .Values.keycloak.adminUsername | quote }}
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: team-drops-secret
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KEYCLOAK_REALM
+              value: {{ .Values.keycloak.realm | quote }}
+            - name: KEYCLOAK_THEME
+              value: {{ .Values.keycloak.theme | quote }}
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
 {{- end }}
