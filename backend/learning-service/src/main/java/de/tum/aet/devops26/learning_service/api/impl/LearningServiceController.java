@@ -38,8 +38,8 @@ public class LearningServiceController implements LearningServiceApi {
     }
 
     @Override
-    public ResponseEntity<List<LearningPlanResponse>> getLearningPlansByUserId(Long userId) {
-        List<LearningPlanResponse> learningPlans = learningPlanService.findResponsesByUserId(userId);
+    public ResponseEntity<List<LearningPlanResponse>> getLearningPlansByUserId(Long userId, String language) {
+        List<LearningPlanResponse> learningPlans = learningPlanService.findResponsesByUserId(userId, language);
         if (learningPlans.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -47,8 +47,8 @@ public class LearningServiceController implements LearningServiceApi {
     }
 
     @Override
-    public ResponseEntity<LessonResponse> getLessonById(Long lessonId) {
-        return lessonService.findResponseById(lessonId)
+    public ResponseEntity<LessonResponse> getLessonById(Long lessonId, String language) {
+        return lessonService.findResponseById(lessonId, language)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }

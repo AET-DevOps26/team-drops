@@ -10,7 +10,7 @@ import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
-import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanTemplate;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLessonTemplate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -31,15 +31,15 @@ public class LearningPlanService {
 
     @Transactional
     public LearningPlanResponse createDefaultLearningPlan(CreateDefaultLearningPlanRequest request) {
-        DefaultLearningPlanTemplate template = defaultLearningPlanCatalog.findByKey(DEFAULT_TEMPLATE_KEY);
-        return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), template.title())
-            .map(this::toResponse)
-            .orElseGet(() -> createFixedDefaultLearningPlan(request, template));
+        DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog.findFallbackByKey(DEFAULT_TEMPLATE_KEY);
+        return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title())
+            .map(plan -> toResponse(plan, request.getTargetLanguage()))
+            .orElseGet(() -> createFixedDefaultLearningPlan(request, fallbackTemplate));
     }
 
     private LearningPlanResponse createFixedDefaultLearningPlan(
         CreateDefaultLearningPlanRequest request,
-        DefaultLearningPlanTemplate template
+        DefaultLearningPlanContent template
     ) {
         LearningPlan plan = learningPlanRepository.save(LearningPlan.builder()
             .userId(request.getUserId())
@@ -73,7 +73,7 @@ public class LearningPlanService {
             }
         }
 
-        return toResponse(plan);
+        return toResponse(plan, request.getTargetLanguage());
     }
 
     @Transactional
@@ -118,27 +118,44 @@ public class LearningPlanService {
 
     @Transactional(readOnly = true)
     public List<LearningPlanResponse> findResponsesByUserId(Long userId) {
+        return findResponsesByUserId(userId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<LearningPlanResponse> findResponsesByUserId(Long userId, String language) {
         return learningPlanRepository.findByUserId(userId).stream()
-            .map(this::toResponse)
+            .map(plan -> toResponse(plan, language))
             .toList();
     }
 
     private LearningPlanResponse toResponse(LearningPlan plan) {
+        return toResponse(plan, null);
+    }
+
+    private LearningPlanResponse toResponse(LearningPlan plan, String language) {
+        DefaultLearningPlanContent localizedTemplate = isDefaultLearningPlan(plan)
+            ? defaultLearningPlanCatalog.findLocalizedByKey(DEFAULT_TEMPLATE_KEY, language)
+            : null;
+
         return new LearningPlanResponse(
             plan.getId(),
             plan.getUserId(),
-            plan.getTitle(),
-            plan.getDescription(),
-            plan.getGoal(),
-            plan.getLanguage(),
+            localizedTemplate == null ? plan.getTitle() : localizedTemplate.title(),
+            localizedTemplate == null ? plan.getDescription() : localizedTemplate.description(),
+            localizedTemplate == null ? plan.getGoal() : localizedTemplate.defaultGoal(),
+            localizedTemplate == null ? plan.getLanguage() : localizedTemplate.defaultLanguage(),
             plan.getLevel(),
-            plan.getDuration(),
+            localizedTemplate == null ? plan.getDuration() : localizedTemplate.duration(),
             toLearningStatus(plan.getStatus()),
             plan.getProgress(),
             lessonService.findByPlanId(plan.getId()).stream()
-                .map(lessonService::toSummaryResponse)
+                .map(lesson -> lessonService.toSummaryResponse(lesson, language))
                 .toList()
         );
+    }
+
+    private boolean isDefaultLearningPlan(LearningPlan plan) {
+        return defaultLearningPlanCatalog.hasLocalizedTitle(DEFAULT_TEMPLATE_KEY, plan.getTitle());
     }
 
     private LearningStatus toLearningStatus(String value) {

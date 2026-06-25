@@ -2,6 +2,7 @@ package de.tum.aet.devops26.learning_service.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -15,7 +16,7 @@ import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
-import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanTemplate;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLessonTemplate;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,12 +43,12 @@ class LearningPlanServiceTests {
     @Mock
     private DefaultLearningPlanCatalog defaultLearningPlanCatalog;
 
-    private DefaultLearningPlanTemplate defaultTemplate;
+    private DefaultLearningPlanContent defaultTemplate;
+    private DefaultLearningPlanContent germanTemplate;
 
     @BeforeEach
     void setUp() {
-        defaultTemplate = new DefaultLearningPlanTemplate(
-            "job-interview",
+        defaultTemplate = new DefaultLearningPlanContent(
             "Job Interview Preparation",
             "Fixed lessons for practicing professional job interview answers.",
             "2 weeks",
@@ -104,7 +105,33 @@ class LearningPlanServiceTests {
             )
         );
 
-        when(defaultLearningPlanCatalog.findByKey("job-interview")).thenReturn(defaultTemplate);
+        germanTemplate = new DefaultLearningPlanContent(
+            "Vorbereitung auf Vorstellungsgespräche",
+            "Feste Lektionen zum Üben professioneller Antworten in Vorstellungsgesprächen.",
+            "2 weeks",
+            "Sich auf ein professionelles Vorstellungsgespräch vorbereiten",
+            "German",
+            "A2",
+            "Verfasse eine klare, professionelle Antwort mit konkreten Details und formellem Wortschatz.",
+            List.of(
+                new DefaultLessonTemplate(
+                    "Selbstvorstellung",
+                    "Stelle dich in einem Vorstellungsgespräch professionell vor.",
+                    List.of(
+                        "Erzählen Sie mir etwas über sich.",
+                        "Schreibe eine kurze professionelle Selbstvorstellung.",
+                        "Verbessere deine Vorstellung mit formellerem Wortschatz."
+                    )
+                )
+            )
+        );
+
+        lenient().when(defaultLearningPlanCatalog.findFallbackByKey("job-interview")).thenReturn(defaultTemplate);
+        when(defaultLearningPlanCatalog.findLocalizedByKey(any(), any())).thenAnswer(invocation -> {
+            String language = invocation.getArgument(1);
+            return "German".equalsIgnoreCase(language) ? germanTemplate : defaultTemplate;
+        });
+        when(defaultLearningPlanCatalog.hasLocalizedTitle("job-interview", "Job Interview Preparation")).thenReturn(true);
     }
 
     @Test
@@ -140,6 +167,7 @@ class LearningPlanServiceTests {
         LearningPlanResponse response = service.createDefaultLearningPlan(request);
 
         assertThat(response.getId()).isEqualTo(7L);
+        assertThat(response.getTitle()).isEqualTo("Vorbereitung auf Vorstellungsgespräche");
         verify(learningPlanRepository, never()).save(any(LearningPlan.class));
         verify(lessonService, never()).save(any(Lesson.class));
         verify(exerciseService, never()).save(any(Exercise.class));
@@ -218,5 +246,36 @@ class LearningPlanServiceTests {
                 "Describe your degree and specialization.",
                 "Describe one project you worked on."
             );
+    }
+
+    @Test
+    void findResponsesByUserIdReturnsLocalizedDefaultPlan() {
+        LearningPlanService service = new LearningPlanService(
+            learningPlanRepository,
+            lessonService,
+            exerciseService,
+            defaultLearningPlanCatalog
+        );
+        LearningPlan existingPlan = LearningPlan.builder()
+            .id(7L)
+            .userId(42L)
+            .title("Job Interview Preparation")
+            .description("Fixed lessons for practicing professional job interview answers.")
+            .goal("Prepare for a professional job interview")
+            .language("English")
+            .level("A2")
+            .duration("2 weeks")
+            .status(LearningStatus.NOT_STARTED.getValue())
+            .progress(0)
+            .build();
+
+        when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(existingPlan));
+        when(lessonService.findByPlanId(7L)).thenReturn(List.of());
+
+        List<LearningPlanResponse> responses = service.findResponsesByUserId(42L, "German");
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).getTitle()).isEqualTo("Vorbereitung auf Vorstellungsgespräche");
+        assertThat(responses.get(0).getLanguage()).isEqualTo("German");
     }
 }

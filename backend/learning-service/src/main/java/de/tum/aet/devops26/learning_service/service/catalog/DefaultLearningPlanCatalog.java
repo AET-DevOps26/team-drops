@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 public class DefaultLearningPlanCatalog {
 
     private static final String CATALOG_RESOURCE = "default-learning-plans.json";
+    private static final String FALLBACK_LANGUAGE = "English";
 
     private final List<DefaultLearningPlanTemplate> templates;
 
@@ -30,5 +31,38 @@ public class DefaultLearningPlanCatalog {
             .filter(template -> template.key().equals(key))
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("Missing default learning plan template: " + key));
+    }
+
+    public DefaultLearningPlanContent findLocalizedByKey(String key, String language) {
+        DefaultLearningPlanTemplate template = findByKey(key);
+        return template.languages().getOrDefault(
+            normalizeLanguage(language),
+            template.languages().get(FALLBACK_LANGUAGE)
+        );
+    }
+
+    public DefaultLearningPlanContent findFallbackByKey(String key) {
+        return findLocalizedByKey(key, FALLBACK_LANGUAGE);
+    }
+
+    public boolean hasLocalizedTitle(String key, String title) {
+        if (title == null) {
+            return false;
+        }
+
+        return findByKey(key).languages().values().stream()
+            .anyMatch(content -> title.equals(content.title()));
+    }
+
+    private String normalizeLanguage(String language) {
+        if (language == null || language.isBlank()) {
+            return FALLBACK_LANGUAGE;
+        }
+
+        return templates.stream()
+            .flatMap(template -> template.languages().keySet().stream())
+            .filter(candidate -> candidate.equalsIgnoreCase(language.trim()))
+            .findFirst()
+            .orElse(FALLBACK_LANGUAGE);
     }
 }

@@ -1,59 +1,119 @@
 [
   {
     "key": "job-interview",
-    "title": "Job Interview Preparation",
-    "description": "Fixed lessons for practicing professional job interview answers.",
-    "duration": "2 weeks",
-    "defaultGoal": "Prepare for a professional job interview",
-    "defaultLanguage": "English",
-    "defaultLevel": "A2",
-    "defaultExpectedAnswer": "Write a clear, professional answer using specific details and formal vocabulary.",
-    "lessons": [
-      {
-        "title": "Self Introduction",
-        "topic": "Introduce yourself professionally in an interview.",
-        "exercises": [
-          "Tell me about yourself.",
-          "Write a short professional introduction.",
-          "Improve your introduction using more formal vocabulary."
+    "languages": {
+      "English": {
+        "title": "Job Interview Preparation",
+        "description": "Fixed lessons for practicing professional job interview answers.",
+        "duration": "2 weeks",
+        "defaultGoal": "Prepare for a professional job interview",
+        "defaultLanguage": "English",
+        "defaultLevel": "A2",
+        "defaultExpectedAnswer": "Write a clear, professional answer using specific details and formal vocabulary.",
+        "lessons": [
+          {
+            "title": "Self Introduction",
+            "topic": "Introduce yourself professionally in an interview.",
+            "exercises": [
+              "Tell me about yourself.",
+              "Write a short professional introduction.",
+              "Improve your introduction using more formal vocabulary."
+            ]
+          },
+          {
+            "title": "Education and Background",
+            "topic": "Explain your studies, university, and academic background.",
+            "exercises": [
+              "Describe your degree and specialization.",
+              "Explain why you chose your field.",
+              "Practice saying your graduation status clearly."
+            ]
+          },
+          {
+            "title": "Work Experience and Internships",
+            "topic": "Talk about previous internships, jobs, or projects.",
+            "exercises": [
+              "Describe one internship or work experience.",
+              "Explain your responsibilities.",
+              "Mention what you learned from the experience."
+            ]
+          },
+          {
+            "title": "Project Explanation",
+            "topic": "Present a technical or academic project clearly.",
+            "exercises": [
+              "Describe one project you worked on.",
+              "Explain the problem, your solution, and your role.",
+              "Simplify a technical explanation for a non-technical interviewer."
+            ]
+          },
+          {
+            "title": "Strengths and Weaknesses",
+            "topic": "Answer common HR questions about strengths and weaknesses.",
+            "exercises": [
+              "Name two strengths with examples.",
+              "Explain one weakness professionally.",
+              "Rewrite weak answers into stronger interview answers."
+            ]
+          }
         ]
       },
-      {
-        "title": "Education and Background",
-        "topic": "Explain your studies, university, and academic background.",
-        "exercises": [
-          "Describe your degree and specialization.",
-          "Explain why you chose your field.",
-          "Practice saying your graduation status clearly."
-        ]
-      },
-      {
-        "title": "Work Experience and Internships",
-        "topic": "Talk about previous internships, jobs, or projects.",
-        "exercises": [
-          "Describe one internship or work experience.",
-          "Explain your responsibilities.",
-          "Mention what you learned from the experience."
-        ]
-      },
-      {
-        "title": "Project Explanation",
-        "topic": "Present a technical or academic project clearly.",
-        "exercises": [
-          "Describe one project you worked on.",
-          "Explain the problem, your solution, and your role.",
-          "Simplify a technical explanation for a non-technical interviewer."
-        ]
-      },
-      {
-        "title": "Strengths and Weaknesses",
-        "topic": "Answer common HR questions about strengths and weaknesses.",
-        "exercises": [
-          "Name two strengths with examples.",
-          "Explain one weakness professionally.",
-          "Rewrite weak answers into stronger interview answers."
+      "German": {
+        "title": "Vorbereitung auf Vorstellungsgespräche",
+        "description": "Feste Lektionen zum Üben professioneller Antworten in Vorstellungsgesprächen.",
+        "duration": "2 weeks",
+        "defaultGoal": "Sich auf ein professionelles Vorstellungsgespräch vorbereiten",
+        "defaultLanguage": "German",
+        "defaultLevel": "A2",
+        "defaultExpectedAnswer": "Verfasse eine klare, professionelle Antwort mit konkreten Details und formellem Wortschatz.",
+        "lessons": [
+          {
+            "title": "Selbstvorstellung",
+            "topic": "Stelle dich in einem Vorstellungsgespräch professionell vor.",
+            "exercises": [
+              "Erzählen Sie mir etwas über sich.",
+              "Schreibe eine kurze professionelle Selbstvorstellung.",
+              "Verbessere deine Vorstellung mit formellerem Wortschatz."
+            ]
+          },
+          {
+            "title": "Ausbildung und Hintergrund",
+            "topic": "Erkläre dein Studium, deine Universität und deinen akademischen Hintergrund.",
+            "exercises": [
+              "Beschreibe deinen Studiengang und deine Spezialisierung.",
+              "Erkläre, warum du dein Fach gewählt hast.",
+              "Formuliere deinen aktuellen Studien- oder Abschlussstatus klar."
+            ]
+          },
+          {
+            "title": "Berufserfahrung und Praktika",
+            "topic": "Sprich über frühere Praktika, Jobs oder Projekte.",
+            "exercises": [
+              "Beschreibe ein Praktikum oder eine Berufserfahrung.",
+              "Erkläre deine Aufgaben und Verantwortlichkeiten.",
+              "Erwähne, was du aus dieser Erfahrung gelernt hast."
+            ]
+          },
+          {
+            "title": "Projekt erklären",
+            "topic": "Präsentiere ein technisches oder akademisches Projekt klar und verständlich.",
+            "exercises": [
+              "Beschreibe ein Projekt, an dem du gearbeitet hast.",
+              "Erkläre das Problem, deine Lösung und deine Rolle.",
+              "Vereinfache eine technische Erklärung für eine nicht-technische interviewende Person."
+            ]
+          },
+          {
+            "title": "Stärken und Schwächen",
+            "topic": "Beantworte häufige HR-Fragen zu Stärken und Schwächen.",
+            "exercises": [
+              "Nenne zwei Stärken mit Beispielen.",
+              "Erkläre eine Schwäche professionell.",
+              "Formuliere schwache Antworten in stärkere Interviewantworten um."
+            ]
+          }
         ]
       }
-    ]
+    }
   }
 ]
