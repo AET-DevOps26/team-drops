@@ -598,7 +598,7 @@ function ExerciseCard({ exercise, index, t, onOpenExercise }) {
       <span className="lesson-progress-copy">
         <strong>{exercise.title}</strong>
         <em>{exercise.format}</em>
-        <span className="status-pill">{formatStatus(exercise.status)}</span>
+        <span className="status-pill">{formatStatus(exercise.status, exercise.language)}</span>
       </span>
       <small className="lesson-percent">{exercise.grade ? `${exercise.grade}` : '--'}</small>
     </button>
@@ -646,7 +646,7 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
       </div>
 
       <div className="exercise-status-row">
-        <span className="status-pill">{formatStatus(activeExercise.status)}</span>
+        <span className="status-pill">{formatStatus(activeExercise.status, activeExercise.language)}</span>
         {activeExercise.status === 'finished' && (
           <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
         )}
@@ -750,14 +750,16 @@ function ExerciseTypeIcon({ type }) {
   return <TextCursorInput size={18} aria-hidden="true" />;
 }
 
-function formatStatus(status) {
+function formatStatus(status, language) {
+  const isGerman = language?.toLowerCase() === 'german';
+
   if (status === 'not-started') {
-    return 'Not yet start';
+    return isGerman ? 'Noch nicht begonnen' : 'Not started';
   }
 
   if (status === 'ongoing') {
-    return 'Ongoing';
+    return isGerman ? 'In Bearbeitung' : 'Ongoing';
   }
 
-  return 'Finished';
+  return isGerman ? 'Abgeschlossen' : 'Finished';
 }

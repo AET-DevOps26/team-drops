@@ -397,7 +397,7 @@ h1 {
 
 .dashboard-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 88px;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   min-height: 150px;
@@ -408,6 +408,11 @@ h1 {
     var(--blue);
   color: #ffffff;
   box-shadow: 0 18px 40px rgba(25, 103, 210, 0.22);
+}
+
+.dashboard-hero-copy {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .dashboard-hero-button {
@@ -453,6 +458,9 @@ h1 {
   margin-top: 6px;
   font-size: 1.42rem;
   line-height: 1.08;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .dashboard-hero span {

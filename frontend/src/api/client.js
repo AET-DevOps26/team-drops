@@ -62,6 +62,10 @@ async function request(service, path, { method = 'GET', token, body } = {}) {
   return parseResponse(response);
 }
 
+function languageQuery(language) {
+  return language ? `?language=${encodeURIComponent(language)}` : '';
+}
+
 export function getCurrentUser(token) {
   return request('user', '/api/v1/users/me', { token });
 }
@@ -78,8 +82,8 @@ export function updateUserProfile(userId, profile, token) {
   });
 }
 
-export function getLearningPlans(userId, token) {
-  return request('learning', `/api/v1/learning-plans/user/${userId}`, { token });
+export function getLearningPlans(userId, token, language) {
+  return request('learning', `/api/v1/learning-plans/user/${userId}${languageQuery(language)}`, { token });
 }
 
 export function createDefaultLearningPlan(payload, token) {
@@ -90,8 +94,8 @@ export function createDefaultLearningPlan(payload, token) {
   });
 }
 
-export function getLesson(lessonId, token) {
-  return request('learning', `/api/v1/lessons/${lessonId}`, { token });
+export function getLesson(lessonId, token, language) {
+  return request('learning', `/api/v1/lessons/${lessonId}${languageQuery(language)}`, { token });
 }
 
 export function submitAnswer(payload, token) {

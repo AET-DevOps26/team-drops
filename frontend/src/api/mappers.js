@@ -37,6 +37,10 @@ function formatPlanSummary(plan) {
   return plan.description || plan.goal || 'Guided language learning plan.';
 }
 
+function isGermanContent(language) {
+  return language?.toLowerCase() === 'german';
+}
+
 function clampProgress(progress) {
   return Math.max(0, Math.min(100, Math.round(progress ?? 0)));
 }
@@ -101,16 +105,23 @@ function withDerivedPlanProgress(plan) {
 }
 
 function fallbackBlocks(lesson) {
+  const isGerman = isGermanContent(lesson.language);
+
   return [
     {
       type: 'content',
-      title: 'Core idea',
+      title: isGerman ? 'Kernidee' : 'Core idea',
       subtitle: `${lesson.timeEstimateMinutes ?? 10} min`,
       text: lesson.topic,
-      points: [
-        'Review the task before answering.',
-        'Use the lesson exercises to practice the target structure.',
-      ],
+      points: isGerman
+        ? [
+            'Lies die Aufgabe aufmerksam, bevor du antwortest.',
+            'Nutze die Übungen der Lektion, um die Zielstruktur zu üben.',
+          ]
+        : [
+            'Review the task before answering.',
+            'Use the lesson exercises to practice the target structure.',
+          ],
     },
     ...lesson.exercises.map((exercise, index) => ({
       type: 'exercise',
@@ -169,6 +180,7 @@ export function toLearningPlans(plans = []) {
       progress: lesson.progress ?? 0,
       timeEstimateMinutes: lesson.time_estimate_minutes ?? 10,
       exerciseCount: lesson.exercise_count ?? 0,
+      language: plan.language,
       accent: pickAccent(lessonIndex, lessonAccents),
       icon: pickLessonIcon(lessonIndex),
       exercises: [],
@@ -192,6 +204,7 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     score: exercise.score,
     format: exercise.format,
     source: exercise.source,
+    language: planSummaryLesson?.language,
     grade: exercise.score,
     task: exercise.question,
     prompt: exercise.question,
@@ -227,12 +240,14 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     progress: lesson.progress ?? 0,
     timeEstimateMinutes: lesson.time_estimate_minutes ?? planSummaryLesson?.timeEstimateMinutes ?? 10,
     exerciseCount: lesson.exercise_count ?? exercises.length,
+    language: planSummaryLesson?.language,
     accent: planSummaryLesson?.accent ?? pickAccent((lesson.order_number ?? 1) - 1, lessonAccents),
     icon: planSummaryLesson?.icon ?? pickLessonIcon((lesson.order_number ?? 1) - 1),
     exercises,
     blocks: blocks.length > 0 ? blocks : fallbackBlocks({
       topic: lesson.topic,
       exercises,
+      language: planSummaryLesson?.language,
       timeEstimateMinutes: lesson.time_estimate_minutes,
     }),
     comment: lesson.status === 'finished' ? 'Great work. This lesson is complete.' : null,
