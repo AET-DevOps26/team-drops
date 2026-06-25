@@ -60,7 +60,7 @@ class UserAnswerServiceTests {
             .level("A2")
         );
 
-        when(learningServiceClient.getExercise(3L, 7L)).thenReturn(new ExerciseContext(
+        when(learningServiceClient.getExercise(3L, 7L, "French")).thenReturn(new ExerciseContext(
             7L,
             "writing",
             "translation",

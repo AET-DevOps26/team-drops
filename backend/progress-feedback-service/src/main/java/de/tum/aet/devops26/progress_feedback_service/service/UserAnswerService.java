@@ -74,7 +74,8 @@ public class UserAnswerService {
 
         ExerciseContext exercise = learningServiceClient.getExercise(
             request.getClientContext().getLessonId(),
-            request.getExerciseId()
+            request.getExerciseId(),
+            request.getClientContext().getTargetLanguage()
         );
         WritingEvaluationResponse evaluation = genAiWritingClient.evaluate(new WritingEvaluationRequest(
             request.getUserId(),
