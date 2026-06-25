@@ -3,10 +3,10 @@ package de.tum.aet.devops26.progress_feedback_service.api.impl;
 import de.tum.aet.devops26.progress_feedback_service.api.ProgressFeedbackServiceApi;
 import de.tum.aet.devops26.progress_feedback_service.dto.FeedbackResponse;
 import de.tum.aet.devops26.progress_feedback_service.dto.ListeningContentResponse;
-import de.tum.aet.devops26.progress_feedback_service.dto.ListeningGenerateRequest;
-import de.tum.aet.devops26.progress_feedback_service.dto.ListeningOption;
-import de.tum.aet.devops26.progress_feedback_service.dto.ListeningQuestion;
 import de.tum.aet.devops26.progress_feedback_service.dto.ProgressResponse;
+import de.tum.aet.devops26.progress_feedback_service.dto.ProgressListeningGenerateRequest;
+import de.tum.aet.devops26.progress_feedback_service.dto.ProgressListeningOption;
+import de.tum.aet.devops26.progress_feedback_service.dto.ProgressListeningQuestion;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerRequest;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerResponse;
 import de.tum.aet.devops26.progress_feedback_service.dto.UserAnswerResponse;
@@ -58,7 +58,7 @@ public class ProgressFeedbackServiceController implements ProgressFeedbackServic
     }
 
     @Override
-    public ResponseEntity<ListeningContentResponse> generateListeningContent(ListeningGenerateRequest request) {
+    public ResponseEntity<ListeningContentResponse> generateListeningContent(ProgressListeningGenerateRequest request) {
         LearningServiceClient.ExerciseContext exercise = learningServiceClient.getExercise(
             request.getLessonId(), request.getExerciseId());
 
@@ -79,14 +79,14 @@ public class ProgressFeedbackServiceController implements ProgressFeedbackServic
     }
 
     private ListeningContentResponse buildListeningResponse(GenAiListeningClient.ListeningGenerateResponse r) {
-        List<ListeningQuestion> questions = r.questions().stream()
+        List<ProgressListeningQuestion> questions = r.questions().stream()
             .map(q -> {
-                ListeningQuestion dto = new ListeningQuestion();
+                ProgressListeningQuestion dto = new ProgressListeningQuestion();
                 dto.setQuestion(q.question());
                 dto.setExplanation(q.explanation());
                 dto.setOptions(q.options().stream()
                     .map(opt -> {
-                        ListeningOption optDto = new ListeningOption();
+                        ProgressListeningOption optDto = new ProgressListeningOption();
                         optDto.setText(opt.text());
                         return optDto;
                     })
