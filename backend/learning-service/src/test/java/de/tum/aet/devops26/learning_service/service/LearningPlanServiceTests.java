@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,13 +17,11 @@ import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLessonTemplate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -42,6 +39,9 @@ class LearningPlanServiceTests {
 
     @Mock
     private DefaultLearningPlanCatalog defaultLearningPlanCatalog;
+
+    @Mock
+    private LearningPlanSeeder learningPlanSeeder;
 
     private DefaultLearningPlanContent defaultTemplate;
     private DefaultLearningPlanContent germanTemplate;
@@ -125,7 +125,8 @@ class LearningPlanServiceTests {
                 learningPlanRepository,
                 lessonService,
                 exerciseService,
-                defaultLearningPlanCatalog);
+                defaultLearningPlanCatalog,
+                learningPlanSeeder);
         CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest()
                 .userId(42L)
                 .targetLanguage("German")
@@ -165,72 +166,35 @@ class LearningPlanServiceTests {
                 learningPlanRepository,
                 lessonService,
                 exerciseService,
-                defaultLearningPlanCatalog);
+                defaultLearningPlanCatalog,
+                learningPlanSeeder);
         CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest()
                 .userId(42L);
-        List<Lesson> savedLessons = new ArrayList<>();
+        LearningPlan savedPlan = LearningPlan.builder()
+                .id(100L)
+                .userId(42L)
+                .title("Job Interview Preparation")
+                .description("Fixed lessons for practicing professional job interview answers.")
+                .goal("Prepare for a professional job interview")
+                .language("English")
+                .level("A2")
+                .duration("2 weeks")
+                .status(LearningStatus.NOT_STARTED.getValue())
+                .progress(0)
+                .build();
 
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
+                .thenReturn(Optional.empty());
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
                 .thenReturn(Optional.empty());
-        when(learningPlanRepository.save(any(LearningPlan.class))).thenAnswer(invocation -> {
-            LearningPlan plan = invocation.getArgument(0);
-            plan.setId(100L);
-            return plan;
-        });
-        when(lessonService.save(any(Lesson.class))).thenAnswer(invocation -> {
-            Lesson lesson = invocation.getArgument(0);
-            lesson.setId((long) savedLessons.size() + 1);
-            savedLessons.add(lesson);
-            return lesson;
-        });
+        when(learningPlanSeeder.createDefaultPlan(request)).thenReturn(savedPlan);
         when(lessonService.findByPlanId(100L)).thenReturn(List.of());
 
         LearningPlanResponse response = service.createDefaultLearningPlan(request);
 
         assertThat(response.getId()).isEqualTo(100L);
-
-        ArgumentCaptor<LearningPlan> planCaptor = ArgumentCaptor.forClass(LearningPlan.class);
-        verify(learningPlanRepository).save(planCaptor.capture());
-        LearningPlan savedPlan = planCaptor.getValue();
-        assertThat(savedPlan.getTitle()).isEqualTo("Job Interview Preparation");
-        assertThat(savedPlan.getDescription())
-                .isEqualTo("Fixed lessons for practicing professional job interview answers.");
-        assertThat(savedPlan.getGoal()).isEqualTo("Prepare for a professional job interview");
-        assertThat(savedPlan.getLanguage()).isEqualTo("English");
-        assertThat(savedPlan.getLevel()).isEqualTo("A2");
-        assertThat(savedPlan.getDuration()).isEqualTo("2 weeks");
-
-        ArgumentCaptor<Lesson> lessonCaptor = ArgumentCaptor.forClass(Lesson.class);
-        verify(lessonService, times(5)).save(lessonCaptor.capture());
-        assertThat(lessonCaptor.getAllValues())
-                .extracting(Lesson::getTitle)
-                .containsExactly(
-                        "Self Introduction",
-                        "Education and Background",
-                        "Work Experience and Internships",
-                        "Project Explanation",
-                        "Strengths and Weaknesses");
-        assertThat(lessonCaptor.getAllValues())
-                .extracting(Lesson::getOrderNumber)
-                .containsExactly(1, 2, 3, 4, 5);
-
-        ArgumentCaptor<Exercise> exerciseCaptor = ArgumentCaptor.forClass(Exercise.class);
-        verify(exerciseService, times(15)).save(exerciseCaptor.capture());
-        assertThat(exerciseCaptor.getAllValues())
-                .hasSize(15)
-                .allSatisfy(exercise -> {
-                    assertThat(exercise.getType()).isEqualTo("free_text");
-                    assertThat(exercise.getDifficulty()).isEqualTo("A2");
-                    assertThat(exercise.getExpectedAnswer())
-                            .isEqualTo(
-                                    "Write a clear, professional answer using specific details and formal vocabulary.");
-                });
-        assertThat(exerciseCaptor.getAllValues())
-                .extracting(Exercise::getQuestion)
-                .contains(
-                        "Tell me about yourself.",
-                        "Describe your degree and specialization.",
-                        "Describe one project you worked on.");
+        verify(learningPlanSeeder).createListeningPlan(request);
+        verify(learningPlanSeeder).createDefaultPlan(request);
     }
 
     @Test
@@ -239,7 +203,8 @@ class LearningPlanServiceTests {
                 learningPlanRepository,
                 lessonService,
                 exerciseService,
-                defaultLearningPlanCatalog);
+                defaultLearningPlanCatalog,
+                learningPlanSeeder);
         LearningPlan existingPlan = LearningPlan.builder()
                 .id(7L)
                 .userId(42L)
@@ -254,6 +219,10 @@ class LearningPlanServiceTests {
                 .build();
 
         when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(existingPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
+                .thenReturn(Optional.of(existingPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
+                .thenReturn(Optional.of(existingPlan));
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
 
         List<LearningPlanResponse> responses = service.findResponsesByUserId(42L, "German");

@@ -11,7 +11,6 @@ import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
-import de.tum.aet.devops26.learning_service.service.catalog.DefaultLessonTemplate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -27,58 +26,32 @@ import org.springframework.web.server.ResponseStatusException;
 public class LearningPlanService {
 
     private static final String DEFAULT_TEMPLATE_KEY = "job-interview";
-    private static final String DEFAULT_EXERCISE_TYPE = "free_text";
+    private static final Logger LOGGER = LoggerFactory.getLogger(LearningPlanService.class);
 
     private final LearningPlanRepository learningPlanRepository;
     private final LessonService lessonService;
     private final ExerciseService exerciseService;
     private final DefaultLearningPlanCatalog defaultLearningPlanCatalog;
+    private final LearningPlanSeeder learningPlanSeeder;
 
     @Transactional
     public LearningPlanResponse createDefaultLearningPlan(CreateDefaultLearningPlanRequest request) {
         DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog
                 .findFallbackByKey(DEFAULT_TEMPLATE_KEY);
-        return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title())
+
+        ensureListeningPlan(request);
+
+        try {
+            return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title())
                 .map(plan -> toResponse(plan, request.getTargetLanguage()))
-                .orElseGet(() -> createFixedDefaultLearningPlan(request, fallbackTemplate));
-    }
-
-    private LearningPlanResponse createFixedDefaultLearningPlan(
-            CreateDefaultLearningPlanRequest request,
-            DefaultLearningPlanContent template) {
-        LearningPlan plan = learningPlanRepository.save(LearningPlan.builder()
-                .userId(request.getUserId())
-                .title(template.title())
-                .description(template.description())
-                .goal(valueOrDefault(request.getLearningGoal(), template.defaultGoal()))
-                .language(valueOrDefault(request.getTargetLanguage(), template.defaultLanguage()))
-                .level(valueOrDefault(request.getCurrentLevel(), template.defaultLevel()))
-                .duration(template.duration())
-                .status(LearningStatus.NOT_STARTED.getValue())
-                .progress(0)
-                .build());
-
-        for (int lessonIndex = 0; lessonIndex < template.lessons().size(); lessonIndex++) {
-            DefaultLessonTemplate lessonTemplate = template.lessons().get(lessonIndex);
-            Lesson lesson = lessonService.save(Lesson.builder()
-                    .planId(plan.getId())
-                    .title(lessonTemplate.title())
-                    .topic(lessonTemplate.topic())
-                    .orderNumber(lessonIndex + 1)
-                    .build());
-
-            for (String question : lessonTemplate.exercises()) {
-                exerciseService.save(Exercise.builder()
-                        .lessonId(lesson.getId())
-                        .type(DEFAULT_EXERCISE_TYPE)
-                        .question(question)
-                        .difficulty(plan.getLevel())
-                        .expectedAnswer(template.defaultExpectedAnswer())
-                        .build());
-            }
+                .orElseGet(() -> toResponse(learningPlanSeeder.createDefaultPlan(request), request.getTargetLanguage()));
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.info("Default plan already exists for user {} (concurrent creation)", request.getUserId());
+            return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title())
+                .map(plan -> toResponse(plan, request.getTargetLanguage()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Default plan creation failed and no existing plan found for user " + request.getUserId()));
         }
-
-        return toResponse(plan, request.getTargetLanguage());
     }
 
     @Transactional
@@ -127,8 +100,9 @@ public class LearningPlanService {
         return findResponsesByUserId(userId, null);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<LearningPlanResponse> findResponsesByUserId(Long userId, String language) {
+        ensureFixedPlans(userId);
         return learningPlanRepository.findByUserId(userId).stream()
                 .map(plan -> toResponse(plan, language))
                 .toList();
@@ -136,23 +110,29 @@ public class LearningPlanService {
 
     private void ensureFixedPlans(Long userId) {
         CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest().userId(userId);
+        DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog
+                .findFallbackByKey(DEFAULT_TEMPLATE_KEY);
+
+        ensureListeningPlan(request);
 
         try {
             if (learningPlanRepository.findFirstByUserIdAndTitle(
-                    userId, LearningPlanSeeder.LISTENING_TITLE).isEmpty()) {
-                learningPlanSeeder.createListeningPlan(request);
-            }
-        } catch (DataIntegrityViolationException e) {
-            LOGGER.info("Listening plan already exists for user {} (concurrent creation)", userId);
-        }
-
-        try {
-            if (learningPlanRepository.findFirstByUserIdAndTitle(
-                    userId, LearningPlanSeeder.DEFAULT_TITLE).isEmpty()) {
+                    userId, fallbackTemplate.title()).isEmpty()) {
                 learningPlanSeeder.createDefaultPlan(request);
             }
         } catch (DataIntegrityViolationException e) {
             LOGGER.info("Default plan already exists for user {} (concurrent creation)", userId);
+        }
+    }
+
+    private void ensureListeningPlan(CreateDefaultLearningPlanRequest request) {
+        try {
+            if (learningPlanRepository.findFirstByUserIdAndTitle(
+                    request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isEmpty()) {
+                learningPlanSeeder.createListeningPlan(request);
+            }
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.info("Listening plan already exists for user {} (concurrent creation)", request.getUserId());
         }
     }
 
@@ -187,9 +167,5 @@ public class LearningPlanService {
 
     private LearningStatus toLearningStatus(String value) {
         return value == null ? LearningStatus.NOT_STARTED : LearningStatus.fromValue(value);
-    }
-
-    private String valueOrDefault(String value, String defaultValue) {
-        return value == null || value.isBlank() ? defaultValue : value;
     }
 }
