@@ -7,8 +7,8 @@ image:
 imagePullSecrets: []
 
 rollout:
-  maxSurge: 1
-  maxUnavailable: 0
+  maxSurge: 0
+  maxUnavailable: 1
 
 auth:
   enabled: true
@@ -34,11 +34,11 @@ keycloak:
     - "+"
   resources:
     requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 300m
+      cpu: 500m
       memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
 
 oauth2Proxy:
   enabled: false
