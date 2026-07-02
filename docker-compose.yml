@@ -86,6 +86,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/teamdrops
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      USER_SERVICE_URL: http://user-service:8081
       LEARNING_SERVICE_URL: http://learning-service:8082
       GENAI_SERVICE_URL: http://genai-service:8084
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
@@ -119,8 +120,9 @@ services:
       KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-http://localhost:8090/realms/team-drops}
       KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs}
       KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-}
+      STT_PROVIDER: ${STT_PROVIDER:-local}
       WHISPER_MODEL: ${WHISPER_MODEL:-base}
-      TTS_ENABLED: "true"
+      TTS_ENABLED: ${TTS_ENABLED:-true}
       KOKORO_MODEL_PATH: ${KOKORO_MODEL_PATH:-}
       KOKORO_VOICES_PATH: ${KOKORO_VOICES_PATH:-}
       PREWARM_MODELS: ${PREWARM_MODELS:-false}

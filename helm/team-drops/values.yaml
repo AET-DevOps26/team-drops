@@ -125,8 +125,10 @@ genai:
   llmBaseUrl: ""
   ollamaBaseUrl: ""
   ollamaModel: llama3
+  sttProvider: local
   whisperModel: base
   whisperDevice: cpu
+  ttsEnabled: true
   prewarmModels: false
   kokoroModelPath: ""
   kokoroVoicesPath: ""

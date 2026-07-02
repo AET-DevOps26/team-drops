@@ -10,6 +10,7 @@ import {
   getUserProfile,
   getUserAnswers,
   submitAnswer,
+  submitSpeakingAnswer,
   updateUserProfile,
 } from './api/client';
 import {
@@ -289,15 +290,18 @@ export function App() {
       ? toLearningPlans(learningPlansResult.value)
       : [];
 
-    if (learningPlansResult.status === 'rejected' && learningPlansResult.reason?.status === 404) {
+    if (
+      (learningPlansResult.status === 'rejected' && learningPlansResult.reason?.status === 404)
+      || (learningPlansResult.status === 'fulfilled' && nextLearningPlans.length === 0)
+    ) {
       try {
-        const defaultPlan = await createDefaultLearningPlan({
+        await createDefaultLearningPlan({
           user_id: userId,
           target_language: nextProfile.targetLanguage,
           current_level: nextProfile.currentLevel,
           learning_goal: nextProfile.learningGoal,
         }, token);
-        nextLearningPlans = toLearningPlans([defaultPlan]);
+        nextLearningPlans = toLearningPlans(await getLearningPlans(userId, token));
         learningPlansError = null;
       } catch (error) {
         learningPlansError = error;
@@ -603,6 +607,7 @@ export function App() {
   };
 
   const openExercise = (exerciseIndex) => {
+    setAnswerError('');
     setSelectedExercise(exerciseIndex);
     setLearningStep('exercise');
 
@@ -679,6 +684,7 @@ export function App() {
 
   const handleSubmitAnswer = async (exercise, answerText) => {
     if (!session || !exercise?.id || !activeLesson?.id || !activePlan?.id) {
+      setAnswerError('Please sign in and open a lesson before submitting an answer.');
       return;
     }
 
@@ -711,6 +717,50 @@ export function App() {
       setLearningPlans(mergeLessonIntoPlans(syncResult.nextLearningPlans, normalizedLesson));
     } catch (error) {
       setAnswerError(error.message || 'Unable to submit answer.');
+    } finally {
+      setAnswerPending(false);
+    }
+  };
+
+  const handleSubmitSpeakingAnswer = async (exercise, audio) => {
+    if (!session) {
+      setAnswerError('Please sign in before submitting a speaking answer.');
+      return;
+    }
+
+    if (!exercise?.id || !activeLesson?.id || !activePlan?.id) {
+      setAnswerError('Open a speaking exercise from a lesson before submitting audio.');
+      return;
+    }
+
+    if (!audio) {
+      setAnswerError('Record or select an audio file before submitting.');
+      return;
+    }
+
+    setAnswerPending(true);
+    setAnswerError('');
+
+    try {
+      const submission = await submitSpeakingAnswer({
+        audio,
+        user_id: session.user.id,
+        exercise_id: exercise.id,
+        lesson_id: activeLesson.id,
+        plan_id: activePlan.id,
+        target_language: profile.targetLanguage,
+        level: profile.currentLevel || exercise.difficulty,
+      }, session.accessToken);
+
+      const lessonResponse = await getLesson(activeLesson.id, session.accessToken);
+      const normalizedLesson = attachSubmissionToLesson(
+        toLessonDetail(lessonResponse, activeLesson),
+        submission,
+      );
+      const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+      setLearningPlans(mergeLessonIntoPlans(syncResult.nextLearningPlans, normalizedLesson));
+    } catch (error) {
+      setAnswerError(error.message || 'Unable to submit speaking answer.');
     } finally {
       setAnswerPending(false);
     }
@@ -800,6 +850,7 @@ export function App() {
                 setListeningSelections((prev) => ({ ...prev, [qIndex]: optionText }))
               }
               onSubmitAnswer={handleSubmitAnswer}
+              onSubmitSpeakingAnswer={handleSubmitSpeakingAnswer}
             />
           )}
 

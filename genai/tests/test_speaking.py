@@ -65,6 +65,37 @@ def test_evaluate_speaking_score_within_range(client):
     assert 0.0 <= score <= 10.0
 
 
+def test_speaking_llm_output_accepts_total_score_alias():
+    result = _SpeakingEvaluationLLMOutput.model_validate({
+        "total_score": 7.5,
+        "is_correct": True,
+        "feedback": "Clear answer with one small grammar issue.",
+        "weak_area": "task completion and meaning",
+        "corrected_answer": "Hallo, ich heiße Julian.",
+    })
+
+    assert result.score == 7.5
+    assert result.message == "Clear answer with one small grammar issue."
+    assert result.weak_area == "fluency"
+
+
+def test_speaking_llm_output_computes_score_from_rubric_fields():
+    result = _SpeakingEvaluationLLMOutput.model_validate({
+        "is_correct": True,
+        "task_completion": 3,
+        "grammar": 2,
+        "vocabulary": 1.5,
+        "fluency": 1.5,
+        "pronunciation": 1.5,
+        "feedback": "Good answer with slight pronunciation issues.",
+        "weak_area": "pronunciation",
+        "corrected_answer": "Hallo, ich heiße Julian und ich studiere Informatik.",
+    })
+
+    assert result.score == 9.5
+    assert result.message == "Good answer with slight pronunciation issues."
+
+
 def test_evaluate_speaking_includes_audio_when_tts_enabled(client):
     response = _post_speaking(client, tts_enabled=True)
 

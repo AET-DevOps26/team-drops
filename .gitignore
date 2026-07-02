@@ -36,6 +36,9 @@ lerna-debug.log*
 .env
 .env.*
 
+# Local planning artifacts
+.planning/
+
 # Java / Gradle
 HELP.md
 .gradle/

@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM eclipse-temurin:21-jdk AS build
 
 WORKDIR /app
@@ -8,7 +10,8 @@ COPY backend/user-service ./backend/user-service
 WORKDIR /app/backend/user-service
 
 RUN chmod +x gradlew
-RUN ./gradlew bootJar --no-daemon -x test
+RUN --mount=type=cache,id=team-drops-gradle,target=/root/.gradle,sharing=locked \
+    ./gradlew bootJar --no-daemon -x test
 
 FROM eclipse-temurin:21-jre
 

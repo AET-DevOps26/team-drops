@@ -66,6 +66,7 @@ async def evaluate_speaking(
     try:
         transcription = await transcribe(audio_bytes, target_language)
     except Exception as exc:
+        logger.warning("STT transcription failed for speaking evaluation: %s", exc)
         raise HTTPException(status_code=502, detail=f"STT transcription failed: {exc}") from exc
 
     chain = speaking_prompt | get_structured_llm(_SpeakingEvaluationLLMOutput)
@@ -82,6 +83,7 @@ async def evaluate_speaking(
             }
         )
     except Exception as exc:
+        logger.warning("LLM invocation failed for speaking evaluation: %s", exc)
         raise HTTPException(status_code=502, detail=f"LLM invocation failed: {exc}") from exc
 
     feedback_audio: str | None = None
