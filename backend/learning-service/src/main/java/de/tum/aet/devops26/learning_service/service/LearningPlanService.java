@@ -31,36 +31,16 @@ public class LearningPlanService {
     private final LearningPlanSeeder learningPlanSeeder;
 
     /**
-     * Ensures both the default interview plan and the listening plan exist for the user.
-     * Each plan is created in its own REQUIRES_NEW transaction (via LearningPlanSeeder) so that
-     * a concurrent DataIntegrityViolationException on the (user_id, title) unique constraint
-     * rolls back only that inner transaction and does not prevent the overall method from succeeding.
+     * Ensures the fixed plans exist for the user. Each plan is created in its own
+     * REQUIRES_NEW transaction so a concurrent insert rolls back only that plan.
      */
     public LearningPlanResponse createDefaultLearningPlan(CreateDefaultLearningPlanRequest request) {
-        // Listening plan — failure due to concurrent creation is silently ignored
-        try {
-            if (learningPlanRepository.findFirstByUserIdAndTitle(
-                    request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isEmpty()) {
-                learningPlanSeeder.createListeningPlan(request);
-            }
-        } catch (DataIntegrityViolationException e) {
-            LOGGER.info("Listening plan already exists for user {} (concurrent creation)", request.getUserId());
-        }
+        ensureListeningPlan(request);
+        ensureSpeakingPlan(request);
 
-        // Default interview plan — same pattern
-        try {
-            return learningPlanRepository.findFirstByUserIdAndTitle(
-                    request.getUserId(), LearningPlanSeeder.DEFAULT_TITLE)
-                .map(this::toResponse)
-                .orElseGet(() -> toResponse(learningPlanSeeder.createDefaultPlan(request)));
-        } catch (DataIntegrityViolationException e) {
-            LOGGER.info("Default plan already exists for user {} (concurrent creation)", request.getUserId());
-            return learningPlanRepository.findFirstByUserIdAndTitle(
-                    request.getUserId(), LearningPlanSeeder.DEFAULT_TITLE)
-                .map(this::toResponse)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Default plan creation failed and no existing plan found for user " + request.getUserId()));
-        }
+        return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.DEFAULT_TITLE)
+            .map(this::toResponse)
+            .orElseGet(() -> toResponse(createDefaultPlan(request)));
     }
 
     @Transactional
@@ -105,31 +85,59 @@ public class LearningPlanService {
 
     @Transactional
     public List<LearningPlanResponse> findResponsesByUserId(Long userId) {
-        ensureFixedPlans(userId);
+        ensureFixedPlans(new CreateDefaultLearningPlanRequest().userId(userId));
         return learningPlanRepository.findByUserId(userId).stream()
             .map(this::toResponse)
             .toList();
     }
 
-    private void ensureFixedPlans(Long userId) {
-        CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest().userId(userId);
+    private void ensureFixedPlans(CreateDefaultLearningPlanRequest request) {
+        ensureDefaultPlan(request);
+        ensureListeningPlan(request);
+        ensureSpeakingPlan(request);
+    }
 
+    private void ensureDefaultPlan(CreateDefaultLearningPlanRequest request) {
+        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.DEFAULT_TITLE).isPresent()) {
+            return;
+        }
+        createDefaultPlan(request);
+    }
+
+    private LearningPlan createDefaultPlan(CreateDefaultLearningPlanRequest request) {
         try {
-            if (learningPlanRepository.findFirstByUserIdAndTitle(
-                    userId, LearningPlanSeeder.LISTENING_TITLE).isEmpty()) {
-                learningPlanSeeder.createListeningPlan(request);
-            }
-        } catch (DataIntegrityViolationException e) {
-            LOGGER.info("Listening plan already exists for user {} (concurrent creation)", userId);
+            return learningPlanSeeder.createDefaultPlan(request);
+        } catch (DataIntegrityViolationException exception) {
+            LOGGER.info("Default plan already exists for user {} (concurrent creation)", request.getUserId());
+            return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.DEFAULT_TITLE)
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Default plan creation failed and no existing plan found for user " + request.getUserId()
+                ));
+        }
+    }
+
+    private void ensureListeningPlan(CreateDefaultLearningPlanRequest request) {
+        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isPresent()) {
+            return;
         }
 
         try {
-            if (learningPlanRepository.findFirstByUserIdAndTitle(
-                    userId, LearningPlanSeeder.DEFAULT_TITLE).isEmpty()) {
-                learningPlanSeeder.createDefaultPlan(request);
-            }
-        } catch (DataIntegrityViolationException e) {
-            LOGGER.info("Default plan already exists for user {} (concurrent creation)", userId);
+            learningPlanSeeder.createListeningPlan(request);
+        } catch (DataIntegrityViolationException exception) {
+            LOGGER.info("Listening plan already exists for user {} (concurrent creation)", request.getUserId());
+        }
+    }
+
+    private void ensureSpeakingPlan(CreateDefaultLearningPlanRequest request) {
+        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.SPEAKING_TITLE).isPresent()) {
+            return;
+        }
+
+        try {
+            learningPlanSeeder.createSpeakingPlan(request);
+        } catch (DataIntegrityViolationException exception) {
+            LOGGER.info("Speaking plan already exists for user {} (concurrent creation)", request.getUserId());
         }
     }
 

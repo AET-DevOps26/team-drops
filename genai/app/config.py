@@ -35,6 +35,7 @@ class Settings(BaseSettings):
 
     whisper_model: str = Field(default="base", alias="WHISPER_MODEL")
     whisper_device: str = Field(default="cpu", alias="WHISPER_DEVICE")
+    stt_provider: str = Field(default="local", alias="STT_PROVIDER")
     tts_enabled: bool = Field(default=True, alias="TTS_ENABLED")
     prewarm_models: bool = Field(default=False, alias="PREWARM_MODELS")
 
