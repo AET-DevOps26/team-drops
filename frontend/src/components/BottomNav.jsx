@@ -3,9 +3,11 @@ import { BookOpen, CalendarDays } from 'lucide-react';
 
 export function BottomNav({ activeScreen, onNavigate, t }) {
   return (
-    <nav className="bottom-bar" aria-label="Main navigation">
+    <nav className={`bottom-bar active-${activeScreen}`} aria-label="Main navigation">
+      <span className="bottom-nav-indicator" aria-hidden="true" />
       <button
         className={`tab-button ${activeScreen === 'learn' ? 'active' : ''}`}
+        data-intro-target="start-learning"
         type="button"
         onClick={() => onNavigate('learn')}
       >
@@ -14,6 +16,7 @@ export function BottomNav({ activeScreen, onNavigate, t }) {
       </button>
       <button
         className={`tab-button ${activeScreen === 'main' ? 'active' : ''}`}
+        data-intro-target="overview"
         type="button"
         onClick={() => onNavigate('main')}
       >

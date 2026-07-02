@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Settings, Target } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 
 export function DashboardPage({
@@ -7,9 +7,7 @@ export function DashboardPage({
   dashboardError,
   hasLearningPlans,
   hasLessons,
-  loading,
   profile,
-  progress,
   recentFinishedLessons,
   recentLessons,
   t,
@@ -43,7 +41,7 @@ export function DashboardPage({
           <p className="app-label">{t.welcomeBack}, {profile.name}</p>
           <h2>{t.dashboard}</h2>
         </div>
-        <button className="icon-button" type="button" aria-label="Settings" onClick={onOpenSettings}>
+        <button className="icon-button" data-intro-target="settings" type="button" aria-label="Settings" onClick={onOpenSettings}>
           <Settings size={22} aria-hidden="true" />
         </button>
       </header>
@@ -53,6 +51,7 @@ export function DashboardPage({
 
         <button
           className={`dashboard-hero dashboard-hero-button colorful-card ${activePlan.accent}`}
+          data-intro-target="current-plan"
           disabled={hasLearningPlans && !hasLessons}
           type="button"
           aria-label={heroActionLabel}
@@ -74,19 +73,6 @@ export function DashboardPage({
             <small>{t.overall}</small>
           </div>
         </button>
-
-        <div className="overview-grid" aria-label="Learning stats">
-          <section className="stat-card">
-            <CheckCircle2 size={20} aria-hidden="true" />
-            <strong>{loading ? '--' : `${progress.completedExercises}/${progress.totalExercises}`}</strong>
-            <span>{t.exercisesDone}</span>
-          </section>
-          <section className="stat-card">
-            <Target size={20} aria-hidden="true" />
-            <strong>{loading ? '--' : `${progress.averageScore}%`}</strong>
-            <span>{t.averageScore}</span>
-          </section>
-        </div>
 
         <LessonListBlock
           emptyText={t.noOngoing}

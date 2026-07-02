@@ -176,6 +176,8 @@ h1 {
   flex-direction: column;
   justify-content: center;
   padding: 28px 0 20px;
+  transform-origin: center 58%;
+  animation: pageAppear 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .auth-processing {
@@ -186,6 +188,8 @@ h1 {
   gap: 18px;
   min-height: 0;
   text-align: center;
+  transform-origin: center 58%;
+  animation: pageAppear 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .auth-processing-mark {
@@ -353,6 +357,8 @@ h1 {
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  transform-origin: center 58%;
+  animation: pageAppear 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .main-topbar {
@@ -425,6 +431,7 @@ h1 {
   padding: 12px 0 14px;
   overflow-y: auto;
   scrollbar-width: none;
+  animation: contentAppear 520ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
 }
 
 .dashboard-content::-webkit-scrollbar {
@@ -444,6 +451,30 @@ h1 {
     var(--blue);
   color: #ffffff;
   box-shadow: 0 18px 40px rgba(25, 103, 210, 0.22);
+}
+
+.dashboard-hero,
+.lesson-progress-card,
+.learning-options,
+.plan-section,
+.ai-plan-form,
+.rag-topic-section,
+.summary-card,
+.feedback-card {
+  animation: sectionAppear 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lesson-progress-card:nth-of-type(2),
+.plan-section,
+.ai-plan-form,
+.rag-topic-section,
+.summary-card:nth-of-type(2) {
+  animation-delay: 130ms;
+}
+
+.lesson-progress-card:nth-of-type(3),
+.summary-card:nth-of-type(3) {
+  animation-delay: 210ms;
 }
 
 .dashboard-hero-button {
@@ -596,39 +627,6 @@ h1 {
   color: #85d9a9;
 }
 
-.overview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.stat-card {
-  display: grid;
-  min-height: 104px;
-  align-content: start;
-  gap: 6px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface);
-  color: var(--blue-dark);
-}
-
-.stat-card strong {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  color: var(--ink);
-  font-size: 0.95rem;
-  line-height: 1.16;
-}
-
-.stat-card span {
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 760;
-  line-height: 1.22;
-}
-
 .progress-row {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr) 38px;
@@ -738,6 +736,7 @@ h1 {
   padding: 12px 0 14px;
   overflow-y: auto;
   scrollbar-width: none;
+  animation: contentAppear 520ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
 }
 
 .learning-content::-webkit-scrollbar {
@@ -767,6 +766,15 @@ h1 {
     border-color 160ms ease,
     background-color 160ms ease,
     box-shadow 160ms ease;
+  animation: sectionAppear 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mode-card:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.mode-card:nth-child(3) {
+  animation-delay: 160ms;
 }
 
 .mode-card:hover,
@@ -857,6 +865,11 @@ h1 {
 .plan-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 22px 46px rgba(16, 32, 51, 0.2);
+}
+
+.plan-card:active {
+  transform: translateY(1px) scale(0.985);
+  box-shadow: 0 12px 28px rgba(16, 32, 51, 0.18);
 }
 
 .colorful-copy {
@@ -1465,6 +1478,33 @@ h1 {
     box-shadow 160ms ease;
 }
 
+.ai-form-hero,
+.rag-topic-card,
+.rag-topic-back,
+.ai-plan-notice,
+.ai-form-field,
+.ai-exercise-types,
+.ai-generate-button {
+  animation: sectionAppear 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rag-topic-card:nth-child(1),
+.rag-topic-back,
+.ai-plan-notice,
+.ai-form-field-full {
+  animation-delay: 130ms;
+}
+
+.rag-topic-card:nth-child(2),
+.ai-form-grid,
+.ai-exercise-types {
+  animation-delay: 210ms;
+}
+
+.ai-generate-button {
+  animation-delay: 280ms;
+}
+
 .rag-topic-card:hover,
 .rag-topic-card:focus-visible {
   transform: translateY(-1px);
@@ -1643,6 +1683,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  animation: sectionAppear 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .ai-exercise-types {
@@ -1921,6 +1962,8 @@ h1 {
   flex: 1;
   min-height: 0;
   flex-direction: column;
+  transform-origin: center 58%;
+  animation: pageAppear 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .page-topbar {
@@ -2331,7 +2374,46 @@ button.settings-row {
   }
 }
 
+@keyframes pageAppear {
+  from {
+    transform: translateY(24px) scale(0.965);
+    opacity: 0;
+    filter: blur(3px);
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes contentAppear {
+  from {
+    transform: translateY(22px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes sectionAppear {
+  from {
+    transform: translateY(18px) scale(0.98);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
 .bottom-bar {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
@@ -2346,7 +2428,29 @@ button.settings-row {
   background: rgba(23, 42, 73, 0.94);
 }
 
+.bottom-nav-indicator {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 8px;
+  z-index: 0;
+  width: calc((100% - 22px) / 2);
+  border-radius: 16px;
+  background: var(--blue);
+  box-shadow: 0 10px 24px rgba(25, 103, 210, 0.24);
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.bottom-bar.active-main .bottom-nav-indicator {
+  transform: translateX(calc(100% + 6px));
+}
+
 .tab-button {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2362,6 +2466,9 @@ button.settings-row {
   font-size: 0.72rem;
   font-weight: 820;
   text-align: center;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .tab-button span {
@@ -2372,8 +2479,155 @@ button.settings-row {
 }
 
 .tab-button.active {
-  background: var(--blue);
   color: #ffffff;
+}
+
+.tab-button:active {
+  transform: scale(0.96);
+}
+
+.intro-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: auto;
+}
+
+.intro-spotlight {
+  position: absolute;
+  z-index: 2;
+  border: 2px solid rgba(255, 255, 255, 0.96);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 0 0 999px rgba(16, 32, 51, 0.6),
+    0 16px 38px rgba(16, 32, 51, 0.26);
+  cursor: pointer;
+  pointer-events: auto;
+  animation: introPulse 1300ms ease-in-out infinite;
+}
+
+.intro-card {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 50px rgba(16, 32, 51, 0.24);
+  color: #102033;
+  pointer-events: none;
+  animation: introCardIn 180ms ease both;
+}
+
+.dark-mode .intro-card {
+  border-color: rgba(96, 165, 250, 0.34);
+  background: rgba(15, 29, 51, 0.96);
+  color: #eef6ff;
+}
+
+.intro-card div {
+  min-width: 0;
+}
+
+.intro-card small {
+  color: var(--blue);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.intro-card h3 {
+  margin: 4px 0 5px;
+  font-size: 1rem;
+  line-height: 1.14;
+}
+
+.intro-card p {
+  margin: 0;
+  color: #4b5f78;
+  font-size: 0.8rem;
+  font-weight: 690;
+  line-height: 1.38;
+}
+
+.dark-mode .intro-card p {
+  color: #a8bbd2;
+}
+
+.intro-skip {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--blue-dark);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 850;
+  pointer-events: auto;
+}
+
+@keyframes introPulse {
+  0%,
+  100% {
+    outline: 0 solid rgba(255, 255, 255, 0);
+  }
+
+  50% {
+    outline: 8px solid rgba(255, 255, 255, 0.18);
+  }
+}
+
+@keyframes introCardIn {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bottom-nav-indicator,
+  .tab-button,
+  .plan-card,
+  .main-page,
+  .auth-card,
+  .auth-processing,
+  .dashboard-content,
+  .learning-content,
+  .dashboard-hero,
+  .lesson-progress-card,
+  .learning-options,
+  .mode-card,
+  .plan-section,
+  .ai-plan-form,
+  .rag-topic-section,
+  .ai-form-hero,
+  .rag-topic-card,
+  .rag-topic-back,
+  .ai-plan-notice,
+  .ai-form-field,
+  .ai-form-grid,
+  .ai-exercise-types,
+  .ai-generate-button,
+  .summary-card,
+  .feedback-card,
+  .profile-page,
+  .language-page,
+  .intro-card,
+  .intro-spotlight {
+    animation: none;
+    transition: none;
+  }
 }
 
 @media (max-width: 760px) {
