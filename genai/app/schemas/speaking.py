@@ -13,6 +13,14 @@ _RUBRIC_SCORE_FIELDS = (
     "pronunciation",
 )
 
+_RUBRIC_WEAK_AREA = {
+    "task_completion": "fluency",
+    "grammar": "grammar",
+    "vocabulary": "vocabulary",
+    "fluency": "fluency",
+    "pronunciation": "pronunciation",
+}
+
 
 class SpeakingEvaluationResponse(BaseModel):
     """
@@ -93,6 +101,19 @@ class _SpeakingEvaluationLLMOutput(BaseModel):
         weak_area = str(normalized.get("weak_area", "")).strip().lower().replace("_", " ")
         if weak_area in {"task completion", "task completion and meaning", "meaning", "completeness"}:
             normalized["weak_area"] = "fluency"
+        elif weak_area:
+            normalized["weak_area"] = weak_area
+        else:
+            scored_areas = [
+                (field, float(normalized[field]))
+                for field in _RUBRIC_SCORE_FIELDS
+                if normalized.get(field) is not None
+            ]
+            if scored_areas:
+                weakest_field, _ = min(scored_areas, key=lambda item: item[1])
+                normalized["weak_area"] = _RUBRIC_WEAK_AREA[weakest_field]
+            else:
+                normalized["weak_area"] = "fluency"
         return normalized
 
     score: float = Field(..., ge=0.0, le=10.0)
