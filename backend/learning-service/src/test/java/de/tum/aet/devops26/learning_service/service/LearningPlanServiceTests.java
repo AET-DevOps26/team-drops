@@ -1,14 +1,22 @@
 package de.tum.aet.devops26.learning_service.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.tum.aet.devops26.learning_service.dto.CreateAiLearningPlanRequest;
 import de.tum.aet.devops26.learning_service.dto.CreateDefaultLearningPlanRequest;
+import de.tum.aet.devops26.learning_service.dto.ExerciseType;
 import de.tum.aet.devops26.learning_service.dto.LearningPlanResponse;
 import de.tum.aet.devops26.learning_service.dto.LearningStatus;
+import de.tum.aet.devops26.learning_service.dto.LessonSummaryResponse;
+import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient;
+import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagExercise;
+import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagLearningPlanResponse;
+import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagLesson;
 import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
@@ -17,8 +25,11 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class LearningPlanServiceTests {
@@ -34,6 +45,9 @@ class LearningPlanServiceTests {
 
     @Mock
     private LearningPlanSeeder learningPlanSeeder;
+
+    @Mock
+    private GenAiRagLearningPlanClient genAiRagLearningPlanClient;
 
     @Test
     void createDefaultLearningPlanReturnsExistingDefaultPlan() {
@@ -58,6 +72,129 @@ class LearningPlanServiceTests {
         verify(learningPlanSeeder, never()).createDefaultPlan(any(CreateDefaultLearningPlanRequest.class));
         verify(learningPlanSeeder, never()).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
         verify(learningPlanSeeder, never()).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+        verify(lessonService, never()).save(any(Lesson.class));
+        verify(exerciseService, never()).save(any(Exercise.class));
+    }
+
+    @Test
+    void createAiLearningPlanPersistsGeneratedRagPlanLessonsAndExercises() {
+        LearningPlanService service = newService();
+        configureGeneratedPlanSaves();
+        CreateAiLearningPlanRequest request = aiRequest();
+        when(genAiRagLearningPlanClient.generate(request)).thenReturn(generatedPlan());
+        when(lessonService.findByPlanId(100L)).thenReturn(List.of(
+            Lesson.builder()
+                .id(201L)
+                .planId(100L)
+                .title("Interview Answers")
+                .topic("STAR answers - Structure answers with examples.")
+                .orderNumber(1)
+                .build()
+        ));
+        when(lessonService.toSummaryResponse(any(Lesson.class))).thenReturn(new LessonSummaryResponse(
+            201L,
+            100L,
+            "Interview Answers",
+            "STAR answers - Structure answers with examples.",
+            1,
+            LearningStatus.NOT_STARTED,
+            0,
+            10,
+            1
+        ));
+
+        LearningPlanResponse response = service.createAiLearningPlan(request);
+
+        assertThat(response.getTitle()).isEqualTo("Generated German Interview Plan");
+        assertThat(response.getLessons()).hasSize(1);
+
+        ArgumentCaptor<LearningPlan> planCaptor = ArgumentCaptor.forClass(LearningPlan.class);
+        verify(learningPlanRepository).save(planCaptor.capture());
+        assertThat(planCaptor.getValue().getTitle()).isEqualTo("Generated German Interview Plan");
+        assertThat(planCaptor.getValue().getDescription()).isEqualTo("Grounded RAG plan");
+        assertThat(planCaptor.getValue().getGoal()).isEqualTo("Prepare for an interview");
+        assertThat(planCaptor.getValue().getLanguage()).isEqualTo("German");
+        assertThat(planCaptor.getValue().getLevel()).isEqualTo("B1");
+        assertThat(planCaptor.getValue().getDuration()).isEqualTo("3 weeks");
+
+        ArgumentCaptor<Lesson> lessonCaptor = ArgumentCaptor.forClass(Lesson.class);
+        verify(lessonService).save(lessonCaptor.capture());
+        assertThat(lessonCaptor.getValue().getTitle()).isEqualTo("Interview Answers");
+        assertThat(lessonCaptor.getValue().getTopic()).isEqualTo("STAR answers - Structure answers with examples.");
+        assertThat(lessonCaptor.getValue().getOrderNumber()).isEqualTo(1);
+
+        ArgumentCaptor<Exercise> exerciseCaptor = ArgumentCaptor.forClass(Exercise.class);
+        verify(exerciseService).save(exerciseCaptor.capture());
+        assertThat(exerciseCaptor.getValue().getType()).isEqualTo("free_text");
+        assertThat(exerciseCaptor.getValue().getQuestion()).isEqualTo("Write a STAR answer.");
+        assertThat(exerciseCaptor.getValue().getExpectedAnswer()).isEqualTo("A structured answer.");
+    }
+
+    @Test
+    void createAiLearningPlanRejectsInvalidLessonBoundsBeforeCallingGenAi() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(5).maximumLessons(2);
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("minimum_lessons must be less than or equal to maximum_lessons");
+
+        verify(genAiRagLearningPlanClient, never()).generate(any(CreateAiLearningPlanRequest.class));
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+    }
+
+    @Test
+    void createAiLearningPlanDoesNotPersistWhenGenAiFails() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest();
+        when(genAiRagLearningPlanClient.generate(request)).thenThrow(new ResponseStatusException(
+            HttpStatus.BAD_GATEWAY,
+            "GenAI unavailable"
+        ));
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("GenAI unavailable");
+
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+        verify(lessonService, never()).save(any(Lesson.class));
+        verify(exerciseService, never()).save(any(Exercise.class));
+    }
+
+    @Test
+    void createAiLearningPlanRejectsUnsupportedGenAiExerciseTypeBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest();
+        RagLearningPlanResponse plan = new RagLearningPlanResponse(
+            "Generated German Interview Plan",
+            "Grounded RAG plan",
+            "Prepare for an interview",
+            "German",
+            "B1",
+            "3 weeks",
+            List.of(new RagLesson(
+                "Interview Answers",
+                "STAR answers",
+                "Structure answers with examples.",
+                1,
+                List.of(),
+                List.of(new RagExercise(
+                    "grammar",
+                    "free_text",
+                    "Write a STAR answer.",
+                    "A structured answer.",
+                    "B1"
+                ))
+            )),
+            List.of()
+        );
+        when(genAiRagLearningPlanClient.generate(request)).thenReturn(plan);
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("unsupported exercise type");
+
         verify(learningPlanRepository, never()).save(any(LearningPlan.class));
         verify(lessonService, never()).save(any(Lesson.class));
         verify(exerciseService, never()).save(any(Exercise.class));
@@ -114,7 +251,8 @@ class LearningPlanServiceTests {
             learningPlanRepository,
             lessonService,
             exerciseService,
-            learningPlanSeeder
+            learningPlanSeeder,
+            genAiRagLearningPlanClient
         );
     }
 
@@ -139,5 +277,63 @@ class LearningPlanServiceTests {
             .status(LearningStatus.NOT_STARTED.getValue())
             .progress(0)
             .build();
+    }
+
+    private void configureGeneratedPlanSaves() {
+        when(learningPlanRepository.save(any(LearningPlan.class))).thenAnswer(invocation -> {
+            LearningPlan plan = invocation.getArgument(0);
+            plan.setId(100L);
+            return plan;
+        });
+        when(lessonService.save(any(Lesson.class))).thenAnswer(invocation -> {
+            Lesson lesson = invocation.getArgument(0);
+            lesson.setId(200L + lesson.getOrderNumber());
+            return lesson;
+        });
+        when(exerciseService.save(any(Exercise.class))).thenAnswer(invocation -> {
+            Exercise exercise = invocation.getArgument(0);
+            exercise.setId(300L);
+            return exercise;
+        });
+    }
+
+    private CreateAiLearningPlanRequest aiRequest() {
+        return new CreateAiLearningPlanRequest()
+            .userId(42L)
+            .ragTopic("job interview")
+            .targetLanguage("German")
+            .currentLevel("B1")
+            .learningGoal("Prepare for an interview")
+            .durationWeeks(3)
+            .studyHoursPerWeek(4)
+            .minimumLessons(1)
+            .maximumLessons(2)
+            .exerciseTypes(List.of(ExerciseType.WRITING));
+    }
+
+    private RagLearningPlanResponse generatedPlan() {
+        return new RagLearningPlanResponse(
+            "Generated German Interview Plan",
+            "Grounded RAG plan",
+            "Prepare for an interview",
+            "German",
+            "B1",
+            "3 weeks",
+            List.of(new RagLesson(
+                "Interview Answers",
+                "STAR answers",
+                "Structure answers with examples.",
+                1,
+                List.of("Use situation, task, action, result."),
+                List.of(new RagExercise(
+                    "writing",
+                    "free_text",
+                    "Write a STAR answer.",
+                    "A structured answer.",
+                    "B1"
+                ))
+            )),
+            List.of()
+        );
     }
 }

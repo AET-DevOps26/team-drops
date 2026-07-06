@@ -50,14 +50,14 @@ public class GenAiRagLearningPlanClient {
         this.authEnabled = authEnabled;
     }
 
-    public RagLearningPlanResponse generate(CreateAiLearningPlanRequest request, String ragTopic) {
+    public RagLearningPlanResponse generate(CreateAiLearningPlanRequest request) {
         if (request == null) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "RAG learning-plan request must not be null."
             );
         }
-        if (ragTopic == null || ragTopic.isBlank()) {
+        if (request.getRagTopic() == null || request.getRagTopic().isBlank()) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "RAG learning-plan generation requires a topic."
@@ -74,7 +74,7 @@ public class GenAiRagLearningPlanClient {
 
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
-            payload.put("topic", ragTopic);
+            payload.put("topic", request.getRagTopic());
             payload.put("learning_goal", request.getLearningGoal());
             payload.put("target_language", request.getTargetLanguage());
             payload.put("level", request.getCurrentLevel());
@@ -84,7 +84,7 @@ public class GenAiRagLearningPlanClient {
             payload.put("maximum_lessons", request.getMaximumLessons());
             payload.put("exercise_types", exerciseTypeValues(request.getExerciseTypes()));
 
-            LOGGER.info("Sending GenAI RAG learning-plan request for topic {}", ragTopic);
+            LOGGER.info("Sending GenAI RAG learning-plan request for topic {}", request.getRagTopic());
 
             String jsonBody = objectMapper.writeValueAsString(payload);
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(

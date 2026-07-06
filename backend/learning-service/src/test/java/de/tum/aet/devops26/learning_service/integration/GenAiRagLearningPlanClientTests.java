@@ -48,7 +48,7 @@ class GenAiRagLearningPlanClientTests {
             successJson()
         );
 
-        RagLearningPlanResponse response = client.generate(request(), "job interview");
+        RagLearningPlanResponse response = client.generate(request());
 
         assertThat(response.title()).isEqualTo("German Interview Plan");
         assertThat(response.lessons()).hasSize(1);
@@ -82,7 +82,7 @@ class GenAiRagLearningPlanClientTests {
             successJson()
         );
 
-        client.generate(request(), "job interview");
+        client.generate(request());
 
         assertThat(authorizationHeader.get()).isEqualTo("Bearer rag-token");
     }
@@ -96,7 +96,7 @@ class GenAiRagLearningPlanClientTests {
             true
         );
 
-        assertThatThrownBy(() -> client.generate(request(), "job interview"))
+        assertThatThrownBy(() -> client.generate(request()))
             .isInstanceOf(ResponseStatusException.class)
             .hasMessageContaining("Authenticated RAG learning-plan generation requires a Bearer token");
     }
@@ -114,7 +114,7 @@ class GenAiRagLearningPlanClientTests {
             "{\"message\":\"LLM unavailable\"}"
         );
 
-        assertThatThrownBy(() -> client.generate(request(), "job interview"))
+        assertThatThrownBy(() -> client.generate(request()))
             .isInstanceOf(ResponseStatusException.class)
             .hasMessageContaining("GenAI service rejected RAG learning-plan generation");
     }
@@ -132,7 +132,7 @@ class GenAiRagLearningPlanClientTests {
             requestCount
         );
 
-        assertThatThrownBy(() -> client.generate(null, "job interview"))
+        assertThatThrownBy(() -> client.generate(null))
             .isInstanceOf(ResponseStatusException.class)
             .hasMessageContaining("RAG learning-plan request must not be null");
         assertThat(requestCount).hasValue(0);
@@ -228,6 +228,7 @@ class GenAiRagLearningPlanClientTests {
     private CreateAiLearningPlanRequest request() {
         return new CreateAiLearningPlanRequest()
             .userId(42L)
+            .ragTopic("job interview")
             .targetLanguage("German")
             .currentLevel("B1")
             .learningGoal("Prepare for an interview")

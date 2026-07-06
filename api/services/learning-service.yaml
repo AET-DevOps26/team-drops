@@ -181,6 +181,7 @@ components:
         - target_language
         - current_level
         - learning_goal
+        - rag_topic
         - duration_weeks
         - study_hours_per_week
         - minimum_lessons
@@ -200,6 +201,10 @@ components:
         learning_goal:
           type: string
           example: Prepare for a German job interview with technical project questions.
+        rag_topic:
+          type: string
+          minLength: 1
+          example: job interview
         duration_weeks:
           type: integer
           format: int32
