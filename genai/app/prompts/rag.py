@@ -18,3 +18,35 @@ rag_prompt = ChatPromptTemplate.from_messages(
         ),
     ]
 )
+
+rag_learning_plan_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You generate language-learning plans from a retrieved RAG corpus. "
+            f"{RAG_GROUNDING_RULES} "
+            "Return only the fields required by the structured output schema. "
+            "Use learning-service-compatible exercise enum values only: "
+            "types WRITING, LISTENING, SPEAKING, READING, GRAMMAR, VOCABULARY, TRANSLATION; "
+            "subtypes ESSAY, FILL_BLANK, MULTIPLE_CHOICE, PRONUNCIATION, COMPREHENSION, "
+            "FLASHCARD, MATCHING, SHORT_ANSWER, TRANSLATE_TEXT. "
+            "Do not invent unsupported enum spellings or hyphenated values.",
+        ),
+        (
+            "human",
+            "Topic: {topic}\n"
+            "Learning goal: {learning_goal}\n"
+            "Target language: {target_language}\n"
+            "Level: {level}\n"
+            "Duration weeks: {duration_weeks}\n"
+            "Study hours per week: {study_hours_per_week}\n"
+            "Lesson range: exactly between {minimum_lessons} and {maximum_lessons} lessons\n"
+            "Requested exercise types: {exercise_types}\n\n"
+            "Retrieved context:\n{context}\n\n"
+            "Create a coherent persisted learning plan grounded only in the retrieved context. "
+            "Set lesson order_number values starting at 1 without gaps. "
+            "Every lesson must include at least one exercise and concise content_blocks that "
+            "summarise teachable material from the context.",
+        ),
+    ]
+)
