@@ -86,7 +86,7 @@ class RagLearningPlanRequest(BaseModel):
         ...,
         min_length=1,
         description="Learning-service-compatible exercise type names to include",
-        examples=[["WRITING", "SPEAKING"]],
+        examples=[["writing", "speaking"]],
     )
     top_k: int = Field(default=6, ge=1, le=12)
     rebuild_corpus: bool = Field(default=False)

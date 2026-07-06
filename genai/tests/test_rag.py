@@ -99,8 +99,8 @@ def test_generate_rag_learning_plan_returns_structured_plan_and_sources(client, 
                 content_blocks=["Explain STAR answers with examples from the retrieved guide."],
                 exercises=[
                     RagLearningPlanExercise(
-                        type="WRITING",
-                        subtype="SHORT_ANSWER",
+                        type="writing",
+                        subtype="free_text",
                         question="Write a STAR answer for a teamwork question.",
                         expected_answer="A concise STAR answer with concrete actions and results.",
                         difficulty="B1",
@@ -127,7 +127,7 @@ def test_generate_rag_learning_plan_returns_structured_plan_and_sources(client, 
                 "study_hours_per_week": 4,
                 "minimum_lessons": 1,
                 "maximum_lessons": 2,
-                "exercise_types": ["WRITING"],
+                "exercise_types": ["writing"],
                 "top_k": 1,
             },
         )
@@ -135,8 +135,8 @@ def test_generate_rag_learning_plan_returns_structured_plan_and_sources(client, 
     assert response.status_code == 200
     body = response.json()
     assert body["title"] == "German Interview Readiness"
-    assert body["lessons"][0]["exercises"][0]["type"] == "WRITING"
-    assert body["lessons"][0]["exercises"][0]["subtype"] == "SHORT_ANSWER"
+    assert body["lessons"][0]["exercises"][0]["type"] == "writing"
+    assert body["lessons"][0]["exercises"][0]["subtype"] == "free_text"
     assert body["sources"][0]["source"] == "interview-guide.pdf"
 
 
@@ -157,8 +157,8 @@ def test_generate_rag_learning_plan_rejects_wrong_lesson_count(client, tmp_path)
                 content_blocks=[],
                 exercises=[
                     RagLearningPlanExercise(
-                        type="WRITING",
-                        subtype="SHORT_ANSWER",
+                        type="writing",
+                        subtype="free_text",
                         question="Question?",
                         expected_answer="Answer",
                         difficulty="B1",
@@ -185,7 +185,7 @@ def test_generate_rag_learning_plan_rejects_wrong_lesson_count(client, tmp_path)
                 "study_hours_per_week": 4,
                 "minimum_lessons": 2,
                 "maximum_lessons": 3,
-                "exercise_types": ["WRITING"],
+                "exercise_types": ["writing"],
             },
         )
 

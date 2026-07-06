@@ -781,8 +781,8 @@ components:
           title: Exercise Types
           description: Learning-service-compatible exercise type names to include
           examples:
-          - - WRITING
-            - SPEAKING
+          - - writing
+            - speaking
         top_k:
           type: integer
           maximum: 12.0

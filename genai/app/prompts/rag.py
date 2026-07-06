@@ -27,9 +27,9 @@ rag_learning_plan_prompt = ChatPromptTemplate.from_messages(
             f"{RAG_GROUNDING_RULES} "
             "Return only the fields required by the structured output schema. "
             "Use learning-service-compatible exercise enum values only: "
-            "types WRITING, LISTENING, SPEAKING, READING, GRAMMAR, VOCABULARY, TRANSLATION; "
-            "subtypes ESSAY, FILL_BLANK, MULTIPLE_CHOICE, PRONUNCIATION, COMPREHENSION, "
-            "FLASHCARD, MATCHING, SHORT_ANSWER, TRANSLATE_TEXT. "
+            "types reading, writing, listening, speaking; "
+            "subtypes translation, fill_in_blank, multiple_choice, sentence_building, "
+            "free_text, speaking_prompt, listening_choice. "
             "Do not invent unsupported enum spellings or hyphenated values.",
         ),
         (

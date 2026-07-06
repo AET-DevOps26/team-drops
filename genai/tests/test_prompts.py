@@ -123,5 +123,5 @@ def test_conversation_correction_and_rag_prompts_include_guardrails():
     assert "Do not invent facts, citations, filenames, or page numbers" in rag_text
     assert "Use only the retrieved context" in rag_learning_plan_text
     assert "exactly between {minimum_lessons} and {maximum_lessons} lessons" in rag_learning_plan_text
-    assert "WRITING, LISTENING, SPEAKING" in rag_learning_plan_text
+    assert "reading, writing, listening, speaking" in rag_learning_plan_text
     assert "Do not invent unsupported enum spellings or hyphenated values" in rag_learning_plan_text
