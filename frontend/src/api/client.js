@@ -92,6 +92,14 @@ export function createDefaultLearningPlan(payload, token) {
   });
 }
 
+export function createAiLearningPlan(payload, token) {
+  return request('learning', '/api/v1/learning-plans/ai', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+}
+
 export function getLesson(lessonId, token) {
   return request('learning', `/api/v1/lessons/${lessonId}`, { token });
 }
