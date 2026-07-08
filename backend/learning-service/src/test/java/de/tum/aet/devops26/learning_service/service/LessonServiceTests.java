@@ -10,6 +10,7 @@ import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import de.tum.aet.devops26.learning_service.repository.LessonRepository;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultExerciseTemplate;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLessonTemplate;
@@ -50,7 +51,7 @@ class LessonServiceTests {
     }
 
     @Test
-    void findResponseByIdReturnsGermanDefaultLessonAndExercises() {
+    void findResponseByIdReturnsGermanDefaultLessonExercisesAndKeywords() {
         Lesson lesson = Lesson.builder()
             .id(3L)
             .planId(7L)
@@ -92,15 +93,22 @@ class LessonServiceTests {
                 "Selbstvorstellung",
                 "Stelle dich in einem Vorstellungsgespräch professionell vor.",
                 List.of(
-                    "Erzählen Sie mir etwas über sich.",
-                    "Schreibe eine kurze professionelle Selbstvorstellung."
+                    new DefaultExerciseTemplate(
+                        "Erzählen Sie mir etwas über sich.",
+                        List.of("background", "motivation")
+                    ),
+                    new DefaultExerciseTemplate(
+                        "Schreibe eine kurze professionelle Selbstvorstellung.",
+                        List.of()
+                    )
                 )
             ))
         );
 
         when(lessonRepository.findById(3L)).thenReturn(Optional.of(lesson));
         when(learningPlanRepository.findById(7L)).thenReturn(Optional.of(plan));
-        when(defaultLearningPlanCatalog.hasLocalizedTitle("job-interview", "Job Interview Preparation")).thenReturn(true);
+        when(defaultLearningPlanCatalog.findKeyByLocalizedTitle("Job Interview Preparation"))
+            .thenReturn(Optional.of("job-interview"));
         when(defaultLearningPlanCatalog.findLocalizedByKey(any(), any())).thenReturn(germanTemplate);
         when(exerciseService.findByLessonId(3L)).thenReturn(exercises);
         when(exerciseService.toResponse(any(Exercise.class), any(LocalizedExercise.class))).thenCallRealMethod();
@@ -118,5 +126,68 @@ class LessonServiceTests {
             .containsOnly("Verfasse eine klare, professionelle Antwort mit konkreten Details und formellem Wortschatz.");
         assertThat(response.getExercises()).extracting("format")
             .containsOnly("Kurze schriftliche Antwort");
+        assertThat(response.getExercises().get(0).getKeywords())
+            .containsExactly("background", "motivation");
+    }
+
+    @Test
+    void findResponseByIdReturnsGermanMachineLearningLessonExercisesAndKeywords() {
+        Lesson lesson = Lesson.builder()
+            .id(4L)
+            .planId(8L)
+            .title("Presenting an ML Project")
+            .topic("Practice explaining an ML project.")
+            .orderNumber(1)
+            .build();
+        LearningPlan plan = LearningPlan.builder()
+            .id(8L)
+            .title("Machine Learning Interview Track")
+            .build();
+        List<Exercise> exercises = List.of(
+            Exercise.builder()
+                .id(21L)
+                .lessonId(4L)
+                .type("free_text")
+                .question("Describe a machine learning project you worked on.")
+                .difficulty("Intermediate")
+                .expectedAnswer("Clear technical reasoning, concrete examples, and structured explanations.")
+                .build()
+        );
+        DefaultLearningPlanContent germanTemplate = new DefaultLearningPlanContent(
+            "Vorbereitung auf Machine-Learning-Interviews",
+            "Feste Lektionen zum Üben von Antworten für Machine-Learning-Interviews auf Deutsch.",
+            "4 weeks",
+            "Sich gezielt auf Machine-Learning-Interviews auf Deutsch vorbereiten",
+            "German",
+            "Intermediate",
+            "Klare technische Argumentation, konkrete Beispiele und strukturierte Erklärungen.",
+            List.of(new DefaultLessonTemplate(
+                "Ein ML-Projekt vorstellen",
+                "Übe, ein ML-Projekt klar und überzeugend zu erklären.",
+                List.of(new DefaultExerciseTemplate(
+                    "Beschreibe ein Machine-Learning-Projekt, an dem du gearbeitet hast.",
+                    List.of("Problem", "Datensatz", "Vorverarbeitung")
+                ))
+            ))
+        );
+
+        when(lessonRepository.findById(4L)).thenReturn(Optional.of(lesson));
+        when(learningPlanRepository.findById(8L)).thenReturn(Optional.of(plan));
+        when(defaultLearningPlanCatalog.findKeyByLocalizedTitle("Machine Learning Interview Track"))
+            .thenReturn(Optional.of("machine-learning-interview"));
+        when(defaultLearningPlanCatalog.findLocalizedByKey(any(), any())).thenReturn(germanTemplate);
+        when(exerciseService.findByLessonId(4L)).thenReturn(exercises);
+        when(exerciseService.toResponse(any(Exercise.class), any(LocalizedExercise.class))).thenCallRealMethod();
+
+        LessonResponse response = service.findResponseById(4L, "German").orElseThrow();
+
+        assertThat(response.getTitle()).isEqualTo("Ein ML-Projekt vorstellen");
+        assertThat(response.getTopic()).isEqualTo("Übe, ein ML-Projekt klar und überzeugend zu erklären.");
+        assertThat(response.getExercises()).extracting("question")
+            .containsExactly("Beschreibe ein Machine-Learning-Projekt, an dem du gearbeitet hast.");
+        assertThat(response.getExercises().get(0).getExpectedAnswer())
+            .isEqualTo("Klare technische Argumentation, konkrete Beispiele und strukturierte Erklärungen.");
+        assertThat(response.getExercises().get(0).getKeywords())
+            .containsExactly("Problem", "Datensatz", "Vorverarbeitung");
     }
 }

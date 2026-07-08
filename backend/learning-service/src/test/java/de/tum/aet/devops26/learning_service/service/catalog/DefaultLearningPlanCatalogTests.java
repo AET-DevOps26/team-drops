@@ -17,6 +17,7 @@ class DefaultLearningPlanCatalogTests {
         assertThat(template.lessons()).hasSize(5);
         assertThat(template.lessons().get(0).title()).isEqualTo("Self Introduction");
         assertThat(template.lessons().get(0).exercises())
+            .extracting("question")
             .containsExactly(
                 "Tell me about yourself.",
                 "Write a short professional introduction.",
@@ -34,6 +35,7 @@ class DefaultLearningPlanCatalogTests {
         assertThat(template.defaultLanguage()).isEqualTo("German");
         assertThat(template.lessons().get(0).title()).isEqualTo("Selbstvorstellung");
         assertThat(template.lessons().get(0).exercises())
+            .extracting("question")
             .containsExactly(
                 "Erzählen Sie mir etwas über sich.",
                 "Schreibe eine kurze professionelle Selbstvorstellung.",
@@ -48,5 +50,53 @@ class DefaultLearningPlanCatalogTests {
         DefaultLearningPlanContent template = catalog.findLocalizedByKey("job-interview", "Italian");
 
         assertThat(template.title()).isEqualTo("Job Interview Preparation");
+    }
+
+    @Test
+    void loadsMachineLearningInterviewTemplateWithKeywordHints() throws Exception {
+        DefaultLearningPlanCatalog catalog = new DefaultLearningPlanCatalog(new ObjectMapper());
+
+        DefaultLearningPlanContent template = catalog.findLocalizedByKey("machine-learning-interview", "English");
+
+        assertThat(template.title()).isEqualTo("Machine Learning Interview Track");
+        assertThat(template.lessons()).hasSize(10);
+        assertThat(template.lessons().get(0).exercises().get(0).question())
+            .isEqualTo("Describe a machine learning project you worked on.");
+        assertThat(template.lessons().get(0).exercises().get(0).keywords())
+            .containsExactly(
+                "problem",
+                "dataset",
+                "preprocessing",
+                "model",
+                "evaluation metric",
+                "result",
+                "contribution",
+                "concrete outcome"
+            );
+    }
+
+    @Test
+    void loadsGermanMachineLearningInterviewTemplateWithKeywordHints() throws Exception {
+        DefaultLearningPlanCatalog catalog = new DefaultLearningPlanCatalog(new ObjectMapper());
+
+        DefaultLearningPlanContent template = catalog.findLocalizedByKey("machine-learning-interview", "German");
+
+        assertThat(template.title()).isEqualTo("Vorbereitung auf Machine-Learning-Interviews");
+        assertThat(template.defaultLanguage()).isEqualTo("German");
+        assertThat(template.lessons()).hasSize(10);
+        assertThat(template.lessons().get(0).title()).isEqualTo("Ein ML-Projekt vorstellen");
+        assertThat(template.lessons().get(0).exercises().get(0).question())
+            .isEqualTo("Beschreibe ein Machine-Learning-Projekt, an dem du gearbeitet hast.");
+        assertThat(template.lessons().get(0).exercises().get(0).keywords())
+            .containsExactly(
+                "Problem",
+                "Datensatz",
+                "Vorverarbeitung",
+                "Modell",
+                "Evaluationsmetrik",
+                "Ergebnis",
+                "Beitrag",
+                "konkreter Effekt"
+            );
     }
 }
