@@ -1353,6 +1353,78 @@ h1 {
   gap: 8px;
 }
 
+.exercise-hints {
+  display: grid;
+  gap: 9px;
+}
+
+.hint-toggle-button {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border: 1px solid rgba(184, 107, 17, 0.32);
+  border-radius: 10px;
+  background: #fff7e8;
+  color: #8c530d;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 850;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.hint-toggle-button:hover,
+.hint-toggle-button:focus-visible {
+  border-color: rgba(184, 107, 17, 0.58);
+  background: #ffefd1;
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.keyword-hint-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.keyword-hint-list span {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 5px 9px;
+  border: 1px solid rgba(25, 103, 210, 0.18);
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue-dark);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.dark-mode .hint-toggle-button {
+  border-color: rgba(255, 184, 90, 0.32);
+  background: rgba(255, 184, 90, 0.12);
+  color: #ffd391;
+}
+
+.dark-mode .hint-toggle-button:hover,
+.dark-mode .hint-toggle-button:focus-visible {
+  border-color: rgba(255, 184, 90, 0.54);
+  background: rgba(255, 184, 90, 0.18);
+}
+
+.dark-mode .keyword-hint-list span {
+  border-color: rgba(112, 166, 255, 0.28);
+  background: rgba(112, 166, 255, 0.14);
+  color: #b9d2ff;
+}
+
 .feedback-card {
   display: grid;
   gap: 12px;

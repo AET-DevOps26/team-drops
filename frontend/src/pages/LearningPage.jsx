@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   Clock3,
   Headphones,
+  Lightbulb,
   ListChecks,
   Mic,
   PenLine,
@@ -521,7 +522,6 @@ function LessonDetailView({ activeLesson, t, onOpenExercise }) {
         <div className="lesson-summary">
           <p>{activeLesson.status}</p>
           <h3>{activeLesson.title}</h3>
-          <span>{activeLesson.topic}</span>
         </div>
       </section>
 
@@ -588,14 +588,16 @@ function LessonBlock({ block, exercises, t, onOpenExercise }) {
         </div>
       )}
 
-      <div className="learning-point-map" aria-label={`${block.title} points`}>
-        {block.points.map((point, index) => (
-          <div className="learning-point" key={point}>
-            <span>{index + 1}</span>
-            <p>{point}</p>
-          </div>
-        ))}
-      </div>
+      {block.points.length > 0 && (
+        <div className="learning-point-map" aria-label={`${block.title} points`}>
+          {block.points.map((point, index) => (
+            <div className="learning-point" key={point}>
+              <span>{index + 1}</span>
+              <p>{point}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -614,7 +616,6 @@ function ExerciseCard({ exercise, index, t, onOpenExercise }) {
       </span>
       <span className="lesson-progress-copy">
         <strong>{exercise.title}</strong>
-        <em>{exercise.format}</em>
         <span className="status-pill">{formatStatus(exercise.status, exercise.language)}</span>
       </span>
       <small className="lesson-percent">{exercise.grade ? `${exercise.grade}` : '--'}</small>
@@ -755,9 +756,12 @@ function ListeningExerciseView({
 
 function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubmitAnswer }) {
   const [answerText, setAnswerText] = React.useState(activeExercise.answerText ?? '');
+  const [hintsVisible, setHintsVisible] = React.useState(false);
+  const keywords = activeExercise.keywords ?? [];
 
   React.useEffect(() => {
     setAnswerText(activeExercise.answerText ?? '');
+    setHintsVisible(false);
   }, [activeExercise.id, activeExercise.answerText]);
 
   const handleSubmit = async (event) => {
@@ -799,9 +803,28 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
       <section className="summary-card">
         <div className="section-heading">
           <h3>Task</h3>
-          <span>{activeExercise.format}</span>
         </div>
         <p>{activeExercise.task}</p>
+        {keywords.length > 0 && (
+          <div className="exercise-hints">
+            <button
+              className="hint-toggle-button"
+              type="button"
+              aria-expanded={hintsVisible}
+              onClick={() => setHintsVisible((visible) => !visible)}
+            >
+              <Lightbulb size={16} aria-hidden="true" />
+              {hintsVisible ? 'Hide hints' : 'Show hints'}
+            </button>
+            {hintsVisible && (
+              <div className="keyword-hint-list" aria-label="Keyword hints">
+                {keywords.map((keyword) => (
+                  <span key={keyword}>{keyword}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="summary-card">
@@ -815,7 +838,6 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
       <form className="summary-card" onSubmit={handleSubmit}>
         <div className="section-heading">
           <h3>Your answer</h3>
-          <span>Submit to backend</span>
         </div>
         <textarea
           className="auth-field"
