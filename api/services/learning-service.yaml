@@ -447,6 +447,15 @@ components:
             - default
             - ai
           example: default
+        keywords:
+          type: array
+          description: Optional keyword hints for fixed catalog exercises.
+          items:
+            type: string
+          example:
+            - problem
+            - dataset
+            - model
     GenerateAiExercisesRequest:
       type: object
       required:

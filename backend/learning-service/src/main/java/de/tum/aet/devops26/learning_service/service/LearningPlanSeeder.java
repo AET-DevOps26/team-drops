@@ -85,11 +85,11 @@ public class LearningPlanSeeder {
                 .orderNumber(i + 1)
                 .build());
 
-            for (String question : lessonTemplate.exercises()) {
+            for (var exerciseTemplate : lessonTemplate.exercises()) {
                 exerciseService.save(Exercise.builder()
                     .lessonId(lesson.getId())
                     .type("free_text")
-                    .question(question)
+                    .question(exerciseTemplate.question())
                     .difficulty(plan.getLevel())
                     .expectedAnswer(template.defaultExpectedAnswer())
                     .build());

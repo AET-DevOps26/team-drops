@@ -156,10 +156,12 @@ public class LessonService {
         }
 
         DefaultLearningPlanContent content = defaultLearningPlanCatalog.findLocalizedByKey(DEFAULT_TEMPLATE_KEY, language);
+        var exerciseTemplate = localizedLesson.exercises().get(exerciseIndex);
         return new LocalizedExercise(
-            localizedLesson.exercises().get(exerciseIndex),
+            exerciseTemplate.question(),
             content.defaultExpectedAnswer(),
-            localizedFormatFor(language)
+            localizedFormatFor(language),
+            exerciseTemplate.keywords()
         );
     }
 
