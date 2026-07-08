@@ -62,7 +62,12 @@ public class LearningPlanSeeder {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public LearningPlan createDefaultPlan(CreateDefaultLearningPlanRequest request) {
-        DefaultLearningPlanContent template = defaultLearningPlanCatalog.findFallbackByKey(DEFAULT_TEMPLATE_KEY);
+        return createDefaultPlan(request, DEFAULT_TEMPLATE_KEY);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public LearningPlan createDefaultPlan(CreateDefaultLearningPlanRequest request, String templateKey) {
+        DefaultLearningPlanContent template = defaultLearningPlanCatalog.findFallbackByKey(templateKey);
 
         LearningPlan plan = learningPlanRepository.save(LearningPlan.builder()
             .userId(request.getUserId())

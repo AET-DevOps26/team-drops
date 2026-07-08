@@ -25,7 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class LearningPlanService {
 
-    private static final String DEFAULT_TEMPLATE_KEY = "job-interview";
+    private static final String PRIMARY_DEFAULT_TEMPLATE_KEY = "job-interview";
     private static final Logger LOGGER = LoggerFactory.getLogger(LearningPlanService.class);
 
     private final LearningPlanRepository learningPlanRepository;
@@ -37,14 +37,18 @@ public class LearningPlanService {
     @Transactional
     public LearningPlanResponse createDefaultLearningPlan(CreateDefaultLearningPlanRequest request) {
         DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog
-                .findFallbackByKey(DEFAULT_TEMPLATE_KEY);
+                .findFallbackByKey(PRIMARY_DEFAULT_TEMPLATE_KEY);
 
         ensureListeningPlan(request);
+        ensureAdditionalCatalogPlans(request, PRIMARY_DEFAULT_TEMPLATE_KEY);
 
         try {
             return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title())
                 .map(plan -> toResponse(plan, request.getTargetLanguage()))
-                .orElseGet(() -> toResponse(learningPlanSeeder.createDefaultPlan(request), request.getTargetLanguage()));
+                .orElseGet(() -> toResponse(
+                    learningPlanSeeder.createDefaultPlan(request, PRIMARY_DEFAULT_TEMPLATE_KEY),
+                    request.getTargetLanguage()
+                ));
         } catch (DataIntegrityViolationException e) {
             LOGGER.info("Default plan already exists for user {} (concurrent creation)", request.getUserId());
             return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title())
@@ -110,18 +114,37 @@ public class LearningPlanService {
 
     private void ensureFixedPlans(Long userId) {
         CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest().userId(userId);
-        DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog
-                .findFallbackByKey(DEFAULT_TEMPLATE_KEY);
+        ensureFixedPlans(request);
+    }
 
+    private void ensureFixedPlans(CreateDefaultLearningPlanRequest request) {
         ensureListeningPlan(request);
+        ensureAdditionalCatalogPlans(request, null);
+    }
+
+    private void ensureAdditionalCatalogPlans(CreateDefaultLearningPlanRequest request, String excludedTemplateKey) {
+        for (String templateKey : defaultLearningPlanCatalog.templateKeys()) {
+            if (templateKey.equals(excludedTemplateKey)) {
+                continue;
+            }
+            ensureCatalogPlan(request, templateKey);
+        }
+    }
+
+    private void ensureCatalogPlan(CreateDefaultLearningPlanRequest request, String templateKey) {
+        DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog.findFallbackByKey(templateKey);
 
         try {
             if (learningPlanRepository.findFirstByUserIdAndTitle(
-                    userId, fallbackTemplate.title()).isEmpty()) {
-                learningPlanSeeder.createDefaultPlan(request);
+                    request.getUserId(), fallbackTemplate.title()).isEmpty()) {
+                learningPlanSeeder.createDefaultPlan(request, templateKey);
             }
         } catch (DataIntegrityViolationException e) {
-            LOGGER.info("Default plan already exists for user {} (concurrent creation)", userId);
+            LOGGER.info(
+                "Default plan {} already exists for user {} (concurrent creation)",
+                templateKey,
+                request.getUserId()
+            );
         }
     }
 
@@ -141,9 +164,9 @@ public class LearningPlanService {
     }
 
     private LearningPlanResponse toResponse(LearningPlan plan, String language) {
-        DefaultLearningPlanContent localizedTemplate = isDefaultLearningPlan(plan)
-                ? defaultLearningPlanCatalog.findLocalizedByKey(DEFAULT_TEMPLATE_KEY, language)
-                : null;
+        DefaultLearningPlanContent localizedTemplate = defaultLearningPlanCatalog.findKeyByLocalizedTitle(plan.getTitle())
+                .map(templateKey -> defaultLearningPlanCatalog.findLocalizedByKey(templateKey, language))
+                .orElse(null);
 
         return new LearningPlanResponse(
                 plan.getId(),
@@ -159,10 +182,6 @@ public class LearningPlanService {
                 lessonService.findByPlanId(plan.getId()).stream()
                         .map(lesson -> lessonService.toSummaryResponse(lesson, language))
                         .toList());
-    }
-
-    private boolean isDefaultLearningPlan(LearningPlan plan) {
-        return defaultLearningPlanCatalog.hasLocalizedTitle(DEFAULT_TEMPLATE_KEY, plan.getTitle());
     }
 
     private LearningStatus toLearningStatus(String value) {
