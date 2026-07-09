@@ -135,6 +135,48 @@ function contentBlockTitle(block, index) {
   return `Learning note ${index + 1}`;
 }
 
+function hasBlankMarker(value = '') {
+  return value.includes('___') || value.includes('____') || value.toLowerCase().includes('[blank]');
+}
+
+function formatExercise(subtype, fallbackFormat) {
+  switch (subtype) {
+    case 'translation':
+      return 'Translation';
+    case 'fill_in_blank':
+      return 'Fill in the blank';
+    case 'sentence_building':
+      return 'Sentence building';
+    case 'speaking_prompt':
+      return 'Spoken response';
+    case 'listening_choice':
+      return 'Listening choice';
+    case 'multiple_choice':
+      return 'Multiple choice';
+    case 'free_text':
+      return 'Short written answer';
+    default:
+      return fallbackFormat ?? 'Practice';
+  }
+}
+
+function normalizeExercisePrompt(exercise) {
+  const question = exercise.question || exercise.title || '';
+  const expectedAnswer = exercise.expected_answer ?? '';
+  const subtype = exercise.subtype === 'fill_in_blank' && !hasBlankMarker(question)
+    ? 'free_text'
+    : exercise.subtype;
+  const normalizedQuestion = exercise.subtype === 'fill_in_blank' && subtype === 'free_text' && expectedAnswer
+    ? `Write a short German answer using these terms: ${expectedAnswer}.`
+    : question;
+
+  return {
+    question: normalizedQuestion,
+    subtype,
+    format: formatExercise(subtype, exercise.format),
+  };
+}
+
 export function createEmptyProgress(userId = null) {
   return {
     userId,
@@ -195,25 +237,29 @@ export function toLearningPlans(plans = []) {
 }
 
 export function toLessonDetail(lesson, planSummaryLesson) {
-  const exercises = (lesson.exercises ?? []).map((exercise) => ({
-    id: exercise.id,
-    lessonId: exercise.lesson_id,
-    type: exercise.type,
-    subtype: exercise.subtype,
-    title: exercise.question || exercise.title,
-    question: exercise.question,
-    expectedAnswer: exercise.expected_answer,
-    difficulty: exercise.difficulty,
-    status: exercise.status,
-    score: exercise.score,
-    format: exercise.format,
-    source: exercise.source,
-    grade: exercise.score,
-    task: exercise.question,
-    prompt: exercise.question,
-    feedback: null,
-    answerText: '',
-  }));
+  const exercises = (lesson.exercises ?? []).map((exercise) => {
+    const normalizedExercise = normalizeExercisePrompt(exercise);
+
+    return {
+      id: exercise.id,
+      lessonId: exercise.lesson_id,
+      type: exercise.type,
+      subtype: normalizedExercise.subtype,
+      title: normalizedExercise.question || exercise.title,
+      question: normalizedExercise.question,
+      expectedAnswer: exercise.expected_answer,
+      difficulty: exercise.difficulty,
+      status: exercise.status,
+      score: exercise.score,
+      format: normalizedExercise.format,
+      source: exercise.source,
+      grade: exercise.score,
+      task: normalizedExercise.question,
+      prompt: normalizedExercise.question,
+      feedback: null,
+      answerText: '',
+    };
+  });
 
   const exerciseIndexById = new Map(exercises.map((exercise, index) => [exercise.id, index]));
   const exerciseIndexesInBlocks = new Set();

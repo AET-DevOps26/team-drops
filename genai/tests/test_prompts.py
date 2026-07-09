@@ -125,3 +125,6 @@ def test_conversation_correction_and_rag_prompts_include_guardrails():
     assert "exactly between {minimum_lessons} and {maximum_lessons} lessons" in rag_learning_plan_text
     assert "reading, writing, listening, speaking" in rag_learning_plan_text
     assert "Do not invent unsupported enum spellings or hyphenated values" in rag_learning_plan_text
+    assert "Every exercise question must be self-contained" in rag_learning_plan_text
+    assert "For fill_in_blank, include the full sentence with explicit ___ blanks" in rag_learning_plan_text
+    assert "contains the actual blanks to fill" in rag_learning_plan_text

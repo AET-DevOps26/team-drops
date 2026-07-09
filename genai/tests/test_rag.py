@@ -294,3 +294,24 @@ def test_rag_learning_plan_schema_normalizes_live_llm_near_miss_shape():
     assert plan.lessons[0].exercises[0].question == "The ticket costs ___ CHF."
     assert plan.lessons[0].exercises[0].expected_answer == "20"
     assert plan.lessons[0].exercises[0].difficulty == "A2"
+
+
+def test_rag_learning_plan_schema_repairs_fill_blank_without_blanks():
+    exercise = RagLearningPlanExercise.model_validate(
+        {
+            "type": "writing",
+            "subtype": "fill_in_blank",
+            "question": (
+                "Ergänze die Lücken mit den passenden deutschen Begriffen "
+                "(z. B. Anzug, Bluse, geschlossene Schuhe)."
+            ),
+            "expected_answer": "Anzug, Bluse, geschlossene Schuhe",
+            "difficulty": "A2",
+        }
+    )
+
+    assert exercise.type == "writing"
+    assert exercise.subtype == "free_text"
+    assert exercise.question == (
+        "Write a short German answer using these terms: Anzug, Bluse, geschlossene Schuhe."
+    )

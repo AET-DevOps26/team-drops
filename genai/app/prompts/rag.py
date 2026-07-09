@@ -30,7 +30,13 @@ rag_learning_plan_prompt = ChatPromptTemplate.from_messages(
             "types reading, writing, listening, speaking; "
             "subtypes translation, fill_in_blank, multiple_choice, sentence_building, "
             "free_text, speaking_prompt, listening_choice. "
-            "Do not invent unsupported enum spellings or hyphenated values.",
+            "Do not invent unsupported enum spellings or hyphenated values. "
+            "Every exercise question must be self-contained and directly answerable by the learner. "
+            "For fill_in_blank, include the full sentence with explicit ___ blanks. "
+            "For multiple_choice and listening_choice, include all answer choices in the question text. "
+            "For translation, include the source sentence to translate. "
+            "For sentence_building, include the exact words or phrases to arrange. "
+            "Use free_text when a task asks for an open written answer instead of a structured format.",
         ),
         (
             "human",
@@ -46,7 +52,9 @@ rag_learning_plan_prompt = ChatPromptTemplate.from_messages(
             "Create a coherent persisted learning plan grounded only in the retrieved context. "
             "Set lesson order_number values starting at 1 without gaps. "
             "Every lesson must include at least one exercise and concise content_blocks that "
-            "summarise teachable material from the context.",
+            "summarise teachable material from the context. "
+            "Reject vague tasks like 'fill in the blanks with these terms' unless the question "
+            "contains the actual blanks to fill.",
         ),
     ]
 )

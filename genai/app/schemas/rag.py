@@ -132,6 +132,13 @@ class RagLearningPlanExercise(BaseModel):
 
         return normalized
 
+    @model_validator(mode="after")
+    def ensure_self_contained_question(self) -> "RagLearningPlanExercise":
+        if self.subtype == "fill_in_blank" and not _has_blank_marker(self.question):
+            self.subtype = "free_text"
+            self.question = _open_answer_question(self.question, self.expected_answer)
+        return self
+
 
 class RagLearningPlanLesson(BaseModel):
     title: str
@@ -238,3 +245,13 @@ def _normalize_content_blocks(content_blocks: Any) -> list[str]:
             normalized.append(text.strip())
 
     return normalized
+
+
+def _has_blank_marker(value: str) -> bool:
+    return "___" in value or "____" in value or "[blank]" in value.lower()
+
+
+def _open_answer_question(question: str, expected_answer: str) -> str:
+    if expected_answer.strip():
+        return f"Write a short German answer using these terms: {expected_answer.strip()}."
+    return question
