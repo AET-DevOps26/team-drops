@@ -7,6 +7,8 @@ import de.tum.aet.devops26.learning_service.dto.LessonSummaryResponse;
 import de.tum.aet.devops26.learning_service.dto.LessonResponse;
 import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.Lesson;
+import de.tum.aet.devops26.learning_service.model.LessonContentBlock;
+import de.tum.aet.devops26.learning_service.repository.LessonContentBlockRepository;
 import de.tum.aet.devops26.learning_service.repository.LessonRepository;
 import java.util.List;
 import java.util.Optional;
@@ -20,9 +22,32 @@ public class LessonService {
 
     private final LessonRepository lessonRepository;
     private final ExerciseService exerciseService;
+    private final LessonContentBlockRepository lessonContentBlockRepository;
 
     public Lesson save(Lesson lesson) {
         return lessonRepository.save(lesson);
+    }
+
+    public List<LessonContentBlock> saveContentBlocks(Long lessonId, List<String> contentBlocks) {
+        if (contentBlocks == null || contentBlocks.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> normalizedBlocks = contentBlocks.stream()
+            .map(contentBlock -> contentBlock == null ? "" : contentBlock.trim())
+            .filter(text -> !text.isBlank())
+            .toList();
+        int existingBlockCount = lessonContentBlockRepository.findByLessonIdOrderByOrderNumberAsc(lessonId).size();
+
+        return IntStream.range(0, normalizedBlocks.size())
+            .mapToObj(index -> lessonContentBlockRepository.save(LessonContentBlock.builder()
+                .lessonId(lessonId)
+                .orderNumber(existingBlockCount + index + 1)
+                .type("content")
+                .title("Lesson content")
+                .text(normalizedBlocks.get(index))
+                .build()))
+            .toList();
     }
 
     public List<Lesson> findAll() {
@@ -90,6 +115,10 @@ public class LessonService {
         List<de.tum.aet.devops26.learning_service.dto.ExerciseResponse> exercises = exerciseService.findByLessonId(lesson.getId()).stream()
             .map(exerciseService::toResponse)
             .toList();
+        List<de.tum.aet.devops26.learning_service.dto.LessonContentBlock> contentBlocks = lessonContentBlockRepository
+            .findByLessonIdOrderByOrderNumberAsc(lesson.getId()).stream()
+            .map(this::toContentBlockResponse)
+            .toList();
 
         return new LessonResponse(
             lesson.getId(),
@@ -101,8 +130,20 @@ public class LessonService {
             0,
             10,
             exercises.size(),
-            List.of(),
+            contentBlocks,
             exercises
         );
+    }
+
+    private de.tum.aet.devops26.learning_service.dto.LessonContentBlock toContentBlockResponse(
+        LessonContentBlock contentBlock
+    ) {
+        return new de.tum.aet.devops26.learning_service.dto.LessonContentBlock(
+            de.tum.aet.devops26.learning_service.dto.LessonContentBlock.TypeEnum.fromValue(contentBlock.getType())
+        )
+            .title(contentBlock.getTitle())
+            .subtitle(contentBlock.getSubtitle())
+            .text(contentBlock.getText())
+            .points(List.of());
     }
 }

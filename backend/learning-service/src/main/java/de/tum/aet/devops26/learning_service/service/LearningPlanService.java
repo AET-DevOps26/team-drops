@@ -86,6 +86,7 @@ public class LearningPlanService {
                 .topic(generatedLesson.topic())
                 .orderNumber(generatedLesson.orderNumber())
                 .build());
+            lessonService.saveContentBlocks(lesson.getId(), generatedLesson.contentBlocks());
 
             for (ValidatedRagExercise generatedExercise : generatedLesson.exercises()) {
                 exerciseService.save(Exercise.builder()
@@ -274,10 +275,21 @@ public class LearningPlanService {
             requiredText(lesson.title(), "lesson title"),
             requiredText(lesson.topic(), "lesson topic") + summarySuffix(lesson.summary()),
             lesson.orderNumber(),
+            normalizedContentBlocks(lesson.contentBlocks()),
             lesson.exercises().stream()
                 .map(exercise -> validateExercise(exercise, requestedExerciseTypes))
                 .toList()
         );
+    }
+
+    private List<String> normalizedContentBlocks(List<String> contentBlocks) {
+        if (contentBlocks == null) {
+            return List.of();
+        }
+        return contentBlocks.stream()
+            .filter(contentBlock -> contentBlock != null && !contentBlock.isBlank())
+            .map(String::trim)
+            .toList();
     }
 
     private ValidatedRagExercise validateExercise(RagExercise exercise, Set<ExerciseType> requestedExerciseTypes) {
@@ -358,6 +370,7 @@ public class LearningPlanService {
         String title,
         String topic,
         Integer orderNumber,
+        List<String> contentBlocks,
         List<ValidatedRagExercise> exercises
     ) {
     }

@@ -129,6 +129,7 @@ class LearningPlanServiceTests {
         assertThat(lessonCaptor.getValue().getTitle()).isEqualTo("Interview Answers");
         assertThat(lessonCaptor.getValue().getTopic()).isEqualTo("STAR answers - Structure answers with examples.");
         assertThat(lessonCaptor.getValue().getOrderNumber()).isEqualTo(1);
+        verify(lessonService).saveContentBlocks(201L, List.of("Use situation, task, action, result."));
 
         ArgumentCaptor<Exercise> exerciseCaptor = ArgumentCaptor.forClass(Exercise.class);
         verify(exerciseService).save(exerciseCaptor.capture());
