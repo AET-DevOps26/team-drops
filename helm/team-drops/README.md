@@ -10,11 +10,13 @@ Nginx on port 80.
 
 ```bash
 helm lint ./helm/team-drops \
-  -f helm/team-drops/values-rancher.yaml
+  -f helm/team-drops/values-rancher.yaml \
+  --set genai.llmApiKey=dummy
 
 helm template team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
+  --set genai.llmApiKey=dummy \
   > /tmp/team-drops-rendered.yaml
 ```
 
@@ -33,6 +35,7 @@ Expected:
 - ingress hosts use `*.stud.k8s.aet.cit.tum.de`
 - Postgres and Mongo storage defaults are small
 - `namespace:` has no matches because Helm receives the namespace at install time
+- backend env vars use either `value` or `valueFrom`, never both
 
 Validate against the Kubernetes API without creating resources:
 

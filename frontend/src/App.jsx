@@ -272,6 +272,7 @@ export function App() {
     task: 'Open a lesson exercise to start practicing.',
     prompt: '',
     expectedAnswer: '',
+    keywords: [],
     feedback: null,
     answerText: '',
   };

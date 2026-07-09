@@ -96,7 +96,12 @@ public class LearningPlanSeeder {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public LearningPlan createDefaultPlan(CreateDefaultLearningPlanRequest request) {
-        DefaultLearningPlanContent template = defaultLearningPlanCatalog.findFallbackByKey(DEFAULT_TEMPLATE_KEY);
+        return createDefaultPlan(request, DEFAULT_TEMPLATE_KEY);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public LearningPlan createDefaultPlan(CreateDefaultLearningPlanRequest request, String templateKey) {
+        DefaultLearningPlanContent template = defaultLearningPlanCatalog.findFallbackByKey(templateKey);
 
         LearningPlan plan = learningPlanRepository.save(LearningPlan.builder()
             .userId(request.getUserId())
@@ -119,11 +124,11 @@ public class LearningPlanSeeder {
                 .orderNumber(i + 1)
                 .build());
 
-            for (String question : lessonTemplate.exercises()) {
+            for (var exerciseTemplate : lessonTemplate.exercises()) {
                 exerciseService.save(Exercise.builder()
                     .lessonId(lesson.getId())
                     .type("free_text")
-                    .question(question)
+                    .question(exerciseTemplate.question())
                     .difficulty(plan.getLevel())
                     .expectedAnswer(template.defaultExpectedAnswer())
                     .build());

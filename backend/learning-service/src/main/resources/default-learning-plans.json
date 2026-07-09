@@ -15,45 +15,90 @@
             "title": "Self Introduction",
             "topic": "Introduce yourself professionally in an interview.",
             "exercises": [
-              "Tell me about yourself.",
-              "Write a short professional introduction.",
-              "Improve your introduction using more formal vocabulary."
+              {
+                "question": "Tell me about yourself.",
+                "keywords": []
+              },
+              {
+                "question": "Write a short professional introduction.",
+                "keywords": []
+              },
+              {
+                "question": "Improve your introduction using more formal vocabulary.",
+                "keywords": []
+              }
             ]
           },
           {
             "title": "Education and Background",
             "topic": "Explain your studies, university, and academic background.",
             "exercises": [
-              "Describe your degree and specialization.",
-              "Explain why you chose your field.",
-              "Practice saying your graduation status clearly."
+              {
+                "question": "Describe your degree and specialization.",
+                "keywords": []
+              },
+              {
+                "question": "Explain why you chose your field.",
+                "keywords": []
+              },
+              {
+                "question": "Practice saying your graduation status clearly.",
+                "keywords": []
+              }
             ]
           },
           {
             "title": "Work Experience and Internships",
             "topic": "Talk about previous internships, jobs, or projects.",
             "exercises": [
-              "Describe one internship or work experience.",
-              "Explain your responsibilities.",
-              "Mention what you learned from the experience."
+              {
+                "question": "Describe one internship or work experience.",
+                "keywords": []
+              },
+              {
+                "question": "Explain your responsibilities.",
+                "keywords": []
+              },
+              {
+                "question": "Mention what you learned from the experience.",
+                "keywords": []
+              }
             ]
           },
           {
             "title": "Project Explanation",
             "topic": "Present a technical or academic project clearly.",
             "exercises": [
-              "Describe one project you worked on.",
-              "Explain the problem, your solution, and your role.",
-              "Simplify a technical explanation for a non-technical interviewer."
+              {
+                "question": "Describe one project you worked on.",
+                "keywords": []
+              },
+              {
+                "question": "Explain the problem, your solution, and your role.",
+                "keywords": []
+              },
+              {
+                "question": "Simplify a technical explanation for a non-technical interviewer.",
+                "keywords": []
+              }
             ]
           },
           {
             "title": "Strengths and Weaknesses",
             "topic": "Answer common HR questions about strengths and weaknesses.",
             "exercises": [
-              "Name two strengths with examples.",
-              "Explain one weakness professionally.",
-              "Rewrite weak answers into stronger interview answers."
+              {
+                "question": "Name two strengths with examples.",
+                "keywords": []
+              },
+              {
+                "question": "Explain one weakness professionally.",
+                "keywords": []
+              },
+              {
+                "question": "Rewrite weak answers into stronger interview answers.",
+                "keywords": []
+              }
             ]
           }
         ]
@@ -71,45 +116,1067 @@
             "title": "Selbstvorstellung",
             "topic": "Stelle dich in einem Vorstellungsgespräch professionell vor.",
             "exercises": [
-              "Erzählen Sie mir etwas über sich.",
-              "Schreibe eine kurze professionelle Selbstvorstellung.",
-              "Verbessere deine Vorstellung mit formellerem Wortschatz."
+              {
+                "question": "Erzählen Sie mir etwas über sich.",
+                "keywords": []
+              },
+              {
+                "question": "Schreibe eine kurze professionelle Selbstvorstellung.",
+                "keywords": []
+              },
+              {
+                "question": "Verbessere deine Vorstellung mit formellerem Wortschatz.",
+                "keywords": []
+              }
             ]
           },
           {
             "title": "Ausbildung und Hintergrund",
             "topic": "Erkläre dein Studium, deine Universität und deinen akademischen Hintergrund.",
             "exercises": [
-              "Beschreibe deinen Studiengang und deine Spezialisierung.",
-              "Erkläre, warum du dein Fach gewählt hast.",
-              "Formuliere deinen aktuellen Studien- oder Abschlussstatus klar."
+              {
+                "question": "Beschreibe deinen Studiengang und deine Spezialisierung.",
+                "keywords": []
+              },
+              {
+                "question": "Erkläre, warum du dein Fach gewählt hast.",
+                "keywords": []
+              },
+              {
+                "question": "Formuliere deinen aktuellen Studien- oder Abschlussstatus klar.",
+                "keywords": []
+              }
             ]
           },
           {
             "title": "Berufserfahrung und Praktika",
             "topic": "Sprich über frühere Praktika, Jobs oder Projekte.",
             "exercises": [
-              "Beschreibe ein Praktikum oder eine Berufserfahrung.",
-              "Erkläre deine Aufgaben und Verantwortlichkeiten.",
-              "Erwähne, was du aus dieser Erfahrung gelernt hast."
+              {
+                "question": "Beschreibe ein Praktikum oder eine Berufserfahrung.",
+                "keywords": []
+              },
+              {
+                "question": "Erkläre deine Aufgaben und Verantwortlichkeiten.",
+                "keywords": []
+              },
+              {
+                "question": "Erwähne, was du aus dieser Erfahrung gelernt hast.",
+                "keywords": []
+              }
             ]
           },
           {
             "title": "Projekt erklären",
             "topic": "Präsentiere ein technisches oder akademisches Projekt klar und verständlich.",
             "exercises": [
-              "Beschreibe ein Projekt, an dem du gearbeitet hast.",
-              "Erkläre das Problem, deine Lösung und deine Rolle.",
-              "Vereinfache eine technische Erklärung für eine nicht-technische interviewende Person."
+              {
+                "question": "Beschreibe ein Projekt, an dem du gearbeitet hast.",
+                "keywords": []
+              },
+              {
+                "question": "Erkläre das Problem, deine Lösung und deine Rolle.",
+                "keywords": []
+              },
+              {
+                "question": "Vereinfache eine technische Erklärung für eine nicht-technische interviewende Person.",
+                "keywords": []
+              }
             ]
           },
           {
             "title": "Stärken und Schwächen",
             "topic": "Beantworte häufige HR-Fragen zu Stärken und Schwächen.",
             "exercises": [
-              "Nenne zwei Stärken mit Beispielen.",
-              "Erkläre eine Schwäche professionell.",
-              "Formuliere schwache Antworten in stärkere Interviewantworten um."
+              {
+                "question": "Nenne zwei Stärken mit Beispielen.",
+                "keywords": []
+              },
+              {
+                "question": "Erkläre eine Schwäche professionell.",
+                "keywords": []
+              },
+              {
+                "question": "Formuliere schwache Antworten in stärkere Interviewantworten um.",
+                "keywords": []
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "key": "machine-learning-interview",
+    "languages": {
+      "English": {
+        "title": "Machine Learning Interview Track",
+        "description": "Fixed lessons for practicing machine learning interview answers in English.",
+        "duration": "4 weeks",
+        "defaultGoal": "Prepare for machine learning interviews in English",
+        "defaultLanguage": "English",
+        "defaultLevel": "Intermediate",
+        "defaultExpectedAnswer": "Clear technical reasoning, concrete examples, and structured explanations.",
+        "lessons": [
+          {
+            "title": "Presenting an ML Project",
+            "topic": "Practice explaining an ML project with a clear story: problem, dataset, preprocessing, model choice, evaluation result, business or user impact, and your personal contribution.",
+            "exercises": [
+              {
+                "question": "Describe a machine learning project you worked on.",
+                "keywords": [
+                  "problem",
+                  "dataset",
+                  "preprocessing",
+                  "model",
+                  "evaluation metric",
+                  "result",
+                  "contribution",
+                  "concrete outcome"
+                ]
+              },
+              {
+                "question": "What was your specific role in the project?",
+                "keywords": [
+                  "specific tasks",
+                  "owned decisions",
+                  "tools",
+                  "implementation",
+                  "impact",
+                  "final result"
+                ]
+              },
+              {
+                "question": "What was the biggest technical challenge, and how did you solve it?",
+                "keywords": [
+                  "technical challenge",
+                  "root cause",
+                  "difficulty",
+                  "solution steps",
+                  "measurable improvement",
+                  "lesson learned"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Data Preparation",
+            "topic": "Explain data preparation as a pipeline from raw data to training-ready features: data inspection, cleaning, missing values, outliers, feature selection, normalization, train-validation-test split, and leakage prevention.",
+            "exercises": [
+              {
+                "question": "How did you prepare the data before training the model?",
+                "keywords": [
+                  "data inspection",
+                  "data cleaning",
+                  "missing values",
+                  "outliers",
+                  "feature selection",
+                  "normalization",
+                  "train-validation-test split",
+                  "data leakage"
+                ]
+              },
+              {
+                "question": "How would you handle missing values in a dataset?",
+                "keywords": [
+                  "deletion",
+                  "mean/median imputation",
+                  "model-based imputation",
+                  "missing-value indicator",
+                  "data collection",
+                  "bias risk"
+                ]
+              },
+              {
+                "question": "What would you do if the dataset were imbalanced?",
+                "keywords": [
+                  "imbalanced dataset",
+                  "resampling",
+                  "class weights",
+                  "F1-score",
+                  "recall",
+                  "threshold tuning",
+                  "minority class data"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Model Selection",
+            "topic": "Justify model choices by comparing tradeoffs: interpretability versus performance, model complexity, training time, dataset size, deployment constraints, maintainability, and business needs.",
+            "exercises": [
+              {
+                "question": "Why did you choose this machine learning model?",
+                "keywords": [
+                  "interpretability",
+                  "performance",
+                  "complexity",
+                  "training time",
+                  "dataset size",
+                  "data type",
+                  "deployment constraints",
+                  "problem requirements"
+                ]
+              },
+              {
+                "question": "How would you compare two different models?",
+                "keywords": [
+                  "same data split",
+                  "same metric",
+                  "baseline",
+                  "error analysis",
+                  "training time",
+                  "interpretability",
+                  "robustness",
+                  "production constraints"
+                ]
+              },
+              {
+                "question": "When would you use a decision tree instead of a neural network?",
+                "keywords": [
+                  "decision tree",
+                  "neural network",
+                  "interpretability",
+                  "tabular data",
+                  "fast training",
+                  "limited compute",
+                  "clear decision rules",
+                  "predictive power"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Training and Overfitting",
+            "topic": "Discuss training quality by explaining how training data, validation data, test data, regularization, hyperparameters, early stopping, and cross-validation help detect and prevent overfitting.",
+            "exercises": [
+              {
+                "question": "What is overfitting, and how can it be prevented?",
+                "keywords": [
+                  "overfitting",
+                  "training performance",
+                  "validation performance",
+                  "regularization",
+                  "more data",
+                  "simpler model",
+                  "early stopping",
+                  "cross-validation"
+                ]
+              },
+              {
+                "question": "What is the difference between training, validation, and test data?",
+                "keywords": [
+                  "training data",
+                  "validation data",
+                  "test data",
+                  "model fitting",
+                  "hyperparameter tuning",
+                  "unbiased estimate",
+                  "final evaluation"
+                ]
+              },
+              {
+                "question": "How do hyperparameters affect model training?",
+                "keywords": [
+                  "hyperparameters",
+                  "learning rate",
+                  "tree depth",
+                  "regularization strength",
+                  "number of layers",
+                  "batch size",
+                  "training stability",
+                  "generalization"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Model Evaluation",
+            "topic": "Explain model quality by choosing metrics based on the task, class balance, baseline performance, and the cost of false positives versus false negatives: accuracy, precision, recall, F1-score, confusion matrix, ROC-AUC, and calibration.",
+            "exercises": [
+              {
+                "question": "Which metrics did you use to evaluate your model?",
+                "keywords": [
+                  "task type",
+                  "metric selection",
+                  "class balance",
+                  "business risk",
+                  "false positives",
+                  "false negatives",
+                  "baseline",
+                  "decision threshold"
+                ]
+              },
+              {
+                "question": "What is the difference between precision and recall?",
+                "keywords": [
+                  "precision",
+                  "recall",
+                  "false positives",
+                  "false negatives",
+                  "high recall example",
+                  "high precision example",
+                  "tradeoff"
+                ]
+              },
+              {
+                "question": "Why can accuracy be misleading?",
+                "keywords": [
+                  "accuracy",
+                  "imbalanced dataset",
+                  "minority class",
+                  "F1-score",
+                  "recall",
+                  "precision",
+                  "balanced accuracy",
+                  "ROC-AUC"
+                ]
+              },
+              {
+                "question": "How would you interpret a confusion matrix?",
+                "keywords": [
+                  "confusion matrix",
+                  "true positives",
+                  "false positives",
+                  "true negatives",
+                  "false negatives",
+                  "error pattern",
+                  "business risk"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Improving Model Performance",
+            "topic": "Describe model improvement as a controlled experiment: identify the weak metric, inspect data and errors, compare with a baseline, change one factor, evaluate again, and document the result.",
+            "exercises": [
+              {
+                "question": "What would you do if the model performed poorly?",
+                "keywords": [
+                  "weak metric",
+                  "error analysis",
+                  "data quality",
+                  "baseline comparison",
+                  "features",
+                  "labels",
+                  "controlled experiment",
+                  "re-evaluation"
+                ]
+              },
+              {
+                "question": "How would you improve the quality of the training data?",
+                "keywords": [
+                  "label quality",
+                  "duplicates",
+                  "edge cases",
+                  "class balance",
+                  "clear features",
+                  "data validation",
+                  "domain expert feedback"
+                ]
+              },
+              {
+                "question": "How would you tune the model's hyperparameters?",
+                "keywords": [
+                  "grid search",
+                  "random search",
+                  "Bayesian optimization",
+                  "validation set",
+                  "test-set leakage",
+                  "experiment tracking",
+                  "baseline comparison"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Deployment and Production",
+            "topic": "Explain production ML as a service lifecycle: save the model, expose inference through an API, package the service, deploy reliably, monitor latency and quality, detect model drift, and plan retraining.",
+            "exercises": [
+              {
+                "question": "How would you deploy a trained machine learning model?",
+                "keywords": [
+                  "model artifact",
+                  "REST API",
+                  "batch job",
+                  "Docker",
+                  "cloud deployment",
+                  "Kubernetes",
+                  "inference testing",
+                  "rollback",
+                  "versioning"
+                ]
+              },
+              {
+                "question": "How would another application communicate with the model?",
+                "keywords": [
+                  "request-response flow",
+                  "endpoint",
+                  "input validation",
+                  "preprocessing",
+                  "inference",
+                  "prediction",
+                  "confidence",
+                  "metadata"
+                ]
+              },
+              {
+                "question": "How would you monitor the model after deployment?",
+                "keywords": [
+                  "latency",
+                  "error rate",
+                  "input distribution",
+                  "prediction quality",
+                  "logs",
+                  "dashboards",
+                  "alerts",
+                  "model version",
+                  "real labels"
+                ]
+              },
+              {
+                "question": "What is model drift?",
+                "keywords": [
+                  "model drift",
+                  "data distribution",
+                  "user behavior",
+                  "target relationship",
+                  "performance drop",
+                  "monitoring",
+                  "alerts",
+                  "retraining",
+                  "validation"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "ML System Design",
+            "topic": "Design end-to-end ML systems by moving from user needs to input data, preprocessing, model choice, API design, storage, deployment, monitoring, feedback loops, privacy constraints, and scaling requirements.",
+            "exercises": [
+              {
+                "question": "Design a system that recommends meals to users.",
+                "keywords": [
+                  "user inputs",
+                  "user features",
+                  "meal features",
+                  "ranking model",
+                  "recommendation API",
+                  "database",
+                  "feedback loop",
+                  "monitoring",
+                  "privacy",
+                  "retraining"
+                ]
+              },
+              {
+                "question": "How would you build a spam detection system?",
+                "keywords": [
+                  "labeled emails",
+                  "text preprocessing",
+                  "features",
+                  "embeddings",
+                  "classifier",
+                  "threshold tuning",
+                  "false positives",
+                  "monitoring",
+                  "retraining"
+                ]
+              },
+              {
+                "question": "How would you design a real-time image classification service?",
+                "keywords": [
+                  "image input",
+                  "preprocessing",
+                  "model inference",
+                  "GPU/CPU",
+                  "latency target",
+                  "scalability",
+                  "monitoring",
+                  "fallback behavior",
+                  "privacy"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Explaining ML to Non-Technical People",
+            "topic": "Translate technical ML concepts into clear non-technical English by using analogies, consequences, simple examples, and business impact instead of formulas or implementation details.",
+            "exercises": [
+              {
+                "question": "Explain overfitting to a non-technical manager.",
+                "keywords": [
+                  "overfitting analogy",
+                  "memorization",
+                  "generalization",
+                  "business consequence",
+                  "simple prevention",
+                  "no formulas"
+                ]
+              },
+              {
+                "question": "Explain how a recommendation system works without using technical terms.",
+                "keywords": [
+                  "similar users",
+                  "past choices",
+                  "personalization",
+                  "suggestions",
+                  "simple language",
+                  "product value"
+                ]
+              },
+              {
+                "question": "Explain why a model can make incorrect predictions.",
+                "keywords": [
+                  "incomplete data",
+                  "unusual cases",
+                  "uncertainty",
+                  "changing behavior",
+                  "historical limitations",
+                  "responsible explanation"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "ML Behavioral Questions",
+            "topic": "Answer behavioral ML questions with a clear situation-action-result-reflection structure that shows ownership, collaboration, learning speed, communication, and technical judgment.",
+            "exercises": [
+              {
+                "question": "Tell me about a time when your model did not work as expected.",
+                "keywords": [
+                  "situation",
+                  "action",
+                  "result",
+                  "reflection",
+                  "diagnosis",
+                  "experiment change",
+                  "measurement",
+                  "lesson learned"
+                ]
+              },
+              {
+                "question": "Describe a disagreement with a teammate about a technical decision.",
+                "keywords": [
+                  "respectful disagreement",
+                  "two viewpoints",
+                  "evidence",
+                  "team decision",
+                  "outcome",
+                  "collaboration",
+                  "learning"
+                ]
+              },
+              {
+                "question": "Tell me about a time when you had to learn a new ML technology quickly.",
+                "keywords": [
+                  "documentation",
+                  "prototype",
+                  "experiment",
+                  "feedback",
+                  "real task",
+                  "time constraints",
+                  "learning strategy"
+                ]
+              },
+              {
+                "question": "How do you stay updated with developments in machine learning?",
+                "keywords": [
+                  "papers",
+                  "newsletters",
+                  "release notes",
+                  "small demos",
+                  "courses",
+                  "practical evaluation",
+                  "real projects"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "German": {
+        "title": "Vorbereitung auf Machine-Learning-Interviews",
+        "description": "Feste Lektionen zum Üben von Antworten für Machine-Learning-Interviews auf Deutsch.",
+        "duration": "4 weeks",
+        "defaultGoal": "Sich gezielt auf Machine-Learning-Interviews auf Deutsch vorbereiten",
+        "defaultLanguage": "German",
+        "defaultLevel": "Intermediate",
+        "defaultExpectedAnswer": "Klare technische Argumentation, konkrete Beispiele und strukturierte Erklärungen.",
+        "lessons": [
+          {
+            "title": "Ein ML-Projekt vorstellen",
+            "topic": "Übe, ein ML-Projekt klar und überzeugend zu erklären: Problem, Datensatz, Vorverarbeitung, Modellwahl, Evaluationsergebnis, Nutzen für Geschäft oder Anwender und dein persönlicher Beitrag.",
+            "exercises": [
+              {
+                "question": "Beschreibe ein Machine-Learning-Projekt, an dem du gearbeitet hast.",
+                "keywords": [
+                  "Problem",
+                  "Datensatz",
+                  "Vorverarbeitung",
+                  "Modell",
+                  "Evaluationsmetrik",
+                  "Ergebnis",
+                  "Beitrag",
+                  "konkreter Effekt"
+                ]
+              },
+              {
+                "question": "Was war deine konkrete Rolle in dem Projekt?",
+                "keywords": [
+                  "konkrete Aufgaben",
+                  "eigene Entscheidungen",
+                  "Werkzeuge",
+                  "Implementierung",
+                  "Auswirkung",
+                  "Endergebnis"
+                ]
+              },
+              {
+                "question": "Was war die größte technische Herausforderung, und wie hast du sie gelöst?",
+                "keywords": [
+                  "technische Herausforderung",
+                  "Ursache",
+                  "Schwierigkeit",
+                  "Lösungsschritte",
+                  "messbare Verbesserung",
+                  "Lerneffekt"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Datenvorbereitung",
+            "topic": "Erkläre Datenvorbereitung als Pipeline von Rohdaten zu trainingsbereiten Features: Datenprüfung, Bereinigung, fehlende Werte, Ausreißer, Feature-Auswahl, Normalisierung, Train-Validation-Test-Aufteilung und Vermeidung von Data Leakage.",
+            "exercises": [
+              {
+                "question": "Wie hast du die Daten vor dem Training des Modells vorbereitet?",
+                "keywords": [
+                  "Datenprüfung",
+                  "Datenbereinigung",
+                  "fehlende Werte",
+                  "Ausreißer",
+                  "Feature-Auswahl",
+                  "Normalisierung",
+                  "Train-Validation-Test-Aufteilung",
+                  "Data Leakage"
+                ]
+              },
+              {
+                "question": "Wie würdest du fehlende Werte in einem Datensatz behandeln?",
+                "keywords": [
+                  "Löschen",
+                  "Mittelwert/Median-Imputation",
+                  "modellbasierte Imputation",
+                  "Indikator für fehlende Werte",
+                  "Datenerhebung",
+                  "Bias-Risiko"
+                ]
+              },
+              {
+                "question": "Was würdest du tun, wenn der Datensatz unausgeglichen wäre?",
+                "keywords": [
+                  "unausgeglichener Datensatz",
+                  "Resampling",
+                  "Klassengewichte",
+                  "F1-Score",
+                  "Recall",
+                  "Schwellenwert-Anpassung",
+                  "Daten der Minderheitsklasse"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Modellauswahl",
+            "topic": "Begründe Modellentscheidungen durch den Vergleich von Trade-offs: Interpretierbarkeit gegenüber Leistung, Modellkomplexität, Trainingszeit, Datensatzgröße, Deployment-Anforderungen, Wartbarkeit und fachliche Anforderungen.",
+            "exercises": [
+              {
+                "question": "Warum hast du dieses Machine-Learning-Modell gewählt?",
+                "keywords": [
+                  "Interpretierbarkeit",
+                  "Leistung",
+                  "Komplexität",
+                  "Trainingszeit",
+                  "Datensatzgröße",
+                  "Datentyp",
+                  "Deployment-Anforderungen",
+                  "Problemvorgaben"
+                ]
+              },
+              {
+                "question": "Wie würdest du zwei verschiedene Modelle vergleichen?",
+                "keywords": [
+                  "gleiche Datenaufteilung",
+                  "gleiche Metrik",
+                  "Baseline",
+                  "Fehleranalyse",
+                  "Trainingszeit",
+                  "Interpretierbarkeit",
+                  "Robustheit",
+                  "Produktionsanforderungen"
+                ]
+              },
+              {
+                "question": "Wann würdest du einen Entscheidungsbaum statt eines neuronalen Netzes verwenden?",
+                "keywords": [
+                  "Entscheidungsbaum",
+                  "neuronales Netz",
+                  "Interpretierbarkeit",
+                  "tabellarische Daten",
+                  "schnelles Training",
+                  "begrenzte Rechenleistung",
+                  "klare Entscheidungsregeln",
+                  "Vorhersagekraft"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Training und Overfitting",
+            "topic": "Besprich Trainingsqualität, indem du erklärst, wie Trainingsdaten, Validierungsdaten, Testdaten, Regularisierung, Hyperparameter, Early Stopping und Cross-Validation Overfitting erkennen und verhindern helfen.",
+            "exercises": [
+              {
+                "question": "Was ist Overfitting, und wie kann man es verhindern?",
+                "keywords": [
+                  "Overfitting",
+                  "Trainingsleistung",
+                  "Validierungsleistung",
+                  "Regularisierung",
+                  "mehr Daten",
+                  "einfacheres Modell",
+                  "Early Stopping",
+                  "Cross-Validation"
+                ]
+              },
+              {
+                "question": "Was ist der Unterschied zwischen Trainings-, Validierungs- und Testdaten?",
+                "keywords": [
+                  "Trainingsdaten",
+                  "Validierungsdaten",
+                  "Testdaten",
+                  "Modellanpassung",
+                  "Hyperparameter-Tuning",
+                  "unverzerrte Schätzung",
+                  "finale Evaluation"
+                ]
+              },
+              {
+                "question": "Wie beeinflussen Hyperparameter das Modelltraining?",
+                "keywords": [
+                  "Hyperparameter",
+                  "Lernrate",
+                  "Baumtiefe",
+                  "Regularisierungsstärke",
+                  "Anzahl der Schichten",
+                  "Batch-Größe",
+                  "Trainingsstabilität",
+                  "Generalisierung"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Modellevaluation",
+            "topic": "Erkläre Modellqualität, indem du Metriken passend zur Aufgabe, Klassenbalance, Baseline-Leistung und den Kosten von False Positives und False Negatives auswählst: Accuracy, Precision, Recall, F1-Score, Confusion Matrix, ROC-AUC und Kalibrierung.",
+            "exercises": [
+              {
+                "question": "Welche Metriken hast du zur Bewertung deines Modells verwendet?",
+                "keywords": [
+                  "Aufgabentyp",
+                  "Metrikauswahl",
+                  "Klassenbalance",
+                  "fachliches Risiko",
+                  "False Positives",
+                  "False Negatives",
+                  "Baseline",
+                  "Entscheidungsschwelle"
+                ]
+              },
+              {
+                "question": "Was ist der Unterschied zwischen Precision und Recall?",
+                "keywords": [
+                  "Precision",
+                  "Recall",
+                  "False Positives",
+                  "False Negatives",
+                  "Beispiel für hohen Recall",
+                  "Beispiel für hohe Precision",
+                  "Trade-off"
+                ]
+              },
+              {
+                "question": "Warum kann Accuracy irreführend sein?",
+                "keywords": [
+                  "Accuracy",
+                  "unausgeglichener Datensatz",
+                  "Minderheitsklasse",
+                  "F1-Score",
+                  "Recall",
+                  "Precision",
+                  "Balanced Accuracy",
+                  "ROC-AUC"
+                ]
+              },
+              {
+                "question": "Wie würdest du eine Confusion Matrix interpretieren?",
+                "keywords": [
+                  "Confusion Matrix",
+                  "True Positives",
+                  "False Positives",
+                  "True Negatives",
+                  "False Negatives",
+                  "Fehlermuster",
+                  "fachliches Risiko"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Modellleistung verbessern",
+            "topic": "Beschreibe Modellverbesserung als kontrolliertes Experiment: schwache Metrik identifizieren, Daten und Fehler untersuchen, mit einer Baseline vergleichen, einen Faktor ändern, erneut evaluieren und das Ergebnis dokumentieren.",
+            "exercises": [
+              {
+                "question": "Was würdest du tun, wenn das Modell schlecht abschneidet?",
+                "keywords": [
+                  "schwache Metrik",
+                  "Fehleranalyse",
+                  "Datenqualität",
+                  "Baseline-Vergleich",
+                  "Features",
+                  "Labels",
+                  "kontrolliertes Experiment",
+                  "erneute Evaluation"
+                ]
+              },
+              {
+                "question": "Wie würdest du die Qualität der Trainingsdaten verbessern?",
+                "keywords": [
+                  "Label-Qualität",
+                  "Duplikate",
+                  "Grenzfälle",
+                  "Klassenbalance",
+                  "klare Features",
+                  "Datenvalidierung",
+                  "Feedback von Fachexperten"
+                ]
+              },
+              {
+                "question": "Wie würdest du die Hyperparameter des Modells tunen?",
+                "keywords": [
+                  "Grid Search",
+                  "Random Search",
+                  "Bayesian Optimization",
+                  "Validierungsset",
+                  "Test-Set-Leakage",
+                  "Experiment-Tracking",
+                  "Baseline-Vergleich"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Deployment und Produktion",
+            "topic": "Erkläre produktives ML als Service-Lebenszyklus: Modell speichern, Inferenz über eine API bereitstellen, Service paketieren, zuverlässig deployen, Latenz und Qualität überwachen, Model Drift erkennen und Retraining planen.",
+            "exercises": [
+              {
+                "question": "Wie würdest du ein trainiertes Machine-Learning-Modell deployen?",
+                "keywords": [
+                  "Modellartefakt",
+                  "REST API",
+                  "Batch Job",
+                  "Docker",
+                  "Cloud Deployment",
+                  "Kubernetes",
+                  "Inferenztests",
+                  "Rollback",
+                  "Versionierung"
+                ]
+              },
+              {
+                "question": "Wie würde eine andere Anwendung mit dem Modell kommunizieren?",
+                "keywords": [
+                  "Request-Response-Ablauf",
+                  "Endpoint",
+                  "Eingabevalidierung",
+                  "Vorverarbeitung",
+                  "Inferenz",
+                  "Vorhersage",
+                  "Konfidenz",
+                  "Metadaten"
+                ]
+              },
+              {
+                "question": "Wie würdest du das Modell nach dem Deployment überwachen?",
+                "keywords": [
+                  "Latenz",
+                  "Fehlerrate",
+                  "Eingabeverteilung",
+                  "Vorhersagequalität",
+                  "Logs",
+                  "Dashboards",
+                  "Alerts",
+                  "Modellversion",
+                  "echte Labels"
+                ]
+              },
+              {
+                "question": "Was ist Model Drift?",
+                "keywords": [
+                  "Model Drift",
+                  "Datenverteilung",
+                  "Nutzerverhalten",
+                  "Zielbeziehung",
+                  "Leistungsabfall",
+                  "Monitoring",
+                  "Alerts",
+                  "Retraining",
+                  "Validierung"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "ML-Systemdesign",
+            "topic": "Entwirf End-to-End-ML-Systeme, indem du von Nutzerbedürfnissen zu Eingabedaten, Vorverarbeitung, Modellwahl, API-Design, Speicherung, Deployment, Monitoring, Feedback-Loops, Datenschutzanforderungen und Skalierung gehst.",
+            "exercises": [
+              {
+                "question": "Entwirf ein System, das Nutzerinnen und Nutzern Mahlzeiten empfiehlt.",
+                "keywords": [
+                  "Nutzereingaben",
+                  "Nutzerfeatures",
+                  "Mahlzeitenfeatures",
+                  "Ranking-Modell",
+                  "Empfehlungs-API",
+                  "Datenbank",
+                  "Feedback-Loop",
+                  "Monitoring",
+                  "Datenschutz",
+                  "Retraining"
+                ]
+              },
+              {
+                "question": "Wie würdest du ein Spam-Erkennungssystem bauen?",
+                "keywords": [
+                  "gelabelte E-Mails",
+                  "Textvorverarbeitung",
+                  "Features",
+                  "Embeddings",
+                  "Klassifikator",
+                  "Schwellenwert-Anpassung",
+                  "False Positives",
+                  "Monitoring",
+                  "Retraining"
+                ]
+              },
+              {
+                "question": "Wie würdest du einen Echtzeit-Service für Bildklassifikation entwerfen?",
+                "keywords": [
+                  "Bildeingabe",
+                  "Vorverarbeitung",
+                  "Modellinferenz",
+                  "GPU/CPU",
+                  "Latenzziel",
+                  "Skalierbarkeit",
+                  "Monitoring",
+                  "Fallback-Verhalten",
+                  "Datenschutz"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "ML für nicht-technische Personen erklären",
+            "topic": "Übersetze technische ML-Konzepte in klares, nicht-technisches Deutsch, indem du Analogien, Konsequenzen, einfache Beispiele und fachlichen Nutzen statt Formeln oder Implementierungsdetails nutzt.",
+            "exercises": [
+              {
+                "question": "Erkläre Overfitting einer nicht-technischen Führungskraft.",
+                "keywords": [
+                  "Overfitting-Analogie",
+                  "Auswendiglernen",
+                  "Generalisierung",
+                  "fachliche Konsequenz",
+                  "einfache Vorbeugung",
+                  "keine Formeln"
+                ]
+              },
+              {
+                "question": "Erkläre ohne technische Begriffe, wie ein Empfehlungssystem funktioniert.",
+                "keywords": [
+                  "ähnliche Nutzer",
+                  "frühere Entscheidungen",
+                  "Personalisierung",
+                  "Vorschläge",
+                  "einfache Sprache",
+                  "Produktnutzen"
+                ]
+              },
+              {
+                "question": "Erkläre, warum ein Modell falsche Vorhersagen machen kann.",
+                "keywords": [
+                  "unvollständige Daten",
+                  "ungewöhnliche Fälle",
+                  "Unsicherheit",
+                  "verändertes Verhalten",
+                  "historische Grenzen",
+                  "verantwortungsvolle Erklärung"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Verhaltensfragen im ML-Interview",
+            "topic": "Beantworte verhaltensbezogene ML-Fragen mit einer klaren Struktur aus Situation, Aktion, Ergebnis und Reflexion, die Ownership, Zusammenarbeit, schnelle Lernfähigkeit, Kommunikation und technisches Urteilsvermögen zeigt.",
+            "exercises": [
+              {
+                "question": "Erzähle von einer Situation, in der dein Modell nicht wie erwartet funktioniert hat.",
+                "keywords": [
+                  "Situation",
+                  "Aktion",
+                  "Ergebnis",
+                  "Reflexion",
+                  "Diagnose",
+                  "Experimentänderung",
+                  "Messung",
+                  "Lerneffekt"
+                ]
+              },
+              {
+                "question": "Beschreibe eine Meinungsverschiedenheit mit einem Teammitglied über eine technische Entscheidung.",
+                "keywords": [
+                  "respektvolle Meinungsverschiedenheit",
+                  "zwei Sichtweisen",
+                  "Evidenz",
+                  "Teamentscheidung",
+                  "Ergebnis",
+                  "Zusammenarbeit",
+                  "Lernen"
+                ]
+              },
+              {
+                "question": "Erzähle von einer Situation, in der du schnell eine neue ML-Technologie lernen musstest.",
+                "keywords": [
+                  "Dokumentation",
+                  "Prototyp",
+                  "Experiment",
+                  "Feedback",
+                  "echte Aufgabe",
+                  "Zeitdruck",
+                  "Lernstrategie"
+                ]
+              },
+              {
+                "question": "Wie bleibst du bei Entwicklungen im Machine Learning auf dem Laufenden?",
+                "keywords": [
+                  "Papers",
+                  "Newsletter",
+                  "Release Notes",
+                  "kleine Demos",
+                  "Kurse",
+                  "praktische Bewertung",
+                  "echte Projekte"
+                ]
+              }
             ]
           }
         ]

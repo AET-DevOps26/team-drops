@@ -6,7 +6,6 @@ import de.tum.aet.devops26.learning_service.dto.LearningStatus;
 import de.tum.aet.devops26.learning_service.dto.LessonSummaryResponse;
 import de.tum.aet.devops26.learning_service.dto.LessonResponse;
 import de.tum.aet.devops26.learning_service.model.Exercise;
-import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import de.tum.aet.devops26.learning_service.repository.LessonRepository;
@@ -23,8 +22,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class LessonService {
-
-    private static final String DEFAULT_TEMPLATE_KEY = "job-interview";
 
     private final LessonRepository lessonRepository;
     private final ExerciseService exerciseService;
@@ -90,13 +87,13 @@ public class LessonService {
     }
 
     public LessonSummaryResponse toSummaryResponse(Lesson lesson, String language) {
-        DefaultLessonTemplate localizedLesson = localizedLessonFor(lesson, language).orElse(null);
+        LocalizedLessonContext localizedLesson = localizedLessonFor(lesson, language).orElse(null);
         List<?> exercises = exerciseService.findByLessonId(lesson.getId());
         return new LessonSummaryResponse(
             lesson.getId(),
             lesson.getPlanId(),
-            localizedLesson == null ? lesson.getTitle() : localizedLesson.title(),
-            localizedLesson == null ? lesson.getTopic() : localizedLesson.topic(),
+            localizedLesson == null ? lesson.getTitle() : localizedLesson.lesson().title(),
+            localizedLesson == null ? lesson.getTopic() : localizedLesson.lesson().topic(),
             lesson.getOrderNumber(),
             LearningStatus.NOT_STARTED,
             0,
@@ -110,7 +107,7 @@ public class LessonService {
     }
 
     public LessonResponse toResponse(Lesson lesson, String language) {
-        DefaultLessonTemplate localizedLesson = localizedLessonFor(lesson, language).orElse(null);
+        LocalizedLessonContext localizedLesson = localizedLessonFor(lesson, language).orElse(null);
         List<de.tum.aet.devops26.learning_service.dto.ExerciseResponse> exercises = exerciseService.findByLessonId(lesson.getId()).stream()
             .map(exercise -> exerciseService.toResponse(exercise, localizedExerciseFor(exercise, localizedLesson, language)))
             .toList();
@@ -118,8 +115,8 @@ public class LessonService {
         return new LessonResponse(
             lesson.getId(),
             lesson.getPlanId(),
-            localizedLesson == null ? lesson.getTitle() : localizedLesson.title(),
-            localizedLesson == null ? lesson.getTopic() : localizedLesson.topic(),
+            localizedLesson == null ? lesson.getTitle() : localizedLesson.lesson().title(),
+            localizedLesson == null ? lesson.getTopic() : localizedLesson.lesson().topic(),
             lesson.getOrderNumber(),
             LearningStatus.NOT_STARTED,
             0,
@@ -130,17 +127,20 @@ public class LessonService {
         );
     }
 
-    private Optional<DefaultLessonTemplate> localizedLessonFor(Lesson lesson, String language) {
+    private Optional<LocalizedLessonContext> localizedLessonFor(Lesson lesson, String language) {
         return learningPlanRepository.findById(lesson.getPlanId())
-            .filter(this::isDefaultLearningPlan)
-            .map(plan -> defaultLearningPlanCatalog.findLocalizedByKey(DEFAULT_TEMPLATE_KEY, language))
+            .flatMap(plan -> defaultLearningPlanCatalog.findKeyByLocalizedTitle(plan.getTitle()))
+            .map(templateKey -> defaultLearningPlanCatalog.findLocalizedByKey(templateKey, language))
             .filter(content -> lesson.getOrderNumber() != null
                 && lesson.getOrderNumber() > 0
                 && lesson.getOrderNumber() <= content.lessons().size())
-            .map(content -> content.lessons().get(lesson.getOrderNumber() - 1));
+            .map(content -> new LocalizedLessonContext(
+                content,
+                content.lessons().get(lesson.getOrderNumber() - 1)
+            ));
     }
 
-    private LocalizedExercise localizedExerciseFor(Exercise exercise, DefaultLessonTemplate localizedLesson, String language) {
+    private LocalizedExercise localizedExerciseFor(Exercise exercise, LocalizedLessonContext localizedLesson, String language) {
         if (localizedLesson == null) {
             return null;
         }
@@ -151,20 +151,17 @@ public class LessonService {
             .findFirst()
             .orElse(-1);
 
-        if (exerciseIndex < 0 || exerciseIndex >= localizedLesson.exercises().size()) {
+        if (exerciseIndex < 0 || exerciseIndex >= localizedLesson.lesson().exercises().size()) {
             return null;
         }
 
-        DefaultLearningPlanContent content = defaultLearningPlanCatalog.findLocalizedByKey(DEFAULT_TEMPLATE_KEY, language);
+        var exerciseTemplate = localizedLesson.lesson().exercises().get(exerciseIndex);
         return new LocalizedExercise(
-            localizedLesson.exercises().get(exerciseIndex),
-            content.defaultExpectedAnswer(),
-            localizedFormatFor(language)
+            exerciseTemplate.question(),
+            localizedLesson.content().defaultExpectedAnswer(),
+            localizedFormatFor(language),
+            exerciseTemplate.keywords()
         );
-    }
-
-    private boolean isDefaultLearningPlan(LearningPlan plan) {
-        return defaultLearningPlanCatalog.hasLocalizedTitle(DEFAULT_TEMPLATE_KEY, plan.getTitle());
     }
 
     private String localizedFormatFor(String language) {
@@ -172,4 +169,9 @@ public class LessonService {
             ? "Kurze schriftliche Antwort"
             : null;
     }
+
+    private record LocalizedLessonContext(
+        DefaultLearningPlanContent content,
+        DefaultLessonTemplate lesson
+    ) {}
 }

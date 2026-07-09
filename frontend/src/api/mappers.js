@@ -113,15 +113,7 @@ function fallbackBlocks(lesson) {
       title: isGerman ? 'Kernidee' : 'Core idea',
       subtitle: `${lesson.timeEstimateMinutes ?? 10} min`,
       text: lesson.topic,
-      points: isGerman
-        ? [
-            'Lies die Aufgabe aufmerksam, bevor du antwortest.',
-            'Nutze die Übungen der Lektion, um die Zielstruktur zu üben.',
-          ]
-        : [
-            'Review the task before answering.',
-            'Use the lesson exercises to practice the target structure.',
-          ],
+      points: [],
     },
     ...lesson.exercises.map((exercise, index) => ({
       type: 'exercise',
@@ -204,6 +196,7 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     score: exercise.score,
     format: exercise.format,
     source: exercise.source,
+    keywords: exercise.keywords ?? [],
     language: planSummaryLesson?.language,
     grade: exercise.score,
     task: exercise.question,

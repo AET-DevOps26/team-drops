@@ -5,6 +5,6 @@ import java.util.List;
 public record DefaultLessonTemplate(
     String title,
     String topic,
-    List<String> exercises
+    List<DefaultExerciseTemplate> exercises
 ) {
 }

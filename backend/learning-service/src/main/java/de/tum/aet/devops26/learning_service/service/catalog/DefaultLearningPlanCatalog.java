@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +44,24 @@ public class DefaultLearningPlanCatalog {
 
     public DefaultLearningPlanContent findFallbackByKey(String key) {
         return findLocalizedByKey(key, FALLBACK_LANGUAGE);
+    }
+
+    public List<String> templateKeys() {
+        return templates.stream()
+            .map(DefaultLearningPlanTemplate::key)
+            .toList();
+    }
+
+    public Optional<String> findKeyByLocalizedTitle(String title) {
+        if (title == null) {
+            return Optional.empty();
+        }
+
+        return templates.stream()
+            .filter(template -> template.languages().values().stream()
+                .anyMatch(content -> title.equals(content.title())))
+            .map(DefaultLearningPlanTemplate::key)
+            .findFirst();
     }
 
     public boolean hasLocalizedTitle(String key, String title) {

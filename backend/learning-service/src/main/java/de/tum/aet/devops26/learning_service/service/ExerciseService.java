@@ -66,6 +66,9 @@ public class ExerciseService {
         if (localizedExercise != null && localizedExercise.format() != null) {
             response.setFormat(localizedExercise.format());
         }
+        if (localizedExercise != null && localizedExercise.keywords() != null) {
+            response.setKeywords(localizedExercise.keywords());
+        }
         return response;
     }
 
