@@ -745,6 +745,31 @@ function isSpeakingExercise(exercise) {
   return exercise?.type === 'speaking' || subtype.toLowerCase().includes('speaking');
 }
 
+function shouldShowReferenceAnswer(exercise) {
+  return exercise?.status === 'finished'
+    || exercise?.score != null
+    || Boolean(exercise?.answerText)
+    || Boolean(exercise?.feedback);
+}
+
+function ReferenceAnswerCard({ exercise, fallback }) {
+  const revealAnswer = shouldShowReferenceAnswer(exercise);
+
+  return (
+    <section className="summary-card">
+      <div className="section-heading">
+        <h3>Reference answer</h3>
+        <span>{revealAnswer ? formatExerciseLabel(exercise.subtype ?? exercise.type) : 'After submission'}</span>
+      </div>
+      <p>
+        {revealAnswer
+          ? exercise.expectedAnswer ?? fallback
+          : 'Submit your answer to reveal the reference answer.'}
+      </p>
+    </section>
+  );
+}
+
 function ListeningExerciseView({
   activeExercise,
   answerError,
@@ -1022,13 +1047,7 @@ function SpeakingExerciseView({ activeExercise, answerError, answerPending, onSu
         <p>{activeExercise.task}</p>
       </section>
 
-      <section className="summary-card">
-        <div className="section-heading">
-          <h3>Expected answer</h3>
-          <span>{formatExerciseLabel(activeExercise.subtype ?? activeExercise.type)}</span>
-        </div>
-        <p>{activeExercise.expectedAnswer ?? 'Open-ended speaking exercise.'}</p>
-      </section>
+      <ReferenceAnswerCard exercise={activeExercise} fallback="Open-ended speaking exercise." />
 
       <form className="summary-card speaking-recorder" onSubmit={handleSubmit}>
         <div className="section-heading">
@@ -1131,13 +1150,7 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
         <p>{activeExercise.task}</p>
       </section>
 
-      <section className="summary-card">
-        <div className="section-heading">
-          <h3>Expected answer</h3>
-          <span>{activeExercise.type}</span>
-        </div>
-        <p>{activeExercise.expectedAnswer ?? 'Open-ended exercise.'}</p>
-      </section>
+      <ReferenceAnswerCard exercise={activeExercise} fallback="Open-ended exercise." />
 
       <form className="summary-card" onSubmit={handleSubmit}>
         <div className="section-heading">
