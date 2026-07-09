@@ -132,7 +132,50 @@ function contentBlockTitle(block, index) {
     return title;
   }
 
-  return `Learning note ${index + 1}`;
+  return index === 0 ? 'Lesson material' : 'Key point';
+}
+
+function isGenericContentBlock(block) {
+  const title = block.title?.trim().toLowerCase();
+  return !title || title === 'lesson content';
+}
+
+function collapseGenericContentBlocks(blocks) {
+  const collapsed = [];
+  let pendingContentBlocks = [];
+
+  const flushPendingContent = () => {
+    if (pendingContentBlocks.length === 0) {
+      return;
+    }
+
+    const [overviewBlock, ...pointBlocks] = pendingContentBlocks;
+    collapsed.push({
+      ...overviewBlock,
+      title: 'Lesson material',
+      points: [
+        ...(overviewBlock.points ?? []),
+        ...pointBlocks
+          .map((block) => block.text)
+          .filter(Boolean),
+        ...pointBlocks.flatMap((block) => block.points ?? []),
+      ],
+    });
+    pendingContentBlocks = [];
+  };
+
+  blocks.forEach((block) => {
+    if (block.type === 'content' && block.genericContent) {
+      pendingContentBlocks.push(block);
+      return;
+    }
+
+    flushPendingContent();
+    collapsed.push(block);
+  });
+  flushPendingContent();
+
+  return collapsed.map(({ genericContent, ...block }) => block);
 }
 
 function hasBlankMarker(value = '') {
@@ -290,13 +333,14 @@ export function toLessonDetail(lesson, planSummaryLesson) {
       subtitle: block.subtitle ?? `${lesson.time_estimate_minutes ?? 10} min`,
       text: block.text ?? lesson.topic,
       points: block.points ?? [],
+      genericContent: isGenericContentBlock(block),
     };
   }).filter(Boolean);
   const missingExerciseBlocks = exercises
     .map((_, index) => index)
     .filter((index) => !exerciseIndexesInBlocks.has(index))
     .map(exerciseBlock);
-  const lessonBlocks = [...blocks, ...missingExerciseBlocks];
+  const lessonBlocks = [...collapseGenericContentBlocks(blocks), ...missingExerciseBlocks];
 
   const normalizedLesson = {
     id: lesson.id,
