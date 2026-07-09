@@ -192,6 +192,12 @@ const ragTopics = [
   },
 ];
 
+const ragPlanLimits = {
+  durationWeeks: { min: 1, max: 52 },
+  studyHoursPerWeek: { min: 1, max: 80 },
+  lessons: { min: 1, max: 24 },
+};
+
 function AiTrainingPlaceholder({ t }) {
   return (
     <section className="ai-plan-form" aria-label="AI training">
@@ -373,7 +379,8 @@ function AiLearningPlanForm({ profile, selectedTopic, t, onBackToTopics, onCreat
           </span>
           <input
             inputMode="numeric"
-            min="1"
+            min={ragPlanLimits.durationWeeks.min}
+            max={ragPlanLimits.durationWeeks.max}
             name="durationWeeks"
             onChange={(event) => updateField('durationWeeks', event.target.value)}
             required
@@ -390,7 +397,8 @@ function AiLearningPlanForm({ profile, selectedTopic, t, onBackToTopics, onCreat
           </span>
           <input
             inputMode="numeric"
-            min="1"
+            min={ragPlanLimits.studyHoursPerWeek.min}
+            max={ragPlanLimits.studyHoursPerWeek.max}
             name="studyHoursPerWeek"
             onChange={(event) => updateField('studyHoursPerWeek', event.target.value)}
             required
@@ -407,7 +415,8 @@ function AiLearningPlanForm({ profile, selectedTopic, t, onBackToTopics, onCreat
           </span>
           <input
             inputMode="numeric"
-            min="1"
+            min={ragPlanLimits.lessons.min}
+            max={ragPlanLimits.lessons.max}
             name="maximumLessons"
             onChange={(event) => updateField('maximumLessons', event.target.value)}
             required
@@ -423,7 +432,8 @@ function AiLearningPlanForm({ profile, selectedTopic, t, onBackToTopics, onCreat
           </span>
           <input
             inputMode="numeric"
-            min="1"
+            min={ragPlanLimits.lessons.min}
+            max={ragPlanLimits.lessons.max}
             name="minimumLessons"
             onChange={(event) => updateField('minimumLessons', event.target.value)}
             required

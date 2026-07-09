@@ -31,6 +31,12 @@ import org.springframework.web.server.ResponseStatusException;
 public class LearningPlanService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LearningPlanService.class);
+    private static final int MIN_DURATION_WEEKS = 1;
+    private static final int MAX_DURATION_WEEKS = 52;
+    private static final int MIN_STUDY_HOURS_PER_WEEK = 1;
+    private static final int MAX_STUDY_HOURS_PER_WEEK = 80;
+    private static final int MIN_LESSONS = 1;
+    private static final int MAX_LESSONS = 24;
 
     private final LearningPlanRepository learningPlanRepository;
     private final LessonService lessonService;
@@ -177,11 +183,45 @@ public class LearningPlanService {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "AI learning-plan request must not be null");
         }
+        if (request.getUserId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user_id is required");
+        }
+        requireRequestText(request.getRagTopic(), "rag_topic");
+        requireRequestText(request.getLearningGoal(), "learning_goal");
+        requireRequestText(request.getTargetLanguage(), "target_language");
+        requireRequestText(request.getCurrentLevel(), "current_level");
+        requireBetween(request.getDurationWeeks(), MIN_DURATION_WEEKS, MAX_DURATION_WEEKS, "duration_weeks");
+        requireBetween(
+            request.getStudyHoursPerWeek(),
+            MIN_STUDY_HOURS_PER_WEEK,
+            MAX_STUDY_HOURS_PER_WEEK,
+            "study_hours_per_week"
+        );
+        requireBetween(request.getMinimumLessons(), MIN_LESSONS, MAX_LESSONS, "minimum_lessons");
+        requireBetween(request.getMaximumLessons(), MIN_LESSONS, MAX_LESSONS, "maximum_lessons");
+        if (request.getExerciseTypes() == null || request.getExerciseTypes().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "exercise_types must contain at least one value");
+        }
         if (request.getMinimumLessons() == null || request.getMaximumLessons() == null
             || request.getMinimumLessons() > request.getMaximumLessons()) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "minimum_lessons must be less than or equal to maximum_lessons"
+            );
+        }
+    }
+
+    private void requireRequestText(String value, String field) {
+        if (value == null || value.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, field + " is required");
+        }
+    }
+
+    private void requireBetween(Integer value, int minimum, int maximum, String field) {
+        if (value == null || value < minimum || value > maximum) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                field + " must be between " + minimum + " and " + maximum
             );
         }
     }

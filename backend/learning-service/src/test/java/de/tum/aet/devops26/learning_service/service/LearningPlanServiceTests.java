@@ -152,6 +152,27 @@ class LearningPlanServiceTests {
     }
 
     @Test
+    void createAiLearningPlanRejectsOutOfRangeRequestsBeforeCallingGenAi() {
+        LearningPlanService service = newService();
+
+        assertBadRequestBeforeGenAi(service, aiRequest().durationWeeks(53), "duration_weeks must be between 1 and 52");
+        assertBadRequestBeforeGenAi(service, aiRequest().studyHoursPerWeek(81), "study_hours_per_week must be between 1 and 80");
+        assertBadRequestBeforeGenAi(service, aiRequest().minimumLessons(0), "minimum_lessons must be between 1 and 24");
+        assertBadRequestBeforeGenAi(service, aiRequest().maximumLessons(25), "maximum_lessons must be between 1 and 24");
+    }
+
+    @Test
+    void createAiLearningPlanRejectsMissingRequiredRequestFieldsBeforeCallingGenAi() {
+        LearningPlanService service = newService();
+
+        assertBadRequestBeforeGenAi(service, aiRequest().ragTopic(" "), "rag_topic is required");
+        assertBadRequestBeforeGenAi(service, aiRequest().learningGoal(null), "learning_goal is required");
+        assertBadRequestBeforeGenAi(service, aiRequest().targetLanguage(""), "target_language is required");
+        assertBadRequestBeforeGenAi(service, aiRequest().currentLevel(null), "current_level is required");
+        assertBadRequestBeforeGenAi(service, aiRequest().exerciseTypes(List.of()), "exercise_types must contain at least one value");
+    }
+
+    @Test
     void createAiLearningPlanRejectsMismatchedAuthenticatedUserBeforeCallingGenAi() {
         LearningPlanService service = newService();
         CreateAiLearningPlanRequest request = aiRequest().userId(99L);
@@ -291,6 +312,20 @@ class LearningPlanServiceTests {
             .targetLanguage("German")
             .currentLevel("A2")
             .learningGoal("Prepare for a software engineering job interview");
+    }
+
+    private void assertBadRequestBeforeGenAi(
+        LearningPlanService service,
+        CreateAiLearningPlanRequest request,
+        String expectedMessage
+    ) {
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining(expectedMessage);
+
+        verify(userServiceClient, never()).resolveSubmittedUserId(any());
+        verify(genAiRagLearningPlanClient, never()).generate(any(CreateAiLearningPlanRequest.class));
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
     }
 
     private LearningPlan fixedPlan(Long id, String title) {

@@ -1871,21 +1871,25 @@ components:
           type: integer
           format: int32
           minimum: 1
+          maximum: 52
           example: 4
         study_hours_per_week:
           type: integer
           format: int32
           minimum: 1
+          maximum: 80
           example: 5
         minimum_lessons:
           type: integer
           format: int32
           minimum: 1
+          maximum: 24
           example: 6
         maximum_lessons:
           type: integer
           format: int32
           minimum: 1
+          maximum: 24
           example: 12
         exercise_types:
           type: array
