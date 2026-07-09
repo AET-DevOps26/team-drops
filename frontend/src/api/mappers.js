@@ -37,6 +37,10 @@ function formatPlanSummary(plan) {
   return plan.description || plan.goal || 'Guided language learning plan.';
 }
 
+function isGermanContent(language) {
+  return language?.toLowerCase() === 'german';
+}
+
 function clampProgress(progress) {
   return Math.max(0, Math.min(100, Math.round(progress ?? 0)));
 }
@@ -101,16 +105,15 @@ function withDerivedPlanProgress(plan) {
 }
 
 function fallbackBlocks(lesson) {
+  const isGerman = isGermanContent(lesson.language);
+
   return [
     {
       type: 'content',
-      title: 'Core idea',
+      title: isGerman ? 'Kernidee' : 'Core idea',
       subtitle: `${lesson.timeEstimateMinutes ?? 10} min`,
       text: lesson.topic,
-      points: [
-        'Review the task before answering.',
-        'Use the lesson exercises to practice the target structure.',
-      ],
+      points: [],
     },
     ...lesson.exercises.map((exercise, index) => ({
       type: 'exercise',
@@ -169,6 +172,7 @@ export function toLearningPlans(plans = []) {
       progress: lesson.progress ?? 0,
       timeEstimateMinutes: lesson.time_estimate_minutes ?? 10,
       exerciseCount: lesson.exercise_count ?? 0,
+      language: plan.language,
       accent: pickAccent(lessonIndex, lessonAccents),
       icon: pickLessonIcon(lessonIndex),
       exercises: [],
@@ -192,6 +196,8 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     score: exercise.score,
     format: exercise.format,
     source: exercise.source,
+    keywords: exercise.keywords ?? [],
+    language: planSummaryLesson?.language,
     grade: exercise.score,
     task: exercise.question,
     prompt: exercise.question,
@@ -227,12 +233,14 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     progress: lesson.progress ?? 0,
     timeEstimateMinutes: lesson.time_estimate_minutes ?? planSummaryLesson?.timeEstimateMinutes ?? 10,
     exerciseCount: lesson.exercise_count ?? exercises.length,
+    language: planSummaryLesson?.language,
     accent: planSummaryLesson?.accent ?? pickAccent((lesson.order_number ?? 1) - 1, lessonAccents),
     icon: planSummaryLesson?.icon ?? pickLessonIcon((lesson.order_number ?? 1) - 1),
     exercises,
     blocks: blocks.length > 0 ? blocks : fallbackBlocks({
       topic: lesson.topic,
       exercises,
+      language: planSummaryLesson?.language,
       timeEstimateMinutes: lesson.time_estimate_minutes,
     }),
     comment: lesson.status === 'finished' ? 'Great work. This lesson is complete.' : null,
@@ -299,6 +307,8 @@ export function attachSubmissionToLesson(lesson, submission) {
     return lesson;
   }
 
+  const transcription = submission.transcription ?? submission.answer.answer_text;
+
   return withDerivedLessonProgress({
     ...lesson,
     progress: submission.lesson_progress ?? lesson.progress,
@@ -312,13 +322,15 @@ export function attachSubmissionToLesson(lesson, submission) {
         status: submission.exercise_status ?? exercise.status,
         score: submission.answer.score,
         grade: submission.answer.score,
-        answerText: submission.answer.answer_text,
+        answerText: transcription,
         feedback: submission.feedback
           ? {
               title: 'AI feedback',
               score: submission.answer.score,
               message: submission.feedback.message,
               weakArea: submission.feedback.weak_area,
+              transcription,
+              feedbackAudioB64: submission.feedback_audio_b64,
               strengths: submission.feedback.strengths ?? [],
               improvements: submission.feedback.improvements
                 ?? (submission.feedback.weak_area ? [`Focus on: ${submission.feedback.weak_area}`] : []),
@@ -362,6 +374,7 @@ export function attachSavedAnswersToLesson(lesson, savedAnswers = [], feedbackBy
               score: answer.score,
               message: feedback.message,
               weakArea: feedback.weak_area,
+              transcription: answer.answer_text,
               strengths: feedback.strengths ?? [],
               improvements: feedback.improvements
                 ?? (feedback.weak_area ? [`Focus on: ${feedback.weak_area}`] : []),

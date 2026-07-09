@@ -57,7 +57,7 @@ export function DashboardPage({
           aria-label={heroActionLabel}
           onClick={handleHeroClick}
         >
-          <div>
+          <div className="dashboard-hero-copy">
             <p>{activePlan.language} {t.currentPlan}</p>
             <h3>{activePlan.title}</h3>
             <span>

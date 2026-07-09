@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private static final String OIDC_PASSWORD_HASH_PLACEHOLDER = "OIDC_USER_NO_LOCAL_PASSWORD";
+    private static final String LOCAL_DEV_EMAIL = "local-dev@example.com";
+    private static final String LOCAL_DEV_NAME = "Local Dev User";
 
     private final UserRepository userRepository;
 
@@ -66,13 +68,11 @@ public class UserService {
     }
 
     public UserResponse getOrCreateLocalDevUser() {
-        String email = "local-dev@example.com";
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmail(LOCAL_DEV_EMAIL)
             .map(this::toResponse)
             .orElseGet(() -> toResponse(save(User.builder()
-                .name("Local Dev User")
-                .email(email)
-                .passwordHash(OIDC_PASSWORD_HASH_PLACEHOLDER)
+                .name(LOCAL_DEV_NAME)
+                .email(LOCAL_DEV_EMAIL)
                 .build())));
     }
 

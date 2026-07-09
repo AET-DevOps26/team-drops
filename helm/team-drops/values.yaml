@@ -125,18 +125,20 @@ genai:
   llmBaseUrl: ""
   ollamaBaseUrl: ""
   ollamaModel: llama3
+  sttProvider: local
   whisperModel: base
   whisperDevice: cpu
+  ttsEnabled: true
   prewarmModels: false
   kokoroModelPath: ""
   kokoroVoicesPath: ""
   resources:
     requests:
-      cpu: 100m
-      memory: 256Mi
+      cpu: 250m
+      memory: 1Gi
     limits:
-      cpu: 300m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 2Gi
 
 postgres:
   image: postgres:16

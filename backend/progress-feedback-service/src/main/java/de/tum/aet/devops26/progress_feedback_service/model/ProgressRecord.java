@@ -31,6 +31,12 @@ public class ProgressRecord {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "plan_id")
+    private Long planId;
+
+    @Column(name = "target_language")
+    private String targetLanguage;
+
     @Column(name = "completed_exercises", nullable = false)
     private Integer completedExercises;
 

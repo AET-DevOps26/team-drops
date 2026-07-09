@@ -2,6 +2,16 @@ genai:
   llmProvider: openai
   llmModel: openai/gpt-oss-120b
   llmBaseUrl: https://logos.aet.cit.tum.de/v1
+  sttProvider: local
+  whisperModel: tiny
+  ttsEnabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
 
 auth:
   issuerUri: https://team-drops.stud.k8s.aet.cit.tum.de/realms/team-drops
@@ -12,9 +22,67 @@ keycloak:
     - https://team-drops.stud.k8s.aet.cit.tum.de/*
   webOrigins:
     - https://team-drops.stud.k8s.aet.cit.tum.de
+  resources:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: 300m
+      memory: 768Mi
 
 frontend:
   keycloakUrl: https://team-drops.stud.k8s.aet.cit.tum.de
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 96Mi
+
+services:
+  user:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 160Mi
+      limits:
+        cpu: 150m
+        memory: 256Mi
+  learning:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 160Mi
+      limits:
+        cpu: 150m
+        memory: 256Mi
+  progress:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 160Mi
+      limits:
+        cpu: 150m
+        memory: 256Mi
+
+postgres:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+mongo:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 
 ingress:
   host: team-drops.stud.k8s.aet.cit.tum.de

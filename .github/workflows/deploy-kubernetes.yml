@@ -55,7 +55,51 @@ jobs:
           chmod 600 "$HOME/.kube/config"
 
       - name: Lint Helm chart
-        run: helm lint ./helm/team-drops -f helm/team-drops/values-rancher.yaml
+        run: |
+          helm lint ./helm/team-drops \
+            -f helm/team-drops/values-rancher.yaml \
+            --set genai.llmApiKey=dummy
+
+      - name: Render Helm chart
+        run: |
+          helm template team-drops ./helm/team-drops \
+            --namespace team-drops \
+            -f helm/team-drops/values-rancher.yaml \
+            --set image.tag="${{ steps.image-tag.outputs.value }}" \
+            --set genai.llmApiKey="${{ secrets.LLM_API_KEY }}" \
+            > /tmp/team-drops-rendered.yaml
+
+      - name: Validate rendered Kubernetes manifests
+        run: |
+          ruby -ryaml -e '
+            failures = []
+
+            YAML.load_stream(File.read("/tmp/team-drops-rendered.yaml")).compact.each do |doc|
+              next unless ["Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob"].include?(doc["kind"])
+
+              pod_spec =
+                if doc["kind"] == "CronJob"
+                  doc.dig("spec", "jobTemplate", "spec", "template", "spec")
+                else
+                  doc.dig("spec", "template", "spec")
+                end
+
+              next unless pod_spec
+
+              containers = pod_spec.fetch("initContainers", []) + pod_spec.fetch("containers", [])
+              containers.each do |container|
+                container.fetch("env", []).each_with_index do |env, index|
+                  next unless env.key?("value") && env.key?("valueFrom")
+
+                  failures << "#{doc["kind"]}/#{doc.dig("metadata", "name")} #{container["name"]} env[#{index}] #{env["name"]}"
+                end
+              end
+            end
+
+            unless failures.empty?
+              abort("Rendered env vars define both value and valueFrom:\n- #{failures.join("\n- ")}")
+            end
+          '
 
       - name: Deploy Team Drops
         run: |
@@ -64,6 +108,7 @@ jobs:
             -f helm/team-drops/values-rancher.yaml \
             --set image.tag="${{ steps.image-tag.outputs.value }}" \
             --set genai.llmApiKey="${{ secrets.LLM_API_KEY }}" \
+            --force-conflicts \
             --wait \
             --timeout 10m
 

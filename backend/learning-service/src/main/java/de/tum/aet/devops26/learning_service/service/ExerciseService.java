@@ -7,6 +7,7 @@ import de.tum.aet.devops26.learning_service.dto.LearningStatus;
 import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.ExerciseRepository;
+import de.tum.aet.devops26.learning_service.service.catalog.LocalizedExercise;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -39,23 +40,35 @@ public class ExerciseService {
     }
 
     public ExerciseResponse toResponse(Exercise exercise) {
+        return toResponse(exercise, null);
+    }
+
+    public ExerciseResponse toResponse(Exercise exercise, LocalizedExercise localizedExercise) {
         ExerciseSubtype subtype = toExerciseSubtype(exercise.getType());
         ExerciseType type = inferExerciseType(subtype);
+        String question = localizedExercise == null ? exercise.getQuestion() : localizedExercise.question();
+        String expectedAnswer = localizedExercise == null ? exercise.getExpectedAnswer() : localizedExercise.expectedAnswer();
         ExerciseResponse response = new ExerciseResponse(
             exercise.getId(),
             exercise.getLessonId(),
             type,
             subtype,
-            exercise.getQuestion(),
-            exercise.getQuestion(),
+            question,
+            question,
             exercise.getDifficulty(),
-            exercise.getExpectedAnswer(),
+            expectedAnswer,
             LearningStatus.NOT_STARTED,
             buildFormat(type)
         );
         response.setSource(isAiExercise(exercise)
             ? ExerciseResponse.SourceEnum.AI
             : ExerciseResponse.SourceEnum.DEFAULT);
+        if (localizedExercise != null && localizedExercise.format() != null) {
+            response.setFormat(localizedExercise.format());
+        }
+        if (localizedExercise != null && localizedExercise.keywords() != null) {
+            response.setKeywords(localizedExercise.keywords());
+        }
         return response;
     }
 

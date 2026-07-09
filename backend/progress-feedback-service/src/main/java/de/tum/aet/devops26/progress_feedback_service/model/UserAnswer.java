@@ -33,6 +33,12 @@ public class UserAnswer {
     @Column(name = "exercise_id", nullable = false)
     private Long exerciseId;
 
+    @Column(name = "plan_id")
+    private Long planId;
+
+    @Column(name = "target_language")
+    private String targetLanguage;
+
     @Column(name = "answer_text", nullable = false, columnDefinition = "TEXT")
     private String answerText;
 

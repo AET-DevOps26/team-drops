@@ -64,6 +64,13 @@ paths:
       operationId: getLearningPlansByUserId
       parameters:
         - $ref: '../base.yaml#/components/parameters/UserIdPath'
+        - name: language
+          in: query
+          required: false
+          description: Preferred language for translated default lesson and exercise content.
+          schema:
+            type: string
+            example: German
       responses:
         '200':
           description: Learning plans found
@@ -84,6 +91,13 @@ paths:
       operationId: getLessonById
       parameters:
         - $ref: '../base.yaml#/components/parameters/LessonIdPath'
+        - name: language
+          in: query
+          required: false
+          description: Preferred language for translated lesson and exercise content.
+          schema:
+            type: string
+            example: German
       responses:
         '200':
           description: Lesson found
@@ -433,6 +447,15 @@ components:
             - default
             - ai
           example: default
+        keywords:
+          type: array
+          description: Optional keyword hints for fixed catalog exercises.
+          items:
+            type: string
+          example:
+            - problem
+            - dataset
+            - model
     GenerateAiExercisesRequest:
       type: object
       required:
