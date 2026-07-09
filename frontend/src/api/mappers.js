@@ -119,6 +119,22 @@ function fallbackBlocks(lesson) {
   ];
 }
 
+function exerciseBlock(index) {
+  return {
+    type: 'exercise',
+    exerciseIndex: index,
+  };
+}
+
+function contentBlockTitle(block, index) {
+  const title = block.title?.trim();
+  if (title && title.toLowerCase() !== 'lesson content') {
+    return title;
+  }
+
+  return `Learning note ${index + 1}`;
+}
+
 export function createEmptyProgress(userId = null) {
   return {
     userId,
@@ -200,22 +216,31 @@ export function toLessonDetail(lesson, planSummaryLesson) {
   }));
 
   const exerciseIndexById = new Map(exercises.map((exercise, index) => [exercise.id, index]));
-  const blocks = (lesson.content_blocks ?? []).map((block) => {
+  const exerciseIndexesInBlocks = new Set();
+  const blocks = (lesson.content_blocks ?? []).map((block, blockIndex) => {
     if (block.type === 'exercise') {
-      return {
-        type: 'exercise',
-        exerciseIndex: exerciseIndexById.get(block.exercise_id) ?? 0,
-      };
+      const exerciseIndex = exerciseIndexById.get(block.exercise_id);
+      if (exerciseIndex === undefined) {
+        return null;
+      }
+
+      exerciseIndexesInBlocks.add(exerciseIndex);
+      return exerciseBlock(exerciseIndex);
     }
 
     return {
       type: block.type,
-      title: block.title ?? 'Lesson content',
+      title: contentBlockTitle(block, blockIndex),
       subtitle: block.subtitle ?? `${lesson.time_estimate_minutes ?? 10} min`,
       text: block.text ?? lesson.topic,
       points: block.points ?? [],
     };
-  });
+  }).filter(Boolean);
+  const missingExerciseBlocks = exercises
+    .map((_, index) => index)
+    .filter((index) => !exerciseIndexesInBlocks.has(index))
+    .map(exerciseBlock);
+  const lessonBlocks = [...blocks, ...missingExerciseBlocks];
 
   const normalizedLesson = {
     id: lesson.id,
@@ -230,7 +255,7 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     accent: planSummaryLesson?.accent ?? pickAccent((lesson.order_number ?? 1) - 1, lessonAccents),
     icon: planSummaryLesson?.icon ?? pickLessonIcon((lesson.order_number ?? 1) - 1),
     exercises,
-    blocks: blocks.length > 0 ? blocks : fallbackBlocks({
+    blocks: lessonBlocks.length > 0 ? lessonBlocks : fallbackBlocks({
       topic: lesson.topic,
       exercises,
       timeEstimateMinutes: lesson.time_estimate_minutes,
