@@ -8,8 +8,13 @@ import de.tum.aet.devops26.learning_service.dto.LessonResponse;
 import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.model.LessonContentBlock;
+import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import de.tum.aet.devops26.learning_service.repository.LessonContentBlockRepository;
 import de.tum.aet.devops26.learning_service.repository.LessonRepository;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLessonTemplate;
+import de.tum.aet.devops26.learning_service.service.catalog.LocalizedExercise;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -23,6 +28,8 @@ public class LessonService {
     private final LessonRepository lessonRepository;
     private final ExerciseService exerciseService;
     private final LessonContentBlockRepository lessonContentBlockRepository;
+    private final LearningPlanRepository learningPlanRepository;
+    private final DefaultLearningPlanCatalog defaultLearningPlanCatalog;
 
     public Lesson save(Lesson lesson) {
         return lessonRepository.save(lesson);
@@ -67,7 +74,11 @@ public class LessonService {
     }
 
     public Optional<LessonResponse> findResponseById(Long id) {
-        return findById(id).map(this::toResponse);
+        return findResponseById(id, null);
+    }
+
+    public Optional<LessonResponse> findResponseById(Long id, String language) {
+        return findById(id).map(lesson -> toResponse(lesson, language));
     }
 
     public Optional<GenerateAiExercisesResponse> generateAiExercisesForLesson(
@@ -97,12 +108,17 @@ public class LessonService {
     }
 
     public LessonSummaryResponse toSummaryResponse(Lesson lesson) {
+        return toSummaryResponse(lesson, null);
+    }
+
+    public LessonSummaryResponse toSummaryResponse(Lesson lesson, String language) {
+        LocalizedLessonContext localizedLesson = localizedLessonFor(lesson, language).orElse(null);
         List<?> exercises = exerciseService.findByLessonId(lesson.getId());
         return new LessonSummaryResponse(
             lesson.getId(),
             lesson.getPlanId(),
-            lesson.getTitle(),
-            lesson.getTopic(),
+            localizedLesson == null ? lesson.getTitle() : localizedLesson.lesson().title(),
+            localizedLesson == null ? lesson.getTopic() : localizedLesson.lesson().topic(),
             lesson.getOrderNumber(),
             LearningStatus.NOT_STARTED,
             0,
@@ -112,8 +128,13 @@ public class LessonService {
     }
 
     public LessonResponse toResponse(Lesson lesson) {
+        return toResponse(lesson, null);
+    }
+
+    public LessonResponse toResponse(Lesson lesson, String language) {
+        LocalizedLessonContext localizedLesson = localizedLessonFor(lesson, language).orElse(null);
         List<de.tum.aet.devops26.learning_service.dto.ExerciseResponse> exercises = exerciseService.findByLessonId(lesson.getId()).stream()
-            .map(exerciseService::toResponse)
+            .map(exercise -> exerciseService.toResponse(exercise, localizedExerciseFor(exercise, localizedLesson, language)))
             .toList();
         List<de.tum.aet.devops26.learning_service.dto.LessonContentBlock> contentBlocks = lessonContentBlockRepository
             .findByLessonIdOrderByOrderNumberAsc(lesson.getId()).stream()
@@ -123,8 +144,8 @@ public class LessonService {
         return new LessonResponse(
             lesson.getId(),
             lesson.getPlanId(),
-            lesson.getTitle(),
-            lesson.getTopic(),
+            localizedLesson == null ? lesson.getTitle() : localizedLesson.lesson().title(),
+            localizedLesson == null ? lesson.getTopic() : localizedLesson.lesson().topic(),
             lesson.getOrderNumber(),
             LearningStatus.NOT_STARTED,
             0,
@@ -146,4 +167,52 @@ public class LessonService {
             .text(contentBlock.getText())
             .points(List.of());
     }
+
+    private Optional<LocalizedLessonContext> localizedLessonFor(Lesson lesson, String language) {
+        return learningPlanRepository.findById(lesson.getPlanId())
+            .flatMap(plan -> defaultLearningPlanCatalog.findKeyByLocalizedTitle(plan.getTitle()))
+            .map(templateKey -> defaultLearningPlanCatalog.findLocalizedByKey(templateKey, language))
+            .filter(content -> lesson.getOrderNumber() != null
+                && lesson.getOrderNumber() > 0
+                && lesson.getOrderNumber() <= content.lessons().size())
+            .map(content -> new LocalizedLessonContext(
+                content,
+                content.lessons().get(lesson.getOrderNumber() - 1)
+            ));
+    }
+
+    private LocalizedExercise localizedExerciseFor(Exercise exercise, LocalizedLessonContext localizedLesson, String language) {
+        if (localizedLesson == null) {
+            return null;
+        }
+
+        List<Exercise> lessonExercises = exerciseService.findByLessonId(exercise.getLessonId());
+        int exerciseIndex = IntStream.range(0, lessonExercises.size())
+            .filter(index -> exercise.getId().equals(lessonExercises.get(index).getId()))
+            .findFirst()
+            .orElse(-1);
+
+        if (exerciseIndex < 0 || exerciseIndex >= localizedLesson.lesson().exercises().size()) {
+            return null;
+        }
+
+        var exerciseTemplate = localizedLesson.lesson().exercises().get(exerciseIndex);
+        return new LocalizedExercise(
+            exerciseTemplate.question(),
+            localizedLesson.content().defaultExpectedAnswer(),
+            localizedFormatFor(language),
+            exerciseTemplate.keywords()
+        );
+    }
+
+    private String localizedFormatFor(String language) {
+        return "German".equalsIgnoreCase(language == null ? "" : language.trim())
+            ? "Kurze schriftliche Antwort"
+            : null;
+    }
+
+    private record LocalizedLessonContext(
+        DefaultLearningPlanContent content,
+        DefaultLessonTemplate lesson
+    ) {}
 }

@@ -3,6 +3,9 @@ package de.tum.aet.devops26.learning_service.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,8 +25,11 @@ import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -45,6 +51,9 @@ class LearningPlanServiceTests {
     private ExerciseService exerciseService;
 
     @Mock
+    private DefaultLearningPlanCatalog defaultLearningPlanCatalog;
+
+    @Mock
     private LearningPlanSeeder learningPlanSeeder;
 
     @Mock
@@ -52,6 +61,24 @@ class LearningPlanServiceTests {
 
     @Mock
     private UserServiceClient userServiceClient;
+
+    @BeforeEach
+    void setUp() {
+        DefaultLearningPlanContent defaultTemplate = new DefaultLearningPlanContent(
+            LearningPlanSeeder.DEFAULT_TITLE,
+            "Fixed lessons for practicing professional job interview answers.",
+            "2 weeks",
+            "Prepare for a professional job interview",
+            "English",
+            "A2",
+            "Write a clear, professional answer using specific details and formal vocabulary.",
+            List.of()
+        );
+
+        lenient().when(defaultLearningPlanCatalog.findFallbackByKey("job-interview")).thenReturn(defaultTemplate);
+        lenient().when(defaultLearningPlanCatalog.templateKeys()).thenReturn(List.of("job-interview"));
+        lenient().when(defaultLearningPlanCatalog.findKeyByLocalizedTitle(any())).thenReturn(Optional.empty());
+    }
 
     @Test
     void createDefaultLearningPlanReturnsExistingDefaultPlan() {
@@ -73,7 +100,7 @@ class LearningPlanServiceTests {
 
         assertThat(response.getId()).isEqualTo(7L);
         assertThat(response.getTitle()).isEqualTo(LearningPlanSeeder.DEFAULT_TITLE);
-        verify(learningPlanSeeder, never()).createDefaultPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanSeeder, never()).createDefaultPlan(any(CreateDefaultLearningPlanRequest.class), any());
         verify(learningPlanSeeder, never()).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
         verify(learningPlanSeeder, never()).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
         verify(learningPlanRepository, never()).save(any(LearningPlan.class));
@@ -97,7 +124,7 @@ class LearningPlanServiceTests {
                 .orderNumber(1)
                 .build()
         ));
-        when(lessonService.toSummaryResponse(any(Lesson.class))).thenReturn(new LessonSummaryResponse(
+        when(lessonService.toSummaryResponse(any(Lesson.class), any())).thenReturn(new LessonSummaryResponse(
             201L,
             100L,
             "Interview Answers",
@@ -356,14 +383,14 @@ class LearningPlanServiceTests {
             .thenReturn(Optional.empty());
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
             .thenReturn(Optional.empty());
-        when(learningPlanSeeder.createDefaultPlan(request)).thenReturn(defaultPlan);
+        when(learningPlanSeeder.createDefaultPlan(request, "job-interview")).thenReturn(defaultPlan);
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
 
         LearningPlanResponse response = service.createDefaultLearningPlan(request);
 
         assertThat(response.getId()).isEqualTo(7L);
         assertThat(response.getTitle()).isEqualTo(LearningPlanSeeder.DEFAULT_TITLE);
-        verify(learningPlanSeeder).createDefaultPlan(request);
+        verify(learningPlanSeeder).createDefaultPlan(request, "job-interview");
         verify(learningPlanSeeder).createListeningPlan(request);
         verify(learningPlanSeeder).createSpeakingPlan(request);
     }
@@ -385,7 +412,8 @@ class LearningPlanServiceTests {
         List<LearningPlanResponse> responses = service.findResponsesByUserId(42L);
 
         assertThat(responses).extracting(LearningPlanResponse::getTitle).containsExactly("Custom Plan");
-        verify(learningPlanSeeder).createDefaultPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanSeeder, atLeastOnce())
+            .createDefaultPlan(any(CreateDefaultLearningPlanRequest.class), eq("job-interview"));
         verify(learningPlanSeeder).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
         verify(learningPlanSeeder).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
     }
@@ -395,6 +423,7 @@ class LearningPlanServiceTests {
             learningPlanRepository,
             lessonService,
             exerciseService,
+            defaultLearningPlanCatalog,
             learningPlanSeeder,
             genAiRagLearningPlanClient,
             userServiceClient

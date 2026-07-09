@@ -32,18 +32,21 @@ class LearningServiceClientTests {
     @Test
     void getExerciseDoesNotSendAuthorizationHeaderWhenAuthIsDisabled() throws IOException {
         AtomicReference<String> authorizationHeader = new AtomicReference<>();
-        LearningServiceClient client = newClient(false, Optional.empty(), authorizationHeader);
+        AtomicReference<String> query = new AtomicReference<>();
+        LearningServiceClient client = newClient(false, Optional.empty(), authorizationHeader, query);
 
         ExerciseContext exercise = client.getExercise(3L, 7L);
 
         assertThat(exercise.id()).isEqualTo(7L);
         assertThat(authorizationHeader.get()).isNull();
+        assertThat(query.get()).isNull();
     }
 
     @Test
     void getExerciseSendsAuthorizationHeaderWhenTokenExists() throws IOException {
         AtomicReference<String> authorizationHeader = new AtomicReference<>();
-        LearningServiceClient client = newClient(true, Optional.of("test-token"), authorizationHeader);
+        AtomicReference<String> query = new AtomicReference<>();
+        LearningServiceClient client = newClient(true, Optional.of("test-token"), authorizationHeader, query);
 
         ExerciseContext exercise = client.getExercise(3L, 7L);
 
@@ -52,9 +55,22 @@ class LearningServiceClientTests {
     }
 
     @Test
+    void getExerciseSendsLanguageQueryWhenProvided() throws IOException {
+        AtomicReference<String> authorizationHeader = new AtomicReference<>();
+        AtomicReference<String> query = new AtomicReference<>();
+        LearningServiceClient client = newClient(false, Optional.empty(), authorizationHeader, query);
+
+        ExerciseContext exercise = client.getExercise(3L, 7L, "German");
+
+        assertThat(exercise.id()).isEqualTo(7L);
+        assertThat(query.get()).isEqualTo("language=German");
+    }
+
+    @Test
     void getExerciseFailsClearlyWhenAuthIsEnabledAndTokenIsMissing() throws IOException {
         AtomicReference<String> authorizationHeader = new AtomicReference<>();
-        LearningServiceClient client = newClient(true, Optional.empty(), authorizationHeader);
+        AtomicReference<String> query = new AtomicReference<>();
+        LearningServiceClient client = newClient(true, Optional.empty(), authorizationHeader, query);
 
         assertThatThrownBy(() -> client.getExercise(3L, 7L))
             .isInstanceOf(ResponseStatusException.class)
@@ -66,11 +82,13 @@ class LearningServiceClientTests {
     private LearningServiceClient newClient(
         boolean authEnabled,
         Optional<String> bearerToken,
-        AtomicReference<String> authorizationHeader
+        AtomicReference<String> authorizationHeader,
+        AtomicReference<String> query
     ) throws IOException {
         server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/api/v1/lessons/3", exchange -> {
             authorizationHeader.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            query.set(exchange.getRequestURI().getQuery());
             sendJson(exchange);
         });
         server.start();

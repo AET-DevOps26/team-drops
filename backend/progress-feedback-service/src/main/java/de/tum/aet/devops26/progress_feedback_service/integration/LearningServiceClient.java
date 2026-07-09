@@ -30,6 +30,10 @@ public class LearningServiceClient {
     }
 
     public ExerciseContext getExercise(Long lessonId, Long exerciseId) {
+        return getExercise(lessonId, exerciseId, null);
+    }
+
+    public ExerciseContext getExercise(Long lessonId, Long exerciseId, String language) {
         Optional<String> bearerToken = currentBearerTokenResolver.resolveTokenValue();
         if (authEnabled && bearerToken.isEmpty()) {
             throw new ResponseStatusException(
@@ -39,7 +43,13 @@ public class LearningServiceClient {
         }
 
         try {
-            RequestHeadersSpec<?> request = restClient.get().uri("/api/v1/lessons/{lessonId}", lessonId);
+            RequestHeadersSpec<?> request = restClient.get().uri(uriBuilder -> {
+                var builder = uriBuilder.path("/api/v1/lessons/{lessonId}");
+                if (language != null && !language.isBlank()) {
+                    builder.queryParam("language", language);
+                }
+                return builder.build(lessonId);
+            });
             bearerToken.ifPresent(token -> request.header("Authorization", "Bearer " + token));
 
             LessonContext lesson = request.retrieve().body(LessonContext.class);

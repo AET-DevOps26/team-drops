@@ -20,8 +20,6 @@ import de.tum.aet.devops26.progress_feedback_service.service.UserAnswerService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,14 +40,18 @@ public class ProgressFeedbackServiceController implements ProgressFeedbackServic
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/api/v1/answers/user/{userId}")
-    public ResponseEntity<List<UserAnswerResponse>> getAnswersByUserId(@PathVariable Long userId) {
-        return ResponseEntity.ok(userAnswerService.findResponsesByUserId(userId));
+    @Override
+    public ResponseEntity<List<UserAnswerResponse>> getAnswersByUserId(
+        Long userId,
+        Long planId,
+        String targetLanguage
+    ) {
+        return ResponseEntity.ok(userAnswerService.findResponsesByUserId(userId, planId, targetLanguage));
     }
 
     @Override
-    public ResponseEntity<ProgressResponse> getProgressByUserId(Long userId) {
-        return progressRecordService.findResponseByUserId(userId)
+    public ResponseEntity<ProgressResponse> getProgressByUserId(Long userId, Long planId, String targetLanguage) {
+        return progressRecordService.findResponseByUserId(userId, planId, targetLanguage)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }

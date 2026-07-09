@@ -11,6 +11,7 @@ import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,12 +32,16 @@ class LearningPlanSeederTests {
     @Mock
     private ExerciseService exerciseService;
 
+    @Mock
+    private DefaultLearningPlanCatalog defaultLearningPlanCatalog;
+
     @Test
     void createSpeakingPlanSeedsGermanA2SpeakingLessonsAndExercises() {
         LearningPlanSeeder seeder = new LearningPlanSeeder(
             learningPlanRepository,
             lessonService,
-            exerciseService
+            exerciseService,
+            defaultLearningPlanCatalog
         );
         CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest()
             .userId(42L);
