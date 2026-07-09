@@ -191,3 +191,106 @@ def test_generate_rag_learning_plan_rejects_wrong_lesson_count(client, tmp_path)
 
     assert response.status_code == 502
     assert "lesson count outside requested range" in response.json()["message"]
+
+
+def test_generate_rag_learning_plan_replaces_generic_normalized_metadata(client, tmp_path):
+    chunks = [
+        RetrievedChunk(
+            text="The Grand Tour has scenic routes through Switzerland.",
+            score=0.75,
+            source="grand_tour_guide.pdf",
+            page=4,
+            chunk_index=0,
+        )
+    ]
+    llm_response = RagLearningPlanResponse.model_validate(
+        {
+            "lessons": [
+                {
+                    "order_number": 1,
+                    "content_blocks": ["Practice describing the Grand Tour route."],
+                    "exercises": [
+                        {
+                            "type": "speaking",
+                            "subtype": "speaking_prompt",
+                            "description": "Describe the route in one minute.",
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+
+    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
+        "app.routers.rag.query_topic", return_value=chunks
+    ), patch(
+        "app.routers.rag.get_structured_llm",
+        return_value=make_mock_structured_llm(llm_response),
+    ):
+        response = client.post(
+            "/api/v1/genai/rag/learning-plan",
+            json={
+                "topic": "Reisen in der Schweiz",
+                "learning_goal": "Prepare for a German job interview",
+                "target_language": "German",
+                "level": "A2",
+                "duration_weeks": 4,
+                "study_hours_per_week": 5,
+                "minimum_lessons": 1,
+                "maximum_lessons": 2,
+                "exercise_types": ["speaking"],
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["title"] == "Reisen in der Schweiz Learning Plan"
+    assert body["goal"] == "Prepare for a German job interview"
+    assert body["duration"] == "4 weeks"
+    assert body["lessons"][0]["title"] == "Lesson 1: Reisen in der Schweiz"
+    assert body["lessons"][0]["topic"] == "Reisen in der Schweiz"
+
+
+def test_rag_learning_plan_schema_normalizes_live_llm_near_miss_shape():
+    plan = RagLearningPlanResponse.model_validate(
+        {
+            "topic": "Reisen in der Schweiz",
+            "learning_goal": "Prepare for a German job interview",
+            "target_language": "German",
+            "level": "A2",
+            "duration_weeks": 4,
+            "lessons": [
+                {
+                    "order_number": 1,
+                    "content_blocks": [
+                        {
+                            "type": "text",
+                            "content": "The Grand Tour is a Swiss travel route with useful planning tips.",
+                        }
+                    ],
+                    "exercises": [
+                        {
+                            "type": "reading",
+                            "subtype": "fill_in_blank",
+                            "description": "The ticket costs ___ CHF.",
+                            "answer": "20",
+                        }
+                    ],
+                }
+            ],
+        }
+    )
+
+    assert plan.title == "Reisen in der Schweiz Learning Plan"
+    assert plan.goal == "Prepare for a German job interview"
+    assert plan.language == "German"
+    assert plan.duration == "4 weeks"
+    assert plan.lessons[0].title == "Lesson 1: Reisen in der Schweiz"
+    assert plan.lessons[0].summary == "The Grand Tour is a Swiss travel route with useful planning tips."
+    assert plan.lessons[0].content_blocks == [
+        "The Grand Tour is a Swiss travel route with useful planning tips."
+    ]
+    assert plan.lessons[0].exercises[0].type == "writing"
+    assert plan.lessons[0].exercises[0].question == "The ticket costs ___ CHF."
+    assert plan.lessons[0].exercises[0].expected_answer == "20"
+    assert plan.lessons[0].exercises[0].difficulty == "A2"

@@ -165,7 +165,11 @@ async def generate_rag_learning_plan(
             ),
         )
 
-    return result.model_copy(update={"sources": [_source_from_chunk(chunk) for chunk in chunks]})
+    return _complete_learning_plan_defaults(
+        result,
+        body,
+        sources=[_source_from_chunk(chunk) for chunk in chunks],
+    )
 
 
 def _rag_doc_db() -> Path:
@@ -203,6 +207,59 @@ def _source_from_chunk(chunk) -> RagSource:
         chunk_index=chunk.chunk_index,
         score=chunk.score,
         text=chunk.text,
+    )
+
+
+def _complete_learning_plan_defaults(
+    result: RagLearningPlanResponse,
+    body: RagLearningPlanRequest,
+    *,
+    sources: list[RagSource],
+) -> RagLearningPlanResponse:
+    title = (
+        f"{body.topic} Learning Plan"
+        if result.title == "RAG topic Learning Plan"
+        else result.title
+    )
+    description = (
+        f"A RAG-grounded learning plan for {body.learning_goal}."
+        if result.description == "A RAG-grounded learning plan for RAG topic."
+        else result.description
+    )
+    goal = body.learning_goal if result.goal == "RAG topic" else result.goal
+    duration = (
+        f"{body.duration_weeks} weeks"
+        if result.duration == "Generated plan"
+        else result.duration
+    )
+
+    lessons = []
+    for lesson in result.lessons:
+        lesson_title = lesson.title
+        if lesson_title == f"Lesson {lesson.order_number}: RAG topic":
+            lesson_title = f"Lesson {lesson.order_number}: {body.topic}"
+
+        lesson_topic = lesson.topic
+        if lesson_topic == "RAG topic":
+            lesson_topic = body.topic
+        elif lesson_topic.startswith("RAG topic - "):
+            lesson_topic = f"{body.topic}{lesson_topic.removeprefix('RAG topic')}"
+
+        lessons.append(
+            lesson.model_copy(update={"title": lesson_title, "topic": lesson_topic})
+        )
+
+    return result.model_copy(
+        update={
+            "title": title,
+            "description": description,
+            "goal": goal,
+            "language": body.target_language,
+            "level": body.level,
+            "duration": duration,
+            "lessons": lessons,
+            "sources": sources,
+        }
     )
 
 

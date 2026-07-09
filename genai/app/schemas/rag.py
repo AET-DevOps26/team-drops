@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class RagQueryRequest(BaseModel):
@@ -99,6 +99,39 @@ class RagLearningPlanExercise(BaseModel):
     expected_answer: str
     difficulty: str
 
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_llm_shape(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+
+        normalized = dict(data)
+        if not normalized.get("question"):
+            normalized["question"] = normalized.get("prompt") or normalized.get("description")
+        if not normalized.get("expected_answer"):
+            normalized["expected_answer"] = (
+                normalized.get("answer")
+                or normalized.get("expectedAnswer")
+                or "Open-ended answer grounded in the lesson content."
+            )
+        if not normalized.get("difficulty"):
+            normalized["difficulty"] = normalized.get("level") or "A2"
+
+        subtype = normalized.get("subtype")
+        type_for_subtype = {
+            "multiple_choice": "reading",
+            "listening_choice": "listening",
+            "speaking_prompt": "speaking",
+            "translation": "writing",
+            "fill_in_blank": "writing",
+            "sentence_building": "writing",
+            "free_text": "writing",
+        }
+        if subtype in type_for_subtype:
+            normalized["type"] = type_for_subtype[subtype]
+
+        return normalized
+
 
 class RagLearningPlanLesson(BaseModel):
     title: str
@@ -107,6 +140,33 @@ class RagLearningPlanLesson(BaseModel):
     order_number: int = Field(..., ge=1)
     content_blocks: list[str] = Field(default_factory=list)
     exercises: list[RagLearningPlanExercise] = Field(..., min_length=1)
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_llm_shape(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+
+        normalized = dict(data)
+        order_number = normalized.get("order_number") or 1
+        topic = normalized.get("topic") or normalized.get("_plan_topic") or "RAG topic"
+        content_blocks = _normalize_content_blocks(normalized.get("content_blocks"))
+        first_block = content_blocks[0] if content_blocks else ""
+
+        normalized["content_blocks"] = content_blocks
+        normalized.setdefault("title", f"Lesson {order_number}: {topic}")
+        normalized.setdefault("topic", topic)
+        normalized.setdefault("summary", first_block or normalized["title"])
+
+        level = normalized.get("_plan_level")
+        exercises = []
+        for exercise in normalized.get("exercises") or []:
+            if isinstance(exercise, dict) and level and not exercise.get("level"):
+                exercise = {**exercise, "level": level}
+            exercises.append(exercise)
+        normalized["exercises"] = exercises
+
+        return normalized
 
 
 class RagLearningPlanResponse(BaseModel):
@@ -118,3 +178,63 @@ class RagLearningPlanResponse(BaseModel):
     duration: str
     lessons: list[RagLearningPlanLesson] = Field(..., min_length=1)
     sources: list[RagSource] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_llm_shape(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+
+        normalized = dict(data)
+        topic = normalized.get("topic") or "RAG topic"
+        learning_goal = normalized.get("learning_goal") or normalized.get("goal") or topic
+        language = normalized.get("target_language") or normalized.get("language") or "German"
+        level = normalized.get("level") or "A2"
+        duration_weeks = normalized.get("duration_weeks")
+
+        normalized.setdefault("title", f"{topic} Learning Plan")
+        normalized.setdefault(
+            "description",
+            f"A RAG-grounded learning plan for {learning_goal}.",
+        )
+        normalized.setdefault("goal", learning_goal)
+        normalized.setdefault("language", language)
+        normalized.setdefault("level", level)
+        normalized.setdefault(
+            "duration",
+            f"{duration_weeks} weeks" if duration_weeks else "Generated plan",
+        )
+
+        lessons = []
+        for lesson in normalized.get("lessons") or []:
+            if isinstance(lesson, dict):
+                lesson = {**lesson, "_plan_topic": topic, "_plan_level": level}
+            lessons.append(lesson)
+        normalized["lessons"] = lessons
+
+        return normalized
+
+
+def _normalize_content_blocks(content_blocks: Any) -> list[str]:
+    if not content_blocks:
+        return []
+
+    normalized = []
+    for block in content_blocks:
+        if isinstance(block, str):
+            text = block
+        elif isinstance(block, dict):
+            text = (
+                block.get("text")
+                or block.get("content")
+                or block.get("summary")
+                or block.get("title")
+                or ""
+            )
+        else:
+            text = str(block)
+
+        if text.strip():
+            normalized.append(text.strip())
+
+    return normalized
