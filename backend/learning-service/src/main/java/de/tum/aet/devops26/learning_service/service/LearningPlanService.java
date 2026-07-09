@@ -150,7 +150,7 @@ public class LearningPlanService {
                 plan.getUserId(),
                 localizedTemplate == null ? plan.getTitle() : localizedTemplate.title(),
                 localizedTemplate == null ? plan.getDescription() : localizedTemplate.description(),
-                localizedTemplate == null ? plan.getGoal() : localizedTemplate.defaultGoal(),
+                plan.getGoal(),
                 localizedTemplate == null ? plan.getLanguage() : localizedTemplate.defaultLanguage(),
                 plan.getLevel(),
                 localizedTemplate == null ? plan.getDuration() : localizedTemplate.duration(),
