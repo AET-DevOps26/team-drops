@@ -10,6 +10,7 @@ import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClie
 import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagExercise;
 import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagLearningPlanResponse;
 import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagLesson;
+import de.tum.aet.devops26.learning_service.integration.UserServiceClient;
 import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
@@ -36,6 +37,7 @@ public class LearningPlanService {
     private final ExerciseService exerciseService;
     private final LearningPlanSeeder learningPlanSeeder;
     private final GenAiRagLearningPlanClient genAiRagLearningPlanClient;
+    private final UserServiceClient userServiceClient;
 
     /**
      * Ensures the fixed plans exist for the user. Each plan is created in its own
@@ -53,11 +55,12 @@ public class LearningPlanService {
     @Transactional
     public LearningPlanResponse createAiLearningPlan(CreateAiLearningPlanRequest request) {
         validateAiLearningPlanRequest(request);
+        Long resolvedUserId = userServiceClient.resolveSubmittedUserId(request.getUserId());
         RagLearningPlanResponse generatedPlan = genAiRagLearningPlanClient.generate(request);
         List<ValidatedRagLesson> lessons = validateGeneratedPlan(generatedPlan);
 
         LearningPlan plan = learningPlanRepository.save(LearningPlan.builder()
-            .userId(request.getUserId())
+            .userId(resolvedUserId)
             .title(requiredText(generatedPlan.title(), "title"))
             .description(requiredText(generatedPlan.description(), "description"))
             .goal(requiredText(generatedPlan.goal(), "goal"))

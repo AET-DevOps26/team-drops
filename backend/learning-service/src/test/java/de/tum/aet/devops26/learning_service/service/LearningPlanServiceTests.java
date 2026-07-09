@@ -17,6 +17,7 @@ import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClie
 import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagExercise;
 import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagLearningPlanResponse;
 import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagLesson;
+import de.tum.aet.devops26.learning_service.integration.UserServiceClient;
 import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
@@ -48,6 +49,9 @@ class LearningPlanServiceTests {
 
     @Mock
     private GenAiRagLearningPlanClient genAiRagLearningPlanClient;
+
+    @Mock
+    private UserServiceClient userServiceClient;
 
     @Test
     void createDefaultLearningPlanReturnsExistingDefaultPlan() {
@@ -82,6 +86,7 @@ class LearningPlanServiceTests {
         LearningPlanService service = newService();
         configureGeneratedPlanSaves();
         CreateAiLearningPlanRequest request = aiRequest();
+        when(userServiceClient.resolveSubmittedUserId(42L)).thenReturn(42L);
         when(genAiRagLearningPlanClient.generate(request)).thenReturn(generatedPlan());
         when(lessonService.findByPlanId(100L)).thenReturn(List.of(
             Lesson.builder()
@@ -112,6 +117,7 @@ class LearningPlanServiceTests {
         ArgumentCaptor<LearningPlan> planCaptor = ArgumentCaptor.forClass(LearningPlan.class);
         verify(learningPlanRepository).save(planCaptor.capture());
         assertThat(planCaptor.getValue().getTitle()).isEqualTo("Generated German Interview Plan");
+        assertThat(planCaptor.getValue().getUserId()).isEqualTo(42L);
         assertThat(planCaptor.getValue().getDescription()).isEqualTo("Grounded RAG plan");
         assertThat(planCaptor.getValue().getGoal()).isEqualTo("Prepare for an interview");
         assertThat(planCaptor.getValue().getLanguage()).isEqualTo("German");
@@ -141,13 +147,34 @@ class LearningPlanServiceTests {
             .hasMessageContaining("minimum_lessons must be less than or equal to maximum_lessons");
 
         verify(genAiRagLearningPlanClient, never()).generate(any(CreateAiLearningPlanRequest.class));
+        verify(userServiceClient, never()).resolveSubmittedUserId(any());
         verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+    }
+
+    @Test
+    void createAiLearningPlanRejectsMismatchedAuthenticatedUserBeforeCallingGenAi() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().userId(99L);
+        when(userServiceClient.resolveSubmittedUserId(99L)).thenThrow(new ResponseStatusException(
+            HttpStatus.FORBIDDEN,
+            "Submitted user_id does not match the authenticated user."
+        ));
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("Submitted user_id does not match");
+
+        verify(genAiRagLearningPlanClient, never()).generate(any(CreateAiLearningPlanRequest.class));
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+        verify(lessonService, never()).save(any(Lesson.class));
+        verify(exerciseService, never()).save(any(Exercise.class));
     }
 
     @Test
     void createAiLearningPlanDoesNotPersistWhenGenAiFails() {
         LearningPlanService service = newService();
         CreateAiLearningPlanRequest request = aiRequest();
+        when(userServiceClient.resolveSubmittedUserId(42L)).thenReturn(42L);
         when(genAiRagLearningPlanClient.generate(request)).thenThrow(new ResponseStatusException(
             HttpStatus.BAD_GATEWAY,
             "GenAI unavailable"
@@ -189,6 +216,7 @@ class LearningPlanServiceTests {
             )),
             List.of()
         );
+        when(userServiceClient.resolveSubmittedUserId(42L)).thenReturn(42L);
         when(genAiRagLearningPlanClient.generate(request)).thenReturn(plan);
 
         assertThatThrownBy(() -> service.createAiLearningPlan(request))
@@ -252,7 +280,8 @@ class LearningPlanServiceTests {
             lessonService,
             exerciseService,
             learningPlanSeeder,
-            genAiRagLearningPlanClient
+            genAiRagLearningPlanClient,
+            userServiceClient
         );
     }
 
