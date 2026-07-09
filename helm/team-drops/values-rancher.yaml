@@ -28,7 +28,7 @@ keycloak:
       memory: 384Mi
     limits:
       cpu: 300m
-      memory: 768Mi
+      memory: 1Gi
 
 frontend:
   keycloakUrl: https://team-drops.stud.k8s.aet.cit.tum.de
@@ -38,7 +38,7 @@ frontend:
       memory: 32Mi
     limits:
       cpu: 50m
-      memory: 96Mi
+      memory: 128Mi
 
 services:
   user:
@@ -48,7 +48,7 @@ services:
         memory: 160Mi
       limits:
         cpu: 150m
-        memory: 256Mi
+        memory: 384Mi
   learning:
     resources:
       requests:
@@ -56,7 +56,7 @@ services:
         memory: 160Mi
       limits:
         cpu: 150m
-        memory: 256Mi
+        memory: 384Mi
   progress:
     resources:
       requests:
@@ -64,7 +64,7 @@ services:
         memory: 160Mi
       limits:
         cpu: 150m
-        memory: 256Mi
+        memory: 384Mi
 
 postgres:
   resources:
