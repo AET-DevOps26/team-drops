@@ -26,7 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class GenAiRagLearningPlanClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GenAiRagLearningPlanClient.class);
-    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(90);
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(180);
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;

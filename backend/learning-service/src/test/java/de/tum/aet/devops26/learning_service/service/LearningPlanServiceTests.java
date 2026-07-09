@@ -93,7 +93,7 @@ class LearningPlanServiceTests {
                 .id(201L)
                 .planId(100L)
                 .title("Interview Answers")
-                .topic("STAR answers - Structure answers with examples.")
+                .topic("STAR answers")
                 .orderNumber(1)
                 .build()
         ));
@@ -101,7 +101,7 @@ class LearningPlanServiceTests {
             201L,
             100L,
             "Interview Answers",
-            "STAR answers - Structure answers with examples.",
+            "STAR answers",
             1,
             LearningStatus.NOT_STARTED,
             0,
@@ -127,9 +127,12 @@ class LearningPlanServiceTests {
         ArgumentCaptor<Lesson> lessonCaptor = ArgumentCaptor.forClass(Lesson.class);
         verify(lessonService).save(lessonCaptor.capture());
         assertThat(lessonCaptor.getValue().getTitle()).isEqualTo("Interview Answers");
-        assertThat(lessonCaptor.getValue().getTopic()).isEqualTo("STAR answers - Structure answers with examples.");
+        assertThat(lessonCaptor.getValue().getTopic()).isEqualTo("STAR answers");
         assertThat(lessonCaptor.getValue().getOrderNumber()).isEqualTo(1);
-        verify(lessonService).saveContentBlocks(201L, List.of("Use situation, task, action, result."));
+        verify(lessonService).saveContentBlocks(201L, List.of(
+            "Structure answers with examples.",
+            "Use situation, task, action, result."
+        ));
 
         ArgumentCaptor<Exercise> exerciseCaptor = ArgumentCaptor.forClass(Exercise.class);
         verify(exerciseService).save(exerciseCaptor.capture());

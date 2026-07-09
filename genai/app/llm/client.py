@@ -22,7 +22,10 @@ def llm_configuration_status() -> dict:
 
 
 def get_structured_llm(schema):
-    return get_llm().with_structured_output(schema, method="json_mode")
+    llm = get_llm()
+    if settings.llm_provider.lower() == "openai":
+        return llm.with_structured_output(schema, method="json_schema", strict=True)
+    return llm.with_structured_output(schema, method="json_schema")
 
 
 @lru_cache(maxsize=1)

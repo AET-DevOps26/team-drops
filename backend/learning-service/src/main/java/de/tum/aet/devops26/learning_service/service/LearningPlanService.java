@@ -15,6 +15,7 @@ import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -273,23 +274,28 @@ public class LearningPlanService {
 
         return new ValidatedRagLesson(
             requiredText(lesson.title(), "lesson title"),
-            requiredText(lesson.topic(), "lesson topic") + summarySuffix(lesson.summary()),
+            requiredText(lesson.topic(), "lesson topic"),
             lesson.orderNumber(),
-            normalizedContentBlocks(lesson.contentBlocks()),
+            normalizedContentBlocks(lesson.summary(), lesson.contentBlocks()),
             lesson.exercises().stream()
                 .map(exercise -> validateExercise(exercise, requestedExerciseTypes))
                 .toList()
         );
     }
 
-    private List<String> normalizedContentBlocks(List<String> contentBlocks) {
-        if (contentBlocks == null) {
-            return List.of();
+    private List<String> normalizedContentBlocks(String summary, List<String> contentBlocks) {
+        List<String> normalized = new ArrayList<>();
+        if (summary != null && !summary.isBlank()) {
+            normalized.add(summary.trim());
         }
-        return contentBlocks.stream()
-            .filter(contentBlock -> contentBlock != null && !contentBlock.isBlank())
-            .map(String::trim)
-            .toList();
+        if (contentBlocks != null) {
+            contentBlocks.stream()
+                .filter(contentBlock -> contentBlock != null && !contentBlock.isBlank())
+                .map(String::trim)
+                .filter(contentBlock -> normalized.isEmpty() || !contentBlock.equals(normalized.getLast()))
+                .forEach(normalized::add);
+        }
+        return normalized;
     }
 
     private ValidatedRagExercise validateExercise(RagExercise exercise, Set<ExerciseType> requestedExerciseTypes) {
@@ -360,10 +366,6 @@ public class LearningPlanService {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "GenAI returned blank " + field);
         }
         return value;
-    }
-
-    private String summarySuffix(String summary) {
-        return summary == null || summary.isBlank() ? "" : " - " + summary;
     }
 
     private record ValidatedRagLesson(
