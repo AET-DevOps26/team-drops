@@ -11,15 +11,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tum.aet.devops26.progress_feedback_service.dto.AnswerClientContext;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerRequest;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerResponse;
+import de.tum.aet.devops26.progress_feedback_service.dto.UserAnswerResponse;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient.WritingEvaluationResponse;
 import de.tum.aet.devops26.progress_feedback_service.integration.LearningServiceClient;
 import de.tum.aet.devops26.progress_feedback_service.integration.LearningServiceClient.ExerciseContext;
 import de.tum.aet.devops26.progress_feedback_service.model.Feedback;
+import de.tum.aet.devops26.progress_feedback_service.model.ProgressRecord;
 import de.tum.aet.devops26.progress_feedback_service.model.UserAnswer;
 import de.tum.aet.devops26.progress_feedback_service.repository.FeedbackRepository;
 import de.tum.aet.devops26.progress_feedback_service.repository.UserAnswerRepository;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -98,14 +101,18 @@ class UserAnswerServiceTests {
             feedback.setCreatedAt(Instant.parse("2026-06-01T10:00:00Z"));
             return feedback;
         });
+        when(progressRecordService.recordSubmittedAnswer(42L, 1L, "French", 85))
+            .thenReturn(ProgressRecord.builder().averageScore(85.0).build());
 
         SubmitAnswerResponse response = service.submitAnswer(request);
 
         assertThat(response.getAnswer().getScore()).isEqualTo(85);
+        assertThat(response.getAnswer().getPlanId()).isEqualTo(1L);
+        assertThat(response.getAnswer().getTargetLanguage()).isEqualTo("French");
         assertThat(response.getFeedback()).isNotNull();
         assertThat(response.getFeedback().getWeakArea()).isEqualTo("verb conjugation");
         assertThat(response.getFeedback().getCorrectedAnswer()).isEqualTo("Je voudrais un cafe");
-        verify(progressRecordService).recordSubmittedAnswer(42L, 85);
+        verify(progressRecordService).recordSubmittedAnswer(42L, 1L, "French", 85);
     }
 
     @Test
@@ -152,13 +159,67 @@ class UserAnswerServiceTests {
             feedback.setCreatedAt(Instant.parse("2026-06-01T10:00:00Z"));
             return feedback;
         });
+        when(progressRecordService.recordSubmittedAnswer(42L, 1L, "German", 50))
+            .thenReturn(ProgressRecord.builder().averageScore(50.0).build());
 
         SubmitAnswerResponse response = service.submitAnswer(request);
 
         assertThat(response.getAnswer().getScore()).isEqualTo(50);
+        assertThat(response.getAnswer().getPlanId()).isEqualTo(1L);
+        assertThat(response.getAnswer().getTargetLanguage()).isEqualTo("German");
         assertThat(response.getFeedback()).isNotNull();
         assertThat(response.getFeedback().getMessage()).isEqualTo("You got 1 out of 2 correct (50%).");
         verify(genAiWritingClient, never()).evaluate(any());
-        verify(progressRecordService).recordSubmittedAnswer(42L, 50);
+        verify(progressRecordService).recordSubmittedAnswer(42L, 1L, "German", 50);
+    }
+
+    @Test
+    void findResponsesByUserIdFiltersByPlanAndLanguageWithLegacyFallback() {
+        UserAnswerService service = new UserAnswerService(
+            userAnswerRepository,
+            feedbackRepository,
+            progressRecordService,
+            learningServiceClient,
+            genAiWritingClient,
+            listeningContentService,
+            objectMapper
+        );
+        UserAnswer germanAnswer = UserAnswer.builder()
+            .id(1L)
+            .userId(42L)
+            .exerciseId(7L)
+            .planId(1L)
+            .targetLanguage("German")
+            .answerText("Antwort")
+            .score(80.0)
+            .submittedAt(Instant.parse("2026-06-01T10:00:00Z"))
+            .build();
+        UserAnswer englishAnswer = UserAnswer.builder()
+            .id(2L)
+            .userId(42L)
+            .exerciseId(8L)
+            .planId(1L)
+            .targetLanguage("English")
+            .answerText("Answer")
+            .score(70.0)
+            .submittedAt(Instant.parse("2026-06-01T11:00:00Z"))
+            .build();
+        UserAnswer legacyAnswer = UserAnswer.builder()
+            .id(3L)
+            .userId(42L)
+            .exerciseId(9L)
+            .planId(1L)
+            .answerText("Legacy")
+            .score(60.0)
+            .submittedAt(Instant.parse("2026-06-01T12:00:00Z"))
+            .build();
+        when(userAnswerRepository.findByUserId(42L))
+            .thenReturn(List.of(germanAnswer, englishAnswer, legacyAnswer));
+
+        List<UserAnswerResponse> responses = service.findResponsesByUserId(42L, 1L, "German");
+
+        assertThat(responses).extracting(UserAnswerResponse::getId)
+            .containsExactly(1L, 3L);
+        assertThat(responses.get(0).getTargetLanguage()).isEqualTo("German");
     }
 }
