@@ -16,7 +16,9 @@ import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +65,7 @@ public class LearningPlanService {
         validateAiLearningPlanRequest(request);
         Long resolvedUserId = userServiceClient.resolveSubmittedUserId(request.getUserId());
         RagLearningPlanResponse generatedPlan = genAiRagLearningPlanClient.generate(request);
-        List<ValidatedRagLesson> lessons = validateGeneratedPlan(generatedPlan);
+        List<ValidatedRagLesson> lessons = validateGeneratedPlan(generatedPlan, request);
 
         LearningPlan plan = learningPlanRepository.save(LearningPlan.builder()
             .userId(resolvedUserId)
@@ -226,18 +228,44 @@ public class LearningPlanService {
         }
     }
 
-    private List<ValidatedRagLesson> validateGeneratedPlan(RagLearningPlanResponse generatedPlan) {
+    private List<ValidatedRagLesson> validateGeneratedPlan(
+        RagLearningPlanResponse generatedPlan,
+        CreateAiLearningPlanRequest request
+    ) {
         if (generatedPlan == null || generatedPlan.lessons() == null || generatedPlan.lessons().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "GenAI returned an empty RAG learning plan");
         }
 
-        return generatedPlan.lessons().stream()
-            .map(this::validateLesson)
+        int lessonCount = generatedPlan.lessons().size();
+        if (lessonCount < request.getMinimumLessons() || lessonCount > request.getMaximumLessons()) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_GATEWAY,
+                "GenAI returned lesson count outside requested bounds"
+            );
+        }
+
+        Set<ExerciseType> requestedExerciseTypes = EnumSet.copyOf(request.getExerciseTypes());
+        List<ValidatedRagLesson> lessons = generatedPlan.lessons().stream()
+            .map(lesson -> validateLesson(lesson, requestedExerciseTypes))
             .sorted(Comparator.comparing(ValidatedRagLesson::orderNumber))
             .toList();
+        validateContiguousLessonOrder(lessons);
+        return lessons;
     }
 
-    private ValidatedRagLesson validateLesson(RagLesson lesson) {
+    private void validateContiguousLessonOrder(List<ValidatedRagLesson> lessons) {
+        for (int index = 0; index < lessons.size(); index++) {
+            int expectedOrder = index + 1;
+            if (lessons.get(index).orderNumber() != expectedOrder) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "GenAI returned duplicate, missing, or non-contiguous lesson order numbers"
+                );
+            }
+        }
+    }
+
+    private ValidatedRagLesson validateLesson(RagLesson lesson, Set<ExerciseType> requestedExerciseTypes) {
         if (lesson == null || lesson.orderNumber() == null || lesson.exercises() == null || lesson.exercises().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "GenAI returned a malformed lesson");
         }
@@ -246,16 +274,25 @@ public class LearningPlanService {
             requiredText(lesson.title(), "lesson title"),
             requiredText(lesson.topic(), "lesson topic") + summarySuffix(lesson.summary()),
             lesson.orderNumber(),
-            lesson.exercises().stream().map(this::validateExercise).toList()
+            lesson.exercises().stream()
+                .map(exercise -> validateExercise(exercise, requestedExerciseTypes))
+                .toList()
         );
     }
 
-    private ValidatedRagExercise validateExercise(RagExercise exercise) {
+    private ValidatedRagExercise validateExercise(RagExercise exercise, Set<ExerciseType> requestedExerciseTypes) {
         if (exercise == null) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "GenAI returned a malformed exercise");
         }
 
         ExerciseType type = parseExerciseType(exercise.type());
+        if (!requestedExerciseTypes.contains(type)) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_GATEWAY,
+                "GenAI returned an exercise type that was not requested: " + exercise.type()
+            );
+        }
+
         ExerciseSubtype subtype = parseExerciseSubtype(exercise.subtype());
         if (typeForSubtype(subtype) != type) {
             throw new ResponseStatusException(

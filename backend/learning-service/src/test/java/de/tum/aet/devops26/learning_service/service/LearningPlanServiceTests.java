@@ -250,6 +250,97 @@ class LearningPlanServiceTests {
     }
 
     @Test
+    void createAiLearningPlanRejectsGeneratedLessonCountBelowRequestedMinimumBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(2).maximumLessons(4);
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            generatedPlan(),
+            "lesson count outside requested bounds"
+        );
+    }
+
+    @Test
+    void createAiLearningPlanRejectsGeneratedLessonCountAboveRequestedMaximumBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(1).maximumLessons(1);
+        RagLearningPlanResponse plan = generatedPlanWithLessons(
+            generatedLesson(1, "Interview Answers"),
+            generatedLesson(2, "Interview Follow-up")
+        );
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            plan,
+            "lesson count outside requested bounds"
+        );
+    }
+
+    @Test
+    void createAiLearningPlanRejectsDuplicateGeneratedLessonOrderBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(2).maximumLessons(4);
+        RagLearningPlanResponse plan = generatedPlanWithLessons(
+            generatedLesson(1, "Interview Answers"),
+            generatedLesson(1, "Interview Follow-up")
+        );
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            plan,
+            "duplicate, missing, or non-contiguous lesson order numbers"
+        );
+    }
+
+    @Test
+    void createAiLearningPlanRejectsGeneratedLessonOrderGapBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(2).maximumLessons(4);
+        RagLearningPlanResponse plan = generatedPlanWithLessons(
+            generatedLesson(1, "Interview Answers"),
+            generatedLesson(3, "Interview Follow-up")
+        );
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            plan,
+            "duplicate, missing, or non-contiguous lesson order numbers"
+        );
+    }
+
+    @Test
+    void createAiLearningPlanRejectsUnrequestedGeneratedExerciseTypeBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().exerciseTypes(List.of(ExerciseType.WRITING));
+        RagLearningPlanResponse plan = generatedPlanWithLessons(new RagLesson(
+            "Speaking Practice",
+            "Interview speaking",
+            "Answer out loud.",
+            1,
+            List.of(),
+            List.of(new RagExercise(
+                "speaking",
+                "speaking_prompt",
+                "Answer this out loud.",
+                "A spoken answer.",
+                "B1"
+            ))
+        ));
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            plan,
+            "exercise type that was not requested"
+        );
+    }
+
+    @Test
     void createDefaultLearningPlanReturnsDefaultPlanAndSeedsMissingListeningAndSpeakingPlans() {
         LearningPlanService service = newService();
         CreateDefaultLearningPlanRequest request = request();
@@ -328,6 +419,24 @@ class LearningPlanServiceTests {
         verify(learningPlanRepository, never()).save(any(LearningPlan.class));
     }
 
+    private void assertGeneratedPlanRejectedBeforePersisting(
+        LearningPlanService service,
+        CreateAiLearningPlanRequest request,
+        RagLearningPlanResponse generatedPlan,
+        String expectedMessage
+    ) {
+        when(userServiceClient.resolveSubmittedUserId(42L)).thenReturn(42L);
+        when(genAiRagLearningPlanClient.generate(request)).thenReturn(generatedPlan);
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining(expectedMessage);
+
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+        verify(lessonService, never()).save(any(Lesson.class));
+        verify(exerciseService, never()).save(any(Exercise.class));
+    }
+
     private LearningPlan fixedPlan(Long id, String title) {
         return LearningPlan.builder()
             .id(id)
@@ -376,6 +485,10 @@ class LearningPlanServiceTests {
     }
 
     private RagLearningPlanResponse generatedPlan() {
+        return generatedPlanWithLessons(generatedLesson(1, "Interview Answers"));
+    }
+
+    private RagLearningPlanResponse generatedPlanWithLessons(RagLesson... lessons) {
         return new RagLearningPlanResponse(
             "Generated German Interview Plan",
             "Grounded RAG plan",
@@ -383,21 +496,25 @@ class LearningPlanServiceTests {
             "German",
             "B1",
             "3 weeks",
-            List.of(new RagLesson(
-                "Interview Answers",
-                "STAR answers",
-                "Structure answers with examples.",
-                1,
-                List.of("Use situation, task, action, result."),
-                List.of(new RagExercise(
-                    "writing",
-                    "free_text",
-                    "Write a STAR answer.",
-                    "A structured answer.",
-                    "B1"
-                ))
-            )),
+            List.of(lessons),
             List.of()
+        );
+    }
+
+    private RagLesson generatedLesson(Integer orderNumber, String title) {
+        return new RagLesson(
+            title,
+            "STAR answers",
+            "Structure answers with examples.",
+            orderNumber,
+            List.of("Use situation, task, action, result."),
+            List.of(new RagExercise(
+                "writing",
+                "free_text",
+                "Write a STAR answer.",
+                "A structured answer.",
+                "B1"
+            ))
         );
     }
 }
