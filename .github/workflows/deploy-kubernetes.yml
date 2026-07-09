@@ -64,7 +64,7 @@ jobs:
             -f helm/team-drops/values-rancher.yaml \
             --set image.tag="${{ steps.image-tag.outputs.value }}" \
             --set genai.llmApiKey="${{ secrets.LLM_API_KEY }}" \
-            --force \
+            --force-conflicts \
             --wait \
             --timeout 10m
 
