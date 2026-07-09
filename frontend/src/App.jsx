@@ -10,6 +10,7 @@ import {
   getUserProfile,
   getUserAnswers,
   submitAnswer,
+  submitSpeakingAnswer,
   updateUserProfile,
 } from './api/client';
 import {
@@ -79,6 +80,9 @@ const translations = {
     topLessons: 'Top 3 lessons',
     noOngoing: 'No ongoing lessons yet',
     noFinished: 'No finished lessons yet',
+    statusNotStarted: 'Not started',
+    statusOngoing: 'Ongoing',
+    statusFinished: 'Finished',
     personalProfile: 'Personal profile',
     accountDetails: 'View and edit account details',
     appearance: 'Light / dark mode',
@@ -129,6 +133,9 @@ const translations = {
     topLessons: 'Top 3 Lektionen',
     noOngoing: 'Noch keine laufenden Lektionen',
     noFinished: 'Noch keine abgeschlossenen Lektionen',
+    statusNotStarted: 'Noch nicht begonnen',
+    statusOngoing: 'In Bearbeitung',
+    statusFinished: 'Abgeschlossen',
     personalProfile: 'Persönliches Profil',
     accountDetails: 'Kontodaten anzeigen und bearbeiten',
     appearance: 'Hell- / Dunkelmodus',
@@ -179,6 +186,9 @@ const translations = {
     topLessons: 'Top 3 lecons',
     noOngoing: 'Aucune lecon en cours',
     noFinished: 'Aucune lecon terminee',
+    statusNotStarted: 'Pas commence',
+    statusOngoing: 'En cours',
+    statusFinished: 'Termine',
     personalProfile: 'Profil personnel',
     accountDetails: 'Voir et modifier le compte',
     appearance: 'Mode clair / sombre',
@@ -276,10 +286,9 @@ export function App() {
 
     const token = currentSession.accessToken;
     const userId = currentSession.user.id;
-    const [profileResult, progressResult] = await Promise.allSettled([
-      getUserProfile(userId, token),
-      getProgress(userId, token),
-    ]);
+    const profileResult = await getUserProfile(userId, token)
+      .then((value) => ({ status: 'fulfilled', value }))
+      .catch((reason) => ({ status: 'rejected', reason }));
 
     const nextProfile = profileResult.status === 'fulfilled'
       ? toProfile(profileResult.value, currentSession.user)
@@ -294,15 +303,18 @@ export function App() {
       learningPlansError = error;
     }
 
-    if (learningPlansError?.status === 404) {
+    if (
+      learningPlansError?.status === 404
+      || (!learningPlansError && nextLearningPlans.length === 0)
+    ) {
       try {
-        const defaultPlan = await createDefaultLearningPlan({
+        await createDefaultLearningPlan({
           user_id: userId,
           target_language: nextProfile.targetLanguage,
           current_level: nextProfile.currentLevel,
           learning_goal: nextProfile.learningGoal,
         }, token);
-        nextLearningPlans = toLearningPlans([defaultPlan]);
+        nextLearningPlans = toLearningPlans(await getLearningPlans(userId, token, contentLanguage));
         learningPlansError = null;
       } catch (error) {
         learningPlansError = error;
@@ -310,7 +322,7 @@ export function App() {
     }
     if (nextLearningPlans.length > 0) {
       try {
-        const savedAnswers = await getUserAnswers(userId, token);
+        const savedAnswers = await getUserAnswers(userId, token, { targetLanguage: contentLanguage });
         const lessonDetails = await Promise.all(
           nextLearningPlans.flatMap((plan) => plan.lessons.map(async (lesson) => {
             const lessonResponse = await getLesson(lesson.id, token, contentLanguage);
@@ -334,6 +346,14 @@ export function App() {
         nextLearningPlans = derivePlanProgress(nextLearningPlans);
       }
     }
+
+    const progressPlanId = options.progressPlanId ?? nextLearningPlans[selectedPlan]?.id ?? nextLearningPlans[0]?.id;
+    const progressResult = await getProgress(userId, token, {
+      planId: progressPlanId,
+      targetLanguage: contentLanguage,
+    })
+      .then((value) => ({ status: 'fulfilled', value }))
+      .catch((reason) => ({ status: 'rejected', reason }));
 
     const nextProgress = progressResult.status === 'fulfilled'
       ? toProgressSummary(progressResult.value, nextLearningPlans)
@@ -363,7 +383,7 @@ export function App() {
     }
 
     return { nextLearningPlans, nextProgress };
-  }, [targetLanguage]);
+  }, [selectedPlan, targetLanguage]);
 
   React.useEffect(() => {
     if (!authEnabled) {
@@ -438,7 +458,10 @@ export function App() {
     );
     const lessonDetail = toLessonDetail(lessonResponse, selectedLessonSummary);
     const lessonExerciseIds = new Set(lessonDetail.exercises.map((exercise) => exercise.id));
-    const savedAnswers = (await getUserAnswers(currentSession.user.id, currentSession.accessToken))
+    const savedAnswers = (await getUserAnswers(currentSession.user.id, currentSession.accessToken, {
+      planId: selectedPlanSummary.id,
+      targetLanguage: profile.targetLanguage,
+    }))
       .filter((answer) => lessonExerciseIds.has(answer.exercise_id));
     const feedbackEntries = await Promise.all(
       savedAnswers.map(async (answer) => {
@@ -612,6 +635,7 @@ export function App() {
   };
 
   const openExercise = (exerciseIndex) => {
+    setAnswerError('');
     setSelectedExercise(exerciseIndex);
     setLearningStep('exercise');
 
@@ -719,6 +743,7 @@ export function App() {
 
   const handleSubmitAnswer = async (exercise, answerText) => {
     if (!session || !exercise?.id || !activeLesson?.id || !activePlan?.id) {
+      setAnswerError('Please sign in and open a lesson before submitting an answer.');
       return;
     }
 
@@ -747,10 +772,57 @@ export function App() {
         toLessonDetail(lessonResponse, activeLesson),
         submission,
       );
-      const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+      const syncResult = await syncLearningData(session, {
+        skipSelectionReset: true,
+        progressPlanId: activePlan.id,
+      });
       setLearningPlans(mergeLessonIntoPlans(syncResult.nextLearningPlans, normalizedLesson));
     } catch (error) {
       setAnswerError(error.message || 'Unable to submit answer.');
+    } finally {
+      setAnswerPending(false);
+    }
+  };
+
+  const handleSubmitSpeakingAnswer = async (exercise, audio) => {
+    if (!session) {
+      setAnswerError('Please sign in before submitting a speaking answer.');
+      return;
+    }
+
+    if (!exercise?.id || !activeLesson?.id || !activePlan?.id) {
+      setAnswerError('Open a speaking exercise from a lesson before submitting audio.');
+      return;
+    }
+
+    if (!audio) {
+      setAnswerError('Record or select an audio file before submitting.');
+      return;
+    }
+
+    setAnswerPending(true);
+    setAnswerError('');
+
+    try {
+      const submission = await submitSpeakingAnswer({
+        audio,
+        user_id: session.user.id,
+        exercise_id: exercise.id,
+        lesson_id: activeLesson.id,
+        plan_id: activePlan.id,
+        target_language: profile.targetLanguage,
+        level: profile.currentLevel || exercise.difficulty,
+      }, session.accessToken);
+
+      const lessonResponse = await getLesson(activeLesson.id, session.accessToken);
+      const normalizedLesson = attachSubmissionToLesson(
+        toLessonDetail(lessonResponse, activeLesson),
+        submission,
+      );
+      const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+      setLearningPlans(mergeLessonIntoPlans(syncResult.nextLearningPlans, normalizedLesson));
+    } catch (error) {
+      setAnswerError(error.message || 'Unable to submit speaking answer.');
     } finally {
       setAnswerPending(false);
     }
@@ -840,6 +912,7 @@ export function App() {
                 setListeningSelections((prev) => ({ ...prev, [qIndex]: optionText }))
               }
               onSubmitAnswer={handleSubmitAnswer}
+              onSubmitSpeakingAnswer={handleSubmitSpeakingAnswer}
             />
           )}
 

@@ -113,6 +113,8 @@ class LearningPlanServiceTests {
             .thenReturn(Optional.of(existingPlan));
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
             .thenReturn(Optional.of(existingPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
+            .thenReturn(Optional.of(existingPlan));
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
 
         LearningPlanResponse response = service.createDefaultLearningPlan(request);
@@ -138,6 +140,8 @@ class LearningPlanServiceTests {
 
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
             .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
+            .thenReturn(Optional.empty());
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
             .thenReturn(Optional.empty());
         when(learningPlanSeeder.createDefaultPlan(request, "job-interview")).thenReturn(savedPlan);
@@ -147,6 +151,7 @@ class LearningPlanServiceTests {
 
         assertThat(response.getId()).isEqualTo(100L);
         verify(learningPlanSeeder).createListeningPlan(request);
+        verify(learningPlanSeeder).createSpeakingPlan(request);
         verify(learningPlanSeeder).createDefaultPlan(request, "job-interview");
     }
 
@@ -181,6 +186,8 @@ class LearningPlanServiceTests {
         when(defaultLearningPlanCatalog.findFallbackByKey("machine-learning-interview")).thenReturn(mlTemplate);
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
             .thenReturn(Optional.of(existingPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
+            .thenReturn(Optional.of(existingPlan));
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
             .thenReturn(Optional.of(existingPlan));
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Machine Learning Interview Track"))
@@ -206,6 +213,8 @@ class LearningPlanServiceTests {
 
         when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(existingPlan));
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
+            .thenReturn(Optional.of(existingPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
             .thenReturn(Optional.of(existingPlan));
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
             .thenReturn(Optional.of(existingPlan));
@@ -260,6 +269,8 @@ class LearningPlanServiceTests {
             .thenReturn(germanMlTemplate);
         when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(mlPlan));
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
+            .thenReturn(Optional.of(mlPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
             .thenReturn(Optional.of(mlPlan));
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
             .thenReturn(Optional.of(mlPlan));

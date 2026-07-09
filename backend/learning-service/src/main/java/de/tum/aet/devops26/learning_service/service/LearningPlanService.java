@@ -40,6 +40,7 @@ public class LearningPlanService {
                 .findFallbackByKey(PRIMARY_DEFAULT_TEMPLATE_KEY);
 
         ensureListeningPlan(request);
+        ensureSpeakingPlan(request);
         ensureAdditionalCatalogPlans(request, PRIMARY_DEFAULT_TEMPLATE_KEY);
 
         try {
@@ -106,19 +107,16 @@ public class LearningPlanService {
 
     @Transactional
     public List<LearningPlanResponse> findResponsesByUserId(Long userId, String language) {
-        ensureFixedPlans(userId);
+        ensureFixedPlans(new CreateDefaultLearningPlanRequest().userId(userId));
         return learningPlanRepository.findByUserId(userId).stream()
                 .map(plan -> toResponse(plan, language))
                 .toList();
     }
 
-    private void ensureFixedPlans(Long userId) {
-        CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest().userId(userId);
-        ensureFixedPlans(request);
-    }
-
     private void ensureFixedPlans(CreateDefaultLearningPlanRequest request) {
+        ensureDefaultPlan(request);
         ensureListeningPlan(request);
+        ensureSpeakingPlan(request);
         ensureAdditionalCatalogPlans(request, null);
     }
 
@@ -133,7 +131,6 @@ public class LearningPlanService {
 
     private void ensureCatalogPlan(CreateDefaultLearningPlanRequest request, String templateKey) {
         DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog.findFallbackByKey(templateKey);
-
         try {
             if (learningPlanRepository.findFirstByUserIdAndTitle(
                     request.getUserId(), fallbackTemplate.title()).isEmpty()) {
@@ -148,14 +145,49 @@ public class LearningPlanService {
         }
     }
 
-    private void ensureListeningPlan(CreateDefaultLearningPlanRequest request) {
+    private void ensureDefaultPlan(CreateDefaultLearningPlanRequest request) {
+        DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog.findFallbackByKey(PRIMARY_DEFAULT_TEMPLATE_KEY);
+        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title()).isPresent()) {
+            return;
+        }
+        createDefaultPlan(request);
+    }
+
+    private LearningPlan createDefaultPlan(CreateDefaultLearningPlanRequest request) {
         try {
-            if (learningPlanRepository.findFirstByUserIdAndTitle(
-                    request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isEmpty()) {
-                learningPlanSeeder.createListeningPlan(request);
-            }
-        } catch (DataIntegrityViolationException e) {
+            return learningPlanSeeder.createDefaultPlan(request, PRIMARY_DEFAULT_TEMPLATE_KEY);
+        } catch (DataIntegrityViolationException exception) {
+            DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog.findFallbackByKey(PRIMARY_DEFAULT_TEMPLATE_KEY);
+            LOGGER.info("Default plan already exists for user {} (concurrent creation)", request.getUserId());
+            return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title())
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Default plan creation failed and no existing plan found for user " + request.getUserId()
+                ));
+        }
+    }
+
+    private void ensureListeningPlan(CreateDefaultLearningPlanRequest request) {
+        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isPresent()) {
+            return;
+        }
+
+        try {
+            learningPlanSeeder.createListeningPlan(request);
+        } catch (DataIntegrityViolationException exception) {
             LOGGER.info("Listening plan already exists for user {} (concurrent creation)", request.getUserId());
+        }
+    }
+
+    private void ensureSpeakingPlan(CreateDefaultLearningPlanRequest request) {
+        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.SPEAKING_TITLE).isPresent()) {
+            return;
+        }
+
+        try {
+            learningPlanSeeder.createSpeakingPlan(request);
+        } catch (DataIntegrityViolationException exception) {
+            LOGGER.info("Speaking plan already exists for user {} (concurrent creation)", request.getUserId());
         }
     }
 
@@ -173,7 +205,7 @@ public class LearningPlanService {
                 plan.getUserId(),
                 localizedTemplate == null ? plan.getTitle() : localizedTemplate.title(),
                 localizedTemplate == null ? plan.getDescription() : localizedTemplate.description(),
-                localizedTemplate == null ? plan.getGoal() : localizedTemplate.defaultGoal(),
+                plan.getGoal(),
                 localizedTemplate == null ? plan.getLanguage() : localizedTemplate.defaultLanguage(),
                 plan.getLevel(),
                 localizedTemplate == null ? plan.getDuration() : localizedTemplate.duration(),

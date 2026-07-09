@@ -139,9 +139,16 @@ The default chart does not deploy Ollama. OpenAI mode requires an API key:
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
+  --set image.tag=<sha-tag> \
   --set genai.llmProvider=openai \
   --set genai.llmApiKey=<api-key>
 ```
+
+For Rancher deployments, always pass the commit image tag, for example
+`--set image.tag=sha-<commit>`. The chart default is `latest` for local
+development, and using it manually can roll different services to a mutable tag.
+Pass only the raw API key to `genai.llmApiKey`; do not paste `.env` lines such as
+`LLM_API_KEY=...` or `LLM_MODEL=...`.
 
 For infrastructure tests without an OpenAI key, use Ollama mode without deploying
 Ollama. The GenAI service starts, but AI requests that need an Ollama backend may

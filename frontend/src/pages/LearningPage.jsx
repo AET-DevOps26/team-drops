@@ -42,6 +42,7 @@ export function LearningPage({
   onOpenSettings,
   onListeningSelect,
   onSubmitAnswer,
+  onSubmitSpeakingAnswer,
   onOpenLesson,
 }) {
   return (
@@ -137,6 +138,15 @@ export function LearningPage({
                 listeningSelections={listeningSelections}
                 onListeningSelect={onListeningSelect}
                 onSubmitAnswer={onSubmitAnswer}
+                t={t}
+              />
+            ) : learningStep === 'exercise' && isSpeakingExercise(activeExercise) ? (
+              <SpeakingExerciseView
+                activeExercise={activeExercise}
+                answerError={answerError}
+                answerPending={answerPending}
+                onSubmitSpeakingAnswer={onSubmitSpeakingAnswer}
+                t={t}
               />
             ) : learningStep === 'exercise' ? (
               <ExerciseDetailView
@@ -144,6 +154,7 @@ export function LearningPage({
                 answerError={answerError}
                 answerPending={answerPending}
                 onSubmitAnswer={onSubmitAnswer}
+                t={t}
               />
             ) : null}
           </>
@@ -616,15 +627,21 @@ function ExerciseCard({ exercise, index, t, onOpenExercise }) {
       </span>
       <span className="lesson-progress-copy">
         <strong>{exercise.title}</strong>
-        <span className="status-pill">{formatStatus(exercise.status, exercise.language)}</span>
+        <em>{exercise.format}</em>
+        <span className="status-pill">{formatStatus(exercise.status, t)}</span>
       </span>
       <small className="lesson-percent">{exercise.grade ? `${exercise.grade}` : '--'}</small>
     </button>
   );
 }
 
-function isComingSoonType(type) {
-  return type === 'speaking';
+function isComingSoonType() {
+  return false;
+}
+
+function isSpeakingExercise(exercise) {
+  const subtype = exercise?.subtype ?? '';
+  return exercise?.type === 'speaking' || subtype.toLowerCase().includes('speaking');
 }
 
 function ListeningExerciseView({
@@ -637,6 +654,7 @@ function ListeningExerciseView({
   listeningSelections,
   onListeningSelect,
   onSubmitAnswer,
+  t,
 }) {
   const allAnswered = listeningContent
     && listeningContent.questions.length > 0
@@ -660,7 +678,7 @@ function ListeningExerciseView({
       </div>
 
       <div className="exercise-status-row">
-        <span className="status-pill">{formatStatus(activeExercise.status)}</span>
+        <span className="status-pill">{formatStatus(activeExercise.status, t)}</span>
         {activeExercise.status === 'finished' && (
           <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
         )}
@@ -668,7 +686,7 @@ function ListeningExerciseView({
 
       {listeningLoading && (
         <section className="summary-card">
-          <p>Generating listening exercise…</p>
+          <p>Generating listening exercise...</p>
         </section>
       )}
 
@@ -743,7 +761,7 @@ function ListeningExerciseView({
               type="submit"
               style={{ marginTop: '0.5rem' }}
             >
-              {answerPending ? 'Submitting…' : 'Submit answers'}
+              {answerPending ? 'Submitting...' : 'Submit answers'}
             </button>
           </form>
         </>
@@ -754,7 +772,215 @@ function ListeningExerciseView({
   );
 }
 
-function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubmitAnswer }) {
+function SpeakingExerciseView({ activeExercise, answerError, answerPending, onSubmitSpeakingAnswer, t }) {
+  const [selectedAudio, setSelectedAudio] = React.useState(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = React.useState('');
+  const [recording, setRecording] = React.useState(false);
+  const [localError, setLocalError] = React.useState('');
+  const recorderRef = React.useRef(null);
+  const streamRef = React.useRef(null);
+  const chunksRef = React.useRef([]);
+  const recorderSupported = typeof navigator !== 'undefined'
+    && Boolean(navigator.mediaDevices?.getUserMedia)
+    && typeof window !== 'undefined'
+    && typeof window.MediaRecorder !== 'undefined';
+
+  React.useEffect(() => {
+    setSelectedAudio(null);
+    setAudioPreviewUrl('');
+    setLocalError('');
+  }, [activeExercise.id]);
+
+  React.useEffect(() => {
+    return () => {
+      if (audioPreviewUrl) {
+        URL.revokeObjectURL(audioPreviewUrl);
+      }
+    };
+  }, [audioPreviewUrl]);
+
+  React.useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  const setAudioWithPreview = (audio) => {
+    if (audioPreviewUrl) {
+      URL.revokeObjectURL(audioPreviewUrl);
+    }
+
+    setSelectedAudio(audio);
+    setAudioPreviewUrl(audio ? URL.createObjectURL(audio) : '');
+  };
+
+  const stopStream = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  };
+
+  const startRecording = async () => {
+    if (!recorderSupported) {
+      setLocalError('Recording is not available in this browser. Select an audio file instead.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      streamRef.current = stream;
+      recorderRef.current = recorder;
+
+      recorder.addEventListener('dataavailable', (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      });
+
+      recorder.addEventListener('stop', () => {
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        setAudioWithPreview(blob);
+        setRecording(false);
+        stopStream();
+      });
+
+      setLocalError('');
+      recorder.start();
+      setRecording(true);
+    } catch (error) {
+      setLocalError(error.message || 'Microphone access was not available. Select an audio file instead.');
+      setRecording(false);
+      stopStream();
+    }
+  };
+
+  const stopRecording = () => {
+    if (recorderRef.current?.state === 'recording') {
+      recorderRef.current.stop();
+      return;
+    }
+
+    setRecording(false);
+    stopStream();
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0] ?? null;
+    setLocalError('');
+    setAudioWithPreview(file);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!selectedAudio) {
+      setLocalError('Record or select an audio file before submitting.');
+      return;
+    }
+
+    setLocalError('');
+    await onSubmitSpeakingAnswer(activeExercise, selectedAudio);
+  };
+
+  if (!activeExercise.id) {
+    return (
+      <section className="summary-card">
+        <div className="section-heading">
+          <h3>No exercise selected</h3>
+          <span>Speaking</span>
+        </div>
+        <p>Open a speaking exercise from the lesson detail screen to practice out loud.</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="exercise-detail" aria-label="Speaking exercise">
+      <div className="exercise-detail-header">
+        <span className="exercise-type-icon speaking">
+          <Mic size={18} aria-hidden="true" />
+        </span>
+        <div>
+          <p>speaking</p>
+          <h3>{activeExercise.title}</h3>
+        </div>
+      </div>
+
+      <div className="exercise-status-row">
+        <span className="status-pill">{formatStatus(activeExercise.status, t)}</span>
+        {activeExercise.status === 'finished' && (
+          <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
+        )}
+      </div>
+
+      <section className="summary-card">
+        <div className="section-heading">
+          <h3>Task</h3>
+          <span>{activeExercise.format ?? 'Spoken answer'}</span>
+        </div>
+        <p>{activeExercise.task}</p>
+      </section>
+
+      <section className="summary-card">
+        <div className="section-heading">
+          <h3>Expected answer</h3>
+          <span>{formatExerciseLabel(activeExercise.subtype ?? activeExercise.type)}</span>
+        </div>
+        <p>{activeExercise.expectedAnswer ?? 'Open-ended speaking exercise.'}</p>
+      </section>
+
+      <form className="summary-card speaking-recorder" onSubmit={handleSubmit}>
+        <div className="section-heading">
+          <h3>Your audio</h3>
+          <span>Progress feedback</span>
+        </div>
+
+        <div className="speaking-record-actions">
+          {recorderSupported ? (
+            recording ? (
+              <button className="text-login speaking-action-button" type="button" onClick={stopRecording}>
+                Stop recording
+              </button>
+            ) : (
+              <button className="text-login speaking-action-button" type="button" onClick={startRecording}>
+                Start recording
+              </button>
+            )
+          ) : (
+            <p className="speaking-help">Recording is unavailable in this browser.</p>
+          )}
+
+          <label className="speaking-file-control">
+            <span>Select audio</span>
+            <input accept="audio/*" type="file" onChange={handleFileChange} />
+          </label>
+        </div>
+
+        {recording && <p className="speaking-recording-state" role="status">Recording...</p>}
+
+        {selectedAudio && (
+          <div className="speaking-audio-preview">
+            <p>{selectedAudio.name || 'Recorded answer'}</p>
+            {audioPreviewUrl && <audio controls src={audioPreviewUrl} />}
+          </div>
+        )}
+
+        {(localError || answerError) && (
+          <p className="auth-error" role="alert">{localError || answerError}</p>
+        )}
+
+        <button className="auth-button register-button" disabled={answerPending || !selectedAudio} type="submit">
+          {answerPending ? 'Submitting...' : 'Submit audio'}
+        </button>
+      </form>
+
+      {activeExercise.feedback && <ExerciseFeedback feedback={activeExercise.feedback} />}
+    </section>
+  );
+}
+
+function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubmitAnswer, t }) {
   const [answerText, setAnswerText] = React.useState(activeExercise.answerText ?? '');
   const [hintsVisible, setHintsVisible] = React.useState(false);
   const keywords = activeExercise.keywords ?? [];
@@ -794,7 +1020,7 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
       </div>
 
       <div className="exercise-status-row">
-        <span className="status-pill">{formatStatus(activeExercise.status, activeExercise.language)}</span>
+        <span className="status-pill">{formatStatus(activeExercise.status, t)}</span>
         {activeExercise.status === 'finished' && (
           <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
         )}
@@ -858,6 +1084,9 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
 }
 
 function ExerciseFeedback({ feedback }) {
+  const strengths = feedback.strengths ?? [];
+  const improvements = feedback.improvements ?? [];
+
   return (
     <section className="feedback-card" aria-label="Exercise feedback">
       <div className="feedback-score">
@@ -869,20 +1098,27 @@ function ExerciseFeedback({ feedback }) {
       </div>
       <p>{feedback.message}</p>
 
-      {(feedback.strengths.length > 0 || feedback.improvements.length > 0) && (
+      {feedback.transcription && (
+        <div className="feedback-example">
+          <h4>Transcription</h4>
+          <p>{feedback.transcription}</p>
+        </div>
+      )}
+
+      {(strengths.length > 0 || improvements.length > 0) && (
         <div className="feedback-grid">
-          {feedback.strengths.length > 0 && (
+          {strengths.length > 0 && (
             <div>
               <h4>Strengths</h4>
-              {feedback.strengths.map((item) => (
+              {strengths.map((item) => (
                 <span key={item}>{item}</span>
               ))}
             </div>
           )}
-          {feedback.improvements.length > 0 && (
+          {improvements.length > 0 && (
             <div>
               <h4>Improve</h4>
-              {feedback.improvements.map((item) => (
+              {improvements.map((item) => (
                 <span key={item}>{item}</span>
               ))}
             </div>
@@ -894,6 +1130,13 @@ function ExerciseFeedback({ feedback }) {
         <div className="feedback-example">
           <h4>Improved example</h4>
           <p>{feedback.improvedExample}</p>
+        </div>
+      )}
+
+      {feedback.feedbackAudioB64 && (
+        <div className="feedback-example">
+          <h4>Corrected audio</h4>
+          <audio controls src={`data:audio/wav;base64,${feedback.feedbackAudioB64}`} />
         </div>
       )}
     </section>
@@ -916,16 +1159,26 @@ function ExerciseTypeIcon({ type }) {
   return <TextCursorInput size={18} aria-hidden="true" />;
 }
 
-function formatStatus(status, language) {
-  const isGerman = language?.toLowerCase() === 'german';
-
+function formatStatus(status, t) {
   if (status === 'not-started') {
-    return isGerman ? 'Noch nicht begonnen' : 'Not started';
+    return t.statusNotStarted;
   }
 
   if (status === 'ongoing') {
-    return isGerman ? 'In Bearbeitung' : 'Ongoing';
+    return t.statusOngoing;
   }
 
-  return isGerman ? 'Abgeschlossen' : 'Finished';
+  return t.statusFinished;
+}
+
+function formatExerciseLabel(value) {
+  if (!value) {
+    return 'Practice';
+  }
+
+  return value
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+    .join(' ');
 }

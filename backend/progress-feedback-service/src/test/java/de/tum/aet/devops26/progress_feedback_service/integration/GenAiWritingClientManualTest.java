@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.datasource.password=",
         "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"
 })
-@Disabled("Manual integration test requires a running GenAI service on localhost:8084.")
+@Disabled("Manual live GenAI check; default Gradle tests use mocked GenAI client coverage.")
 class GenAiWritingClientManualTest {
 
     @Autowired

@@ -63,9 +63,11 @@ def _transcribe_local(audio_bytes: bytes, language: str) -> str:
 async def transcribe(audio_bytes: bytes, language: str) -> str:
     """Transcribe audio bytes to text using the configured STT backend.
 
-    Uses faster-whisper locally (Ollama mode) or OpenAI Whisper API (OpenAI mode).
+    Uses faster-whisper locally by default, or OpenAI Whisper API when
+    STT_PROVIDER=openai. This is intentionally separate from LLM_PROVIDER
+    because OpenAI-compatible LLM gateways usually do not implement audio APIs.
     """
-    if settings.llm_provider == "openai":
+    if settings.stt_provider.lower() == "openai":
         import openai
 
         client = openai.AsyncOpenAI(api_key=settings.llm_api_key)

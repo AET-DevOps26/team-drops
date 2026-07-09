@@ -92,6 +92,44 @@ class UserServiceTests {
         verify(userRepository).save(existingUser);
     }
 
+    @Test
+    void getOrCreateLocalDevUserCreatesStableFallbackUser() {
+        UserService userService = new UserService(userRepository);
+        when(userRepository.findByEmail("local-dev@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            user.setId(99L);
+            return user;
+        });
+
+        UserResponse response = userService.getOrCreateLocalDevUser();
+
+        assertThat(response.getId()).isEqualTo(99L);
+        assertThat(response.getName()).isEqualTo("Local Dev User");
+        assertThat(response.getEmail()).isEqualTo("local-dev@example.com");
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        assertThat(userCaptor.getValue().getKeycloakSubject()).isNull();
+        assertThat(userCaptor.getValue().getPasswordHash()).isNull();
+    }
+
+    @Test
+    void getOrCreateLocalDevUserReturnsExistingFallbackUser() {
+        UserService userService = new UserService(userRepository);
+        User existingUser = User.builder()
+            .id(100L)
+            .name("Local Dev User")
+            .email("local-dev@example.com")
+            .build();
+        when(userRepository.findByEmail("local-dev@example.com")).thenReturn(Optional.of(existingUser));
+
+        UserResponse response = userService.getOrCreateLocalDevUser();
+
+        assertThat(response.getId()).isEqualTo(100L);
+        assertThat(response.getEmail()).isEqualTo("local-dev@example.com");
+    }
+
     private Jwt jwt(String subject, Map<String, Object> claims) {
         return Jwt.withTokenValue("token")
             .header("alg", "none")
