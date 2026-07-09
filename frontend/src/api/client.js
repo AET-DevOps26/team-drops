@@ -64,6 +64,25 @@ async function request(service, path, { method = 'GET', token, body } = {}) {
   return parseResponse(response);
 }
 
+function languageQuery(language) {
+  return language ? `?language=${encodeURIComponent(language)}` : '';
+}
+
+function scopedProgressQuery({ planId, targetLanguage } = {}) {
+  const params = new URLSearchParams();
+
+  if (planId != null) {
+    params.set('plan_id', planId);
+  }
+
+  if (targetLanguage) {
+    params.set('target_language', targetLanguage);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
 export function getCurrentUser(token) {
   return request('user', '/api/v1/users/me', { token });
 }
@@ -80,8 +99,8 @@ export function updateUserProfile(userId, profile, token) {
   });
 }
 
-export function getLearningPlans(userId, token) {
-  return request('learning', `/api/v1/learning-plans/user/${userId}`, { token });
+export function getLearningPlans(userId, token, language) {
+  return request('learning', `/api/v1/learning-plans/user/${userId}${languageQuery(language)}`, { token });
 }
 
 export function createDefaultLearningPlan(payload, token) {
@@ -92,8 +111,8 @@ export function createDefaultLearningPlan(payload, token) {
   });
 }
 
-export function getLesson(lessonId, token) {
-  return request('learning', `/api/v1/lessons/${lessonId}`, { token });
+export function getLesson(lessonId, token, language) {
+  return request('learning', `/api/v1/lessons/${lessonId}${languageQuery(language)}`, { token });
 }
 
 export function submitAnswer(payload, token) {
@@ -132,16 +151,16 @@ export function submitSpeakingAnswer(payload, token) {
   });
 }
 
-export function getUserAnswers(userId, token) {
-  return request('progress', `/api/v1/answers/user/${userId}`, { token });
+export function getUserAnswers(userId, token, scope) {
+  return request('progress', `/api/v1/answers/user/${userId}${scopedProgressQuery(scope)}`, { token });
 }
 
 export function getFeedbackByAnswerId(answerId, token) {
   return request('progress', `/api/v1/answers/${answerId}/feedback`, { token });
 }
 
-export function getProgress(userId, token) {
-  return request('progress', `/api/v1/progress/user/${userId}`, { token });
+export function getProgress(userId, token, scope) {
+  return request('progress', `/api/v1/progress/user/${userId}${scopedProgressQuery(scope)}`, { token });
 }
 
 export function generateListeningContent(exerciseId, lessonId, targetLanguage, level, token) {

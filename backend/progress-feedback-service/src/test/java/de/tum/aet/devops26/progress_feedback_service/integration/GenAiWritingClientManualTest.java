@@ -10,7 +10,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
-        "services.genai.base-url=http://localhost:8084"
+        "services.genai.base-url=http://localhost:8084",
+        "spring.datasource.url=jdbc:h2:mem:progress-feedback-service-manual-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"
 })
 @Disabled("Manual live GenAI check; default Gradle tests use mocked GenAI client coverage.")
 class GenAiWritingClientManualTest {

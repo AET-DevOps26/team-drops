@@ -368,6 +368,15 @@ paths:
       operationId: getLearningPlansByUserId
       parameters:
         - $ref: '#/components/parameters/UserIdPath'
+        - name: language
+          in: query
+          required: false
+          description: >-
+            Preferred language for translated default lesson and exercise
+            content.
+          schema:
+            type: string
+            example: German
       responses:
         '200':
           description: Learning plans found
@@ -390,6 +399,13 @@ paths:
       operationId: getLessonById
       parameters:
         - $ref: '#/components/parameters/LessonIdPath'
+        - name: language
+          in: query
+          required: false
+          description: Preferred language for translated lesson and exercise content.
+          schema:
+            type: string
+            example: German
       responses:
         '200':
           description: Lesson found
@@ -598,6 +614,19 @@ paths:
       operationId: getAnswersByUserId
       parameters:
         - $ref: '#/components/parameters/UserIdPath'
+        - name: plan_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Optional plan scope for language-specific progress.
+        - name: target_language
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional target learning language scope.
       responses:
         '200':
           description: Submitted answers for the user
@@ -620,6 +649,19 @@ paths:
       operationId: getProgressByUserId
       parameters:
         - $ref: '#/components/parameters/UserIdPath'
+        - name: plan_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Optional plan scope for language-specific progress.
+        - name: target_language
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional target learning language scope.
       responses:
         '200':
           description: User progress found
@@ -2118,6 +2160,17 @@ components:
           type: integer
           format: int64
           example: 1
+        plan_id:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          example: 1
+        target_language:
+          type:
+            - string
+            - 'null'
+          example: German
         answer_text:
           type: string
           example: I am a computer science student interested in backend development.

@@ -80,6 +80,9 @@ const translations = {
     topLessons: 'Top 3 lessons',
     noOngoing: 'No ongoing lessons yet',
     noFinished: 'No finished lessons yet',
+    statusNotStarted: 'Not started',
+    statusOngoing: 'Ongoing',
+    statusFinished: 'Finished',
     personalProfile: 'Personal profile',
     accountDetails: 'View and edit account details',
     appearance: 'Light / dark mode',
@@ -102,15 +105,15 @@ const translations = {
   },
   German: {
     appLabel: 'Sprachen lernen',
-    welcomeBack: 'Willkommen zuruck',
-    dashboard: 'Ubersicht',
+    welcomeBack: 'Willkommen zurück',
+    dashboard: 'Übersicht',
     settings: 'Einstellungen',
     startLearning: 'Lernen starten',
-    overview: 'Ubersicht',
+    overview: 'Übersicht',
     language: 'Sprache',
     languageToLearn: 'Lernsprache',
-    appLanguage: 'App-Sprache wahlen',
-    targetLanguage: 'Lernsprache wahlen',
+    appLanguage: 'App-Sprache wählen',
+    targetLanguage: 'Lernsprache wählen',
     profile: 'Profil',
     name: 'Name',
     country: 'Land',
@@ -119,34 +122,37 @@ const translations = {
     learn: 'Lernbereich',
     learningPlan: 'Lernplan',
     lesson: 'Lektion',
-    exercise: 'Ubung',
-    planOverview: 'Planubersicht',
+    exercise: 'Übung',
+    planOverview: 'Planübersicht',
     currentPlan: 'Plan',
     lessonsInProgress: 'Lektionen laufen',
-    exercisesDone: 'Ubungen erledigt',
+    exercisesDone: 'Übungen erledigt',
     averageScore: 'Durchschnitt',
     recentProgress: 'Aktueller Fortschritt',
     recentFinish: 'Abgeschlossen',
     topLessons: 'Top 3 Lektionen',
     noOngoing: 'Noch keine laufenden Lektionen',
     noFinished: 'Noch keine abgeschlossenen Lektionen',
-    personalProfile: 'Personliches Profil',
+    statusNotStarted: 'Noch nicht begonnen',
+    statusOngoing: 'In Bearbeitung',
+    statusFinished: 'Abgeschlossen',
+    personalProfile: 'Persönliches Profil',
     accountDetails: 'Kontodaten anzeigen und bearbeiten',
     appearance: 'Hell- / Dunkelmodus',
     darkEnabled: 'Dunkelmodus aktiv',
     lightEnabled: 'Hellmodus aktiv',
     logout: 'Abmelden',
     training: 'Training',
-    trainingDescription: 'Gefuhrte Interviewlektionen',
+    trainingDescription: 'Geführte Interviewlektionen',
     aiTraining: 'KI-Training',
-    aiTrainingDescription: 'Adaptives Interviewtraining wird hier verfugbar sein.',
+    aiTrainingDescription: 'Adaptives Interviewtraining wird hier verfügbar sein.',
     ragLearning: 'RAG-Lernen',
     ragLearningDescription: 'Aus Dokumentthemen erstellen',
-    chooseRagTopic: 'RAG-Thema wahlen',
+    chooseRagTopic: 'RAG-Thema wählen',
     generateLearningPlan: 'Lernplan erstellen',
-    comingLater: 'Kommt spater',
-    suggestedPlans: 'Vorgeschlagene Lernplane',
-    plans: 'Plane',
+    comingLater: 'Kommt später',
+    suggestedPlans: 'Vorgeschlagene Lernpläne',
+    plans: 'Pläne',
     overall: 'Gesamt',
     comingSoon: 'Kommt bald',
   },
@@ -180,6 +186,9 @@ const translations = {
     topLessons: 'Top 3 lecons',
     noOngoing: 'Aucune lecon en cours',
     noFinished: 'Aucune lecon terminee',
+    statusNotStarted: 'Pas commence',
+    statusOngoing: 'En cours',
+    statusFinished: 'Termine',
     personalProfile: 'Profil personnel',
     accountDetails: 'Voir et modifier le compte',
     appearance: 'Mode clair / sombre',
@@ -276,23 +285,26 @@ export function App() {
 
     const token = currentSession.accessToken;
     const userId = currentSession.user.id;
-    const [profileResult, learningPlansResult, progressResult] = await Promise.allSettled([
-      getUserProfile(userId, token),
-      getLearningPlans(userId, token),
-      getProgress(userId, token),
-    ]);
+    const profileResult = await getUserProfile(userId, token)
+      .then((value) => ({ status: 'fulfilled', value }))
+      .catch((reason) => ({ status: 'rejected', reason }));
 
     const nextProfile = profileResult.status === 'fulfilled'
       ? toProfile(profileResult.value, currentSession.user)
       : toProfile(null, currentSession.user);
-    let learningPlansError = learningPlansResult.status === 'rejected' ? learningPlansResult.reason : null;
-    let nextLearningPlans = learningPlansResult.status === 'fulfilled'
-      ? toLearningPlans(learningPlansResult.value)
-      : [];
+    const contentLanguage = nextProfile.targetLanguage || targetLanguage;
+    let learningPlansError = null;
+    let nextLearningPlans = [];
+
+    try {
+      nextLearningPlans = toLearningPlans(await getLearningPlans(userId, token, contentLanguage));
+    } catch (error) {
+      learningPlansError = error;
+    }
 
     if (
-      (learningPlansResult.status === 'rejected' && learningPlansResult.reason?.status === 404)
-      || (learningPlansResult.status === 'fulfilled' && nextLearningPlans.length === 0)
+      learningPlansError?.status === 404
+      || (!learningPlansError && nextLearningPlans.length === 0)
     ) {
       try {
         await createDefaultLearningPlan({
@@ -301,7 +313,7 @@ export function App() {
           current_level: nextProfile.currentLevel,
           learning_goal: nextProfile.learningGoal,
         }, token);
-        nextLearningPlans = toLearningPlans(await getLearningPlans(userId, token));
+        nextLearningPlans = toLearningPlans(await getLearningPlans(userId, token, contentLanguage));
         learningPlansError = null;
       } catch (error) {
         learningPlansError = error;
@@ -309,10 +321,10 @@ export function App() {
     }
     if (nextLearningPlans.length > 0) {
       try {
-        const savedAnswers = await getUserAnswers(userId, token);
+        const savedAnswers = await getUserAnswers(userId, token, { targetLanguage: contentLanguage });
         const lessonDetails = await Promise.all(
           nextLearningPlans.flatMap((plan) => plan.lessons.map(async (lesson) => {
-            const lessonResponse = await getLesson(lesson.id, token);
+            const lessonResponse = await getLesson(lesson.id, token, contentLanguage);
             return toLessonDetail(lessonResponse, lesson);
           })),
         );
@@ -333,6 +345,14 @@ export function App() {
         nextLearningPlans = derivePlanProgress(nextLearningPlans);
       }
     }
+
+    const progressPlanId = options.progressPlanId ?? nextLearningPlans[selectedPlan]?.id ?? nextLearningPlans[0]?.id;
+    const progressResult = await getProgress(userId, token, {
+      planId: progressPlanId,
+      targetLanguage: contentLanguage,
+    })
+      .then((value) => ({ status: 'fulfilled', value }))
+      .catch((reason) => ({ status: 'rejected', reason }));
 
     const nextProgress = progressResult.status === 'fulfilled'
       ? toProgressSummary(progressResult.value, nextLearningPlans)
@@ -362,7 +382,7 @@ export function App() {
     }
 
     return { nextLearningPlans, nextProgress };
-  }, [targetLanguage]);
+  }, [selectedPlan, targetLanguage]);
 
   React.useEffect(() => {
     if (!authEnabled) {
@@ -430,10 +450,17 @@ export function App() {
       return;
     }
 
-    const lessonResponse = await getLesson(selectedLessonSummary.id, currentSession.accessToken);
+    const lessonResponse = await getLesson(
+      selectedLessonSummary.id,
+      currentSession.accessToken,
+      profile.targetLanguage,
+    );
     const lessonDetail = toLessonDetail(lessonResponse, selectedLessonSummary);
     const lessonExerciseIds = new Set(lessonDetail.exercises.map((exercise) => exercise.id));
-    const savedAnswers = (await getUserAnswers(currentSession.user.id, currentSession.accessToken))
+    const savedAnswers = (await getUserAnswers(currentSession.user.id, currentSession.accessToken, {
+      planId: selectedPlanSummary.id,
+      targetLanguage: profile.targetLanguage,
+    }))
       .filter((answer) => lessonExerciseIds.has(answer.exercise_id));
     const feedbackEntries = await Promise.all(
       savedAnswers.map(async (answer) => {
@@ -458,7 +485,7 @@ export function App() {
     );
 
     setLearningPlans((currentPlans) => mergeLessonIntoPlans(currentPlans, normalizedLesson));
-  }, [learningPlans]);
+  }, [learningPlans, profile.targetLanguage]);
 
   const openSettings = () => {
     setSettingsClosing(false);
@@ -680,6 +707,37 @@ export function App() {
         targetLanguage: nextTargetLanguage,
       };
     });
+
+    if (!session) {
+      return;
+    }
+
+    setProfilePending(true);
+    setProfileError('');
+
+    const resolvedProfile = {
+      ...profile,
+      targetLanguage: nextTargetLanguage,
+    };
+
+    updateUserProfile(session.user.id, {
+      name: resolvedProfile.name,
+      country: resolvedProfile.country,
+      target_language: nextTargetLanguage,
+      current_level: resolvedProfile.currentLevel,
+      learning_goal: resolvedProfile.learningGoal,
+    }, session.accessToken)
+      .then((savedProfile) => {
+        const normalizedProfile = toProfile(savedProfile, session.user);
+        applyProfileState(normalizedProfile);
+        return syncLearningData(session, { skipSelectionReset: true });
+      })
+      .catch((error) => {
+        setProfileError(error.message || 'Unable to save profile.');
+      })
+      .finally(() => {
+        setProfilePending(false);
+      });
   };
 
   const handleSubmitAnswer = async (exercise, answerText) => {
@@ -708,12 +766,15 @@ export function App() {
         },
       }, session.accessToken);
 
-      const lessonResponse = await getLesson(activeLesson.id, session.accessToken);
+      const lessonResponse = await getLesson(activeLesson.id, session.accessToken, profile.targetLanguage);
       const normalizedLesson = attachSubmissionToLesson(
         toLessonDetail(lessonResponse, activeLesson),
         submission,
       );
-      const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+      const syncResult = await syncLearningData(session, {
+        skipSelectionReset: true,
+        progressPlanId: activePlan.id,
+      });
       setLearningPlans(mergeLessonIntoPlans(syncResult.nextLearningPlans, normalizedLesson));
     } catch (error) {
       setAnswerError(error.message || 'Unable to submit answer.');
