@@ -66,6 +66,19 @@ public class UserAnswerService {
             .toList();
     }
 
+    public List<UserAnswerResponse> findResponsesByUserId(Long userId, Long planId, String targetLanguage) {
+        if (planId == null && isBlank(targetLanguage)) {
+            return findResponsesByUserId(userId);
+        }
+
+        String normalizedLanguage = normalizeLanguage(targetLanguage);
+        return findByUserId(userId).stream()
+            .filter(answer -> matchesPlanOrLegacy(answer, planId))
+            .filter(answer -> matchesLanguageOrLegacy(answer, normalizedLanguage))
+            .map(this::toResponse)
+            .toList();
+    }
+
     public List<UserAnswer> findByExerciseId(Long exerciseId) {
         return userAnswerRepository.findByExerciseId(exerciseId);
     }
@@ -109,6 +122,8 @@ public class UserAnswerService {
         UserAnswer savedAnswer = save(UserAnswer.builder()
             .userId(request.getUserId())
             .exerciseId(request.getExerciseId())
+            .planId(request.getClientContext().getPlanId())
+            .targetLanguage(normalizeLanguage(request.getClientContext().getTargetLanguage()))
             .answerText(request.getAnswerText())
             .score((double) score)
             .build());
@@ -119,10 +134,15 @@ public class UserAnswerService {
             .weakArea(evaluation.weakArea())
             .correctedAnswer(evaluation.correctedAnswer())
             .build());
-        progressRecordService.recordSubmittedAnswer(savedAnswer.getUserId(), score);
+        var progressRecord = progressRecordService.recordSubmittedAnswer(
+            savedAnswer.getUserId(),
+            savedAnswer.getPlanId(),
+            savedAnswer.getTargetLanguage(),
+            score
+        );
 
         SubmitAnswerResponse response = new SubmitAnswerResponse(
-            toResponse(savedAnswer), LearningStatus.FINISHED, score, score);
+            toResponse(savedAnswer), LearningStatus.FINISHED, score, toProgressValue(progressRecord.getAverageScore()));
         response.setFeedback(toFeedbackResponse(savedFeedback));
         return response;
     }
@@ -147,6 +167,8 @@ public class UserAnswerService {
         UserAnswer savedAnswer = save(UserAnswer.builder()
             .userId(request.getUserId())
             .exerciseId(request.getExerciseId())
+            .planId(request.getClientContext().getPlanId())
+            .targetLanguage(normalizeLanguage(request.getClientContext().getTargetLanguage()))
             .answerText(request.getAnswerText())
             .score((double) score)
             .build());
@@ -155,16 +177,21 @@ public class UserAnswerService {
             .answerId(savedAnswer.getId())
             .message(feedbackMessage)
             .build());
-        progressRecordService.recordSubmittedAnswer(savedAnswer.getUserId(), score);
+        var progressRecord = progressRecordService.recordSubmittedAnswer(
+            savedAnswer.getUserId(),
+            savedAnswer.getPlanId(),
+            savedAnswer.getTargetLanguage(),
+            score
+        );
 
         SubmitAnswerResponse response = new SubmitAnswerResponse(
-            toResponse(savedAnswer), LearningStatus.FINISHED, score, score);
+            toResponse(savedAnswer), LearningStatus.FINISHED, score, toProgressValue(progressRecord.getAverageScore()));
         response.setFeedback(toFeedbackResponse(savedFeedback));
         return response;
     }
 
     private UserAnswerResponse toResponse(UserAnswer userAnswer) {
-        return new UserAnswerResponse(
+        UserAnswerResponse response = new UserAnswerResponse(
             userAnswer.getId(),
             userAnswer.getUserId(),
             userAnswer.getExerciseId(),
@@ -174,6 +201,9 @@ public class UserAnswerService {
             userAnswer.getScore() != null && userAnswer.getScore() >= 60,
             OffsetDateTime.ofInstant(userAnswer.getSubmittedAt(), ZoneOffset.UTC)
         );
+        response.setPlanId(userAnswer.getPlanId());
+        response.setTargetLanguage(userAnswer.getTargetLanguage());
+        return response;
     }
 
     private FeedbackResponse toFeedbackResponse(Feedback feedback) {
@@ -190,5 +220,29 @@ public class UserAnswerService {
 
     private String valueOrDefault(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private boolean matchesLanguageOrLegacy(UserAnswer answer, String targetLanguage) {
+        return answer.getTargetLanguage() == null
+            || targetLanguage == null
+            || answer.getTargetLanguage().equalsIgnoreCase(targetLanguage);
+    }
+
+    private boolean matchesPlanOrLegacy(UserAnswer answer, Long planId) {
+        return answer.getPlanId() == null
+            || planId == null
+            || answer.getPlanId().equals(planId);
+    }
+
+    private String normalizeLanguage(String targetLanguage) {
+        return isBlank(targetLanguage) ? null : targetLanguage.trim();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private int toProgressValue(Double averageScore) {
+        return Math.max(0, Math.min(MAX_SCORE, (int) Math.round(averageScore == null ? 0.0 : averageScore)));
     }
 }
