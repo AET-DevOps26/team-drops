@@ -364,6 +364,7 @@ export function App() {
     }
 
     let cancelled = false;
+    let introTimeoutId = 0;
 
     async function bootstrapOidcSession() {
       setAuthPending(true);
@@ -398,7 +399,11 @@ export function App() {
           goToMain();
           if (window.localStorage.getItem(introPendingKey) === 'true') {
             window.localStorage.removeItem(introPendingKey);
-            window.setTimeout(() => setIntroOpen(true), 260);
+            introTimeoutId = window.setTimeout(() => {
+              if (!cancelled) {
+                setIntroOpen(true);
+              }
+            }, 260);
           }
         }
       } catch (error) {
@@ -417,6 +422,7 @@ export function App() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(introTimeoutId);
     };
   }, [syncLearningData]);
 

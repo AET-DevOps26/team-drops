@@ -26,6 +26,8 @@ const steps = [
 export function IntroOverlay({ onFinish }) {
   const [stepIndex, setStepIndex] = React.useState(0);
   const [targetRect, setTargetRect] = React.useState(null);
+  const overlayRef = React.useRef(null);
+  const cardRef = React.useRef(null);
   const step = steps[stepIndex];
 
   React.useLayoutEffect(() => {
@@ -73,6 +75,60 @@ export function IntroOverlay({ onFinish }) {
     };
   }, [step]);
 
+  React.useEffect(() => {
+    if (step) {
+      cardRef.current?.focus();
+    }
+  }, [step, stepIndex]);
+
+  React.useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (!step) {
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onFinish();
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const focusableElements = overlayRef.current?.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const focusable = Array.from(focusableElements || []).filter(
+        (element) => !element.disabled && element.offsetParent !== null,
+      );
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        cardRef.current?.focus();
+        return;
+      }
+
+      const firstElement = focusable[0];
+      const lastElement = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+        return;
+      }
+
+      if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onFinish, step]);
+
   if (!step) {
     return null;
   }
@@ -97,7 +153,7 @@ export function IntroOverlay({ onFinish }) {
     : undefined;
 
   return (
-    <div className="intro-overlay" role="dialog" aria-modal="true" aria-label="App introduction">
+    <div ref={overlayRef} className="intro-overlay" role="dialog" aria-modal="true" aria-label="App introduction">
       {targetRect && (
         <button
           className="intro-spotlight"
@@ -113,7 +169,7 @@ export function IntroOverlay({ onFinish }) {
         />
       )}
 
-      <section className="intro-card" style={tooltipStyle}>
+      <section ref={cardRef} className="intro-card" style={tooltipStyle} tabIndex={-1}>
         <div>
           <small>{stepIndex + 1} / {steps.length}</small>
           <h3>{step.title}</h3>
