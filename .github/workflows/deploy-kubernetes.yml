@@ -55,7 +55,22 @@ jobs:
           chmod 600 "$HOME/.kube/config"
 
       - name: Lint Helm chart
-        run: helm lint ./helm/team-drops -f helm/team-drops/values-rancher.yaml
+        run: |
+          helm lint ./helm/team-drops \
+            -f helm/team-drops/values-rancher.yaml \
+            --set genai.llmApiKey=dummy
+
+      - name: Render Helm chart
+        run: |
+          helm template team-drops ./helm/team-drops \
+            --namespace team-drops \
+            -f helm/team-drops/values-rancher.yaml \
+            --set image.tag="${{ steps.image-tag.outputs.value }}" \
+            --set genai.llmApiKey="${{ secrets.LLM_API_KEY }}" \
+            > /tmp/team-drops-rendered.yaml
+
+      - name: Validate rendered Kubernetes manifests
+        run: kubectl apply --dry-run=server -n team-drops -f /tmp/team-drops-rendered.yaml
 
       - name: Deploy Team Drops
         run: |
