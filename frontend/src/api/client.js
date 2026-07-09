@@ -66,6 +66,21 @@ function languageQuery(language) {
   return language ? `?language=${encodeURIComponent(language)}` : '';
 }
 
+function scopedProgressQuery({ planId, targetLanguage } = {}) {
+  const params = new URLSearchParams();
+
+  if (planId != null) {
+    params.set('plan_id', planId);
+  }
+
+  if (targetLanguage) {
+    params.set('target_language', targetLanguage);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
 export function getCurrentUser(token) {
   return request('user', '/api/v1/users/me', { token });
 }
@@ -106,16 +121,16 @@ export function submitAnswer(payload, token) {
   });
 }
 
-export function getUserAnswers(userId, token) {
-  return request('progress', `/api/v1/answers/user/${userId}`, { token });
+export function getUserAnswers(userId, token, scope) {
+  return request('progress', `/api/v1/answers/user/${userId}${scopedProgressQuery(scope)}`, { token });
 }
 
 export function getFeedbackByAnswerId(answerId, token) {
   return request('progress', `/api/v1/answers/${answerId}/feedback`, { token });
 }
 
-export function getProgress(userId, token) {
-  return request('progress', `/api/v1/progress/user/${userId}`, { token });
+export function getProgress(userId, token, scope) {
+  return request('progress', `/api/v1/progress/user/${userId}${scopedProgressQuery(scope)}`, { token });
 }
 
 export function generateListeningContent(exerciseId, lessonId, targetLanguage, level, token) {

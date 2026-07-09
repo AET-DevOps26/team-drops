@@ -284,10 +284,9 @@ export function App() {
 
     const token = currentSession.accessToken;
     const userId = currentSession.user.id;
-    const [profileResult, progressResult] = await Promise.allSettled([
-      getUserProfile(userId, token),
-      getProgress(userId, token),
-    ]);
+    const profileResult = await getUserProfile(userId, token)
+      .then((value) => ({ status: 'fulfilled', value }))
+      .catch((reason) => ({ status: 'rejected', reason }));
 
     const nextProfile = profileResult.status === 'fulfilled'
       ? toProfile(profileResult.value, currentSession.user)
@@ -318,7 +317,7 @@ export function App() {
     }
     if (nextLearningPlans.length > 0) {
       try {
-        const savedAnswers = await getUserAnswers(userId, token);
+        const savedAnswers = await getUserAnswers(userId, token, { targetLanguage: contentLanguage });
         const lessonDetails = await Promise.all(
           nextLearningPlans.flatMap((plan) => plan.lessons.map(async (lesson) => {
             const lessonResponse = await getLesson(lesson.id, token, contentLanguage);
@@ -342,6 +341,14 @@ export function App() {
         nextLearningPlans = derivePlanProgress(nextLearningPlans);
       }
     }
+
+    const progressPlanId = options.progressPlanId ?? nextLearningPlans[selectedPlan]?.id ?? nextLearningPlans[0]?.id;
+    const progressResult = await getProgress(userId, token, {
+      planId: progressPlanId,
+      targetLanguage: contentLanguage,
+    })
+      .then((value) => ({ status: 'fulfilled', value }))
+      .catch((reason) => ({ status: 'rejected', reason }));
 
     const nextProgress = progressResult.status === 'fulfilled'
       ? toProgressSummary(progressResult.value, nextLearningPlans)
@@ -371,7 +378,7 @@ export function App() {
     }
 
     return { nextLearningPlans, nextProgress };
-  }, [targetLanguage]);
+  }, [selectedPlan, targetLanguage]);
 
   React.useEffect(() => {
     if (!authEnabled) {
@@ -446,7 +453,10 @@ export function App() {
     );
     const lessonDetail = toLessonDetail(lessonResponse, selectedLessonSummary);
     const lessonExerciseIds = new Set(lessonDetail.exercises.map((exercise) => exercise.id));
-    const savedAnswers = (await getUserAnswers(currentSession.user.id, currentSession.accessToken))
+    const savedAnswers = (await getUserAnswers(currentSession.user.id, currentSession.accessToken, {
+      planId: selectedPlanSummary.id,
+      targetLanguage: profile.targetLanguage,
+    }))
       .filter((answer) => lessonExerciseIds.has(answer.exercise_id));
     const feedbackEntries = await Promise.all(
       savedAnswers.map(async (answer) => {
@@ -755,7 +765,10 @@ export function App() {
         toLessonDetail(lessonResponse, activeLesson),
         submission,
       );
-      const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+      const syncResult = await syncLearningData(session, {
+        skipSelectionReset: true,
+        progressPlanId: activePlan.id,
+      });
       setLearningPlans(mergeLessonIntoPlans(syncResult.nextLearningPlans, normalizedLesson));
     } catch (error) {
       setAnswerError(error.message || 'Unable to submit answer.');
