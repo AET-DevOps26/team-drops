@@ -6,12 +6,17 @@ import de.tum.aet.devops26.progress_feedback_service.dto.FeedbackResponse;
 import de.tum.aet.devops26.progress_feedback_service.dto.LearningStatus;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerRequest;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerResponse;
+import de.tum.aet.devops26.progress_feedback_service.dto.SubmitSpeakingAnswerResponse;
 import de.tum.aet.devops26.progress_feedback_service.dto.UserAnswerResponse;
+import de.tum.aet.devops26.progress_feedback_service.integration.GenAiSpeakingClient;
+import de.tum.aet.devops26.progress_feedback_service.integration.GenAiSpeakingClient.SpeakingEvaluationRequest;
+import de.tum.aet.devops26.progress_feedback_service.integration.GenAiSpeakingClient.SpeakingEvaluationResponse;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient.WritingEvaluationRequest;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient.WritingEvaluationResponse;
 import de.tum.aet.devops26.progress_feedback_service.integration.LearningServiceClient;
 import de.tum.aet.devops26.progress_feedback_service.integration.LearningServiceClient.ExerciseContext;
+import de.tum.aet.devops26.progress_feedback_service.integration.UserServiceClient;
 import de.tum.aet.devops26.progress_feedback_service.model.Feedback;
 import de.tum.aet.devops26.progress_feedback_service.model.UserAnswer;
 import de.tum.aet.devops26.progress_feedback_service.repository.FeedbackRepository;
@@ -27,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -41,6 +47,8 @@ public class UserAnswerService {
     private final ProgressRecordService progressRecordService;
     private final LearningServiceClient learningServiceClient;
     private final GenAiWritingClient genAiWritingClient;
+    private final GenAiSpeakingClient genAiSpeakingClient;
+    private final UserServiceClient userServiceClient;
     private final ListeningContentService listeningContentService;
     private final ObjectMapper objectMapper;
 
@@ -99,8 +107,8 @@ public class UserAnswerService {
             request.getClientContext().getTargetLanguage()
         );
 
-        if ("LISTENING".equalsIgnoreCase(exercise.type())) {
-            return submitListeningAnswer(request, exercise);
+        if ("LISTENING".equalsIgnoreCase(exercise.type()) || containsListening(exercise.subtype())) {
+            return submitListeningAnswer(request);
         }
 
         return submitWritingAnswer(request, exercise);
@@ -117,7 +125,7 @@ public class UserAnswerService {
             valueOrDefault(request.getClientContext().getTargetLanguage(), "English"),
             valueOrDefault(request.getClientContext().getLevel(), exercise.difficulty())
         ));
-        int score = Math.max(0, Math.min(MAX_SCORE, (int) Math.round(evaluation.score() * 10)));
+        int score = toPercentScore(evaluation.score());
 
         UserAnswer savedAnswer = save(UserAnswer.builder()
             .userId(request.getUserId())
@@ -147,7 +155,7 @@ public class UserAnswerService {
         return response;
     }
 
-    private SubmitAnswerResponse submitListeningAnswer(SubmitAnswerRequest request, ExerciseContext exercise) {
+    private SubmitAnswerResponse submitListeningAnswer(SubmitAnswerRequest request) {
         Map<Integer, String> selections;
         try {
             selections = objectMapper.readValue(request.getAnswerText(), new TypeReference<>() {});
@@ -190,6 +198,75 @@ public class UserAnswerService {
         return response;
     }
 
+    @Transactional
+    public SubmitSpeakingAnswerResponse submitSpeakingAnswer(
+            Long userId,
+            Long exerciseId,
+            Long lessonId,
+            Long planId,
+            String targetLanguage,
+            String level,
+            MultipartFile audio) {
+        if (lessonId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lesson_id is required.");
+        }
+        if (audio == null || audio.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "audio is required.");
+        }
+
+        Long resolvedUserId = userServiceClient.resolveSubmittedUserId(userId);
+        ExerciseContext exercise = learningServiceClient.getExercise(lessonId, exerciseId);
+        if (!isSpeakingExercise(exercise)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Exercise is not a speaking exercise.");
+        }
+
+        SpeakingEvaluationResponse evaluation = genAiSpeakingClient.evaluate(new SpeakingEvaluationRequest(
+            resolvedUserId,
+            exerciseId,
+            readAudioBytes(audio),
+            audio.getOriginalFilename(),
+            audio.getContentType(),
+            valueOrDefault(exercise.subtype(), exercise.type()),
+            exercise.question(),
+            exercise.expectedAnswer(),
+            valueOrDefault(targetLanguage, "English"),
+            valueOrDefault(level, exercise.difficulty())
+        ));
+        int score = toPercentScore(evaluation.score());
+
+        UserAnswer savedAnswer = save(UserAnswer.builder()
+            .userId(resolvedUserId)
+            .exerciseId(exerciseId)
+            .planId(planId)
+            .targetLanguage(normalizeLanguage(targetLanguage))
+            .answerText(evaluation.transcription())
+            .score((double) score)
+            .build());
+
+        Feedback savedFeedback = feedbackRepository.save(Feedback.builder()
+            .answerId(savedAnswer.getId())
+            .message(evaluation.message())
+            .weakArea(evaluation.weakArea())
+            .correctedAnswer(evaluation.correctedAnswer())
+            .build());
+        var progressRecord = progressRecordService.recordSubmittedAnswer(
+            savedAnswer.getUserId(),
+            savedAnswer.getPlanId(),
+            savedAnswer.getTargetLanguage(),
+            score
+        );
+
+        SubmitSpeakingAnswerResponse response = new SubmitSpeakingAnswerResponse();
+        response.setAnswer(toResponse(savedAnswer));
+        response.setFeedback(toFeedbackResponse(savedFeedback));
+        response.setExerciseStatus(LearningStatus.FINISHED);
+        response.setLessonProgress(score);
+        response.setPlanProgress(toProgressValue(progressRecord.getAverageScore()));
+        response.setTranscription(evaluation.transcription());
+        response.setFeedbackAudioB64(evaluation.feedbackAudioB64());
+        return response;
+    }
+
     private UserAnswerResponse toResponse(UserAnswer userAnswer) {
         UserAnswerResponse response = new UserAnswerResponse(
             userAnswer.getId(),
@@ -216,6 +293,30 @@ public class UserAnswerService {
         response.setWeakArea(feedback.getWeakArea());
         response.setCorrectedAnswer(feedback.getCorrectedAnswer());
         return response;
+    }
+
+    private int toPercentScore(double score) {
+        return Math.max(0, Math.min(MAX_SCORE, (int) Math.round(score * 10)));
+    }
+
+    private boolean isSpeakingExercise(ExerciseContext exercise) {
+        return containsSpeaking(exercise.type()) || containsSpeaking(exercise.subtype());
+    }
+
+    private boolean containsSpeaking(String value) {
+        return value != null && value.toLowerCase().contains("speaking");
+    }
+
+    private boolean containsListening(String value) {
+        return value != null && value.toLowerCase().contains("listening");
+    }
+
+    private byte[] readAudioBytes(MultipartFile audio) {
+        try {
+            return audio.getBytes();
+        } catch (Exception exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read uploaded audio.", exception);
+        }
     }
 
     private String valueOrDefault(String value, String defaultValue) {

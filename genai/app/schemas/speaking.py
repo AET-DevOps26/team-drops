@@ -2,7 +2,24 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+
+_RUBRIC_SCORE_FIELDS = (
+    "task_completion",
+    "grammar",
+    "vocabulary",
+    "fluency",
+    "pronunciation",
+)
+
+_RUBRIC_WEAK_AREA = {
+    "task_completion": "fluency",
+    "grammar": "grammar",
+    "vocabulary": "vocabulary",
+    "fluency": "fluency",
+    "pronunciation": "pronunciation",
+}
 
 
 class SpeakingEvaluationResponse(BaseModel):
@@ -61,6 +78,43 @@ class SpeakingEvaluationResponse(BaseModel):
 # LLM fills everything except transcription and feedback_audio_b64 (set by the router).
 class _SpeakingEvaluationLLMOutput(BaseModel):
     """Schema used only for LLM structured output — excludes fields set outside the chain."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_model_output(cls, data):
+        if not isinstance(data, dict):
+            return data
+
+        normalized = dict(data)
+        if "score" not in normalized and "total_score" in normalized:
+            normalized["score"] = normalized["total_score"]
+        if "score" not in normalized:
+            rubric_scores = [
+                normalized.get(field)
+                for field in _RUBRIC_SCORE_FIELDS
+                if normalized.get(field) is not None
+            ]
+            if rubric_scores:
+                normalized["score"] = max(0.0, min(10.0, sum(float(score) for score in rubric_scores)))
+        if "message" not in normalized and "feedback" in normalized:
+            normalized["message"] = normalized["feedback"]
+        weak_area = str(normalized.get("weak_area", "")).strip().lower().replace("_", " ")
+        if weak_area in {"task completion", "task completion and meaning", "meaning", "completeness"}:
+            normalized["weak_area"] = "fluency"
+        elif weak_area:
+            normalized["weak_area"] = weak_area
+        else:
+            scored_areas = [
+                (field, float(normalized[field]))
+                for field in _RUBRIC_SCORE_FIELDS
+                if normalized.get(field) is not None
+            ]
+            if scored_areas:
+                weakest_field, _ = min(scored_areas, key=lambda item: item[1])
+                normalized["weak_area"] = _RUBRIC_WEAK_AREA[weakest_field]
+            else:
+                normalized["weak_area"] = "fluency"
+        return normalized
 
     score: float = Field(..., ge=0.0, le=10.0)
     is_correct: bool

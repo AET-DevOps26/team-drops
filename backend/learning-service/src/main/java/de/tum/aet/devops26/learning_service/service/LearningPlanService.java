@@ -40,6 +40,7 @@ public class LearningPlanService {
                 .findFallbackByKey(DEFAULT_TEMPLATE_KEY);
 
         ensureListeningPlan(request);
+        ensureSpeakingPlan(request);
 
         try {
             return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title())
@@ -102,37 +103,61 @@ public class LearningPlanService {
 
     @Transactional
     public List<LearningPlanResponse> findResponsesByUserId(Long userId, String language) {
-        ensureFixedPlans(userId);
+        ensureFixedPlans(new CreateDefaultLearningPlanRequest().userId(userId));
         return learningPlanRepository.findByUserId(userId).stream()
                 .map(plan -> toResponse(plan, language))
                 .toList();
     }
 
-    private void ensureFixedPlans(Long userId) {
-        CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest().userId(userId);
-        DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog
-                .findFallbackByKey(DEFAULT_TEMPLATE_KEY);
-
+    private void ensureFixedPlans(CreateDefaultLearningPlanRequest request) {
+        ensureDefaultPlan(request);
         ensureListeningPlan(request);
+        ensureSpeakingPlan(request);
+    }
 
+    private void ensureDefaultPlan(CreateDefaultLearningPlanRequest request) {
+        DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog.findFallbackByKey(DEFAULT_TEMPLATE_KEY);
+        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title()).isPresent()) {
+            return;
+        }
+        createDefaultPlan(request);
+    }
+
+    private LearningPlan createDefaultPlan(CreateDefaultLearningPlanRequest request) {
         try {
-            if (learningPlanRepository.findFirstByUserIdAndTitle(
-                    userId, fallbackTemplate.title()).isEmpty()) {
-                learningPlanSeeder.createDefaultPlan(request);
-            }
-        } catch (DataIntegrityViolationException e) {
-            LOGGER.info("Default plan already exists for user {} (concurrent creation)", userId);
+            return learningPlanSeeder.createDefaultPlan(request);
+        } catch (DataIntegrityViolationException exception) {
+            DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog.findFallbackByKey(DEFAULT_TEMPLATE_KEY);
+            LOGGER.info("Default plan already exists for user {} (concurrent creation)", request.getUserId());
+            return learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), fallbackTemplate.title())
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Default plan creation failed and no existing plan found for user " + request.getUserId()
+                ));
         }
     }
 
     private void ensureListeningPlan(CreateDefaultLearningPlanRequest request) {
+        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isPresent()) {
+            return;
+        }
+
         try {
-            if (learningPlanRepository.findFirstByUserIdAndTitle(
-                    request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isEmpty()) {
-                learningPlanSeeder.createListeningPlan(request);
-            }
-        } catch (DataIntegrityViolationException e) {
+            learningPlanSeeder.createListeningPlan(request);
+        } catch (DataIntegrityViolationException exception) {
             LOGGER.info("Listening plan already exists for user {} (concurrent creation)", request.getUserId());
+        }
+    }
+
+    private void ensureSpeakingPlan(CreateDefaultLearningPlanRequest request) {
+        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.SPEAKING_TITLE).isPresent()) {
+            return;
+        }
+
+        try {
+            learningPlanSeeder.createSpeakingPlan(request);
+        } catch (DataIntegrityViolationException exception) {
+            LOGGER.info("Speaking plan already exists for user {} (concurrent creation)", request.getUserId());
         }
     }
 

@@ -314,6 +314,8 @@ export function attachSubmissionToLesson(lesson, submission) {
     return lesson;
   }
 
+  const transcription = submission.transcription ?? submission.answer.answer_text;
+
   return withDerivedLessonProgress({
     ...lesson,
     progress: submission.lesson_progress ?? lesson.progress,
@@ -327,13 +329,15 @@ export function attachSubmissionToLesson(lesson, submission) {
         status: submission.exercise_status ?? exercise.status,
         score: submission.answer.score,
         grade: submission.answer.score,
-        answerText: submission.answer.answer_text,
+        answerText: transcription,
         feedback: submission.feedback
           ? {
               title: 'AI feedback',
               score: submission.answer.score,
               message: submission.feedback.message,
               weakArea: submission.feedback.weak_area,
+              transcription,
+              feedbackAudioB64: submission.feedback_audio_b64,
               strengths: submission.feedback.strengths ?? [],
               improvements: submission.feedback.improvements
                 ?? (submission.feedback.weak_area ? [`Focus on: ${submission.feedback.weak_area}`] : []),
@@ -377,6 +381,7 @@ export function attachSavedAnswersToLesson(lesson, savedAnswers = [], feedbackBy
               score: answer.score,
               message: feedback.message,
               weakArea: feedback.weak_area,
+              transcription: answer.answer_text,
               strengths: feedback.strengths ?? [],
               improvements: feedback.improvements
                 ?? (feedback.weak_area ? [`Focus on: ${feedback.weak_area}`] : []),

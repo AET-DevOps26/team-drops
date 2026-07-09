@@ -68,6 +68,70 @@ paths:
         '404':
           $ref: '../base.yaml#/components/responses/NotFound'
       x-service: progress-feedback-service
+  /api/v1/answers/speaking:
+    post:
+      tags:
+        - Progress & Feedback Service
+      summary: Submit speaking answer
+      description: >
+        Submit spoken audio for an exercise. The progress-feedback backend owns
+        validation, exercise lookup, internal GenAI speaking evaluation,
+        feedback persistence, progress updates, and response mapping.
+      operationId: submitSpeakingAnswer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - audio
+                - user_id
+                - exercise_id
+                - lesson_id
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                  description: Spoken answer audio.
+                user_id:
+                  type: integer
+                  format: int64
+                  example: 1
+                exercise_id:
+                  type: integer
+                  format: int64
+                  example: 1
+                lesson_id:
+                  type: integer
+                  format: int64
+                  example: 1
+                plan_id:
+                  type: integer
+                  format: int64
+                  example: 1
+                target_language:
+                  type: string
+                  example: German
+                level:
+                  type: string
+                  example: A2
+      responses:
+        '200':
+          description: Speaking answer submitted, evaluated, and persisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitSpeakingAnswerResponse'
+        '400':
+          $ref: '../base.yaml#/components/responses/BadRequest'
+        '404':
+          $ref: '../base.yaml#/components/responses/NotFound'
+        '413':
+          description: Audio payload is too large
+        '502':
+          description: GenAI speaking evaluation failed
+      x-service: progress-feedback-service
   /api/v1/answers/{answer_id}/feedback:
     get:
       tags:
@@ -301,6 +365,44 @@ components:
           minimum: 0
           maximum: 100
           example: 48
+    SubmitSpeakingAnswerResponse:
+      type: object
+      required:
+        - answer
+        - exercise_status
+        - lesson_progress
+        - plan_progress
+        - transcription
+      properties:
+        answer:
+          $ref: '#/components/schemas/UserAnswerResponse'
+        feedback:
+          oneOf:
+            - $ref: '#/components/schemas/FeedbackResponse'
+            - type: 'null'
+        exercise_status:
+          $ref: '#/components/schemas/LearningStatus'
+        lesson_progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 65
+        plan_progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 65
+        transcription:
+          type: string
+          example: Die Katze ist an den Tisch
+        feedback_audio_b64:
+          type:
+            - string
+            - 'null'
+          description: Base64-encoded corrected-answer audio returned by GenAI when available.
+          example: UklGRiQAAABXQVZFZm10IBAAAA==
     UserAnswerResponse:
       type: object
       required:

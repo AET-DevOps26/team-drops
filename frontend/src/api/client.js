@@ -11,12 +11,12 @@ const serviceBaseUrls = {
   progress: '/progress-service',
 };
 
-function buildHeaders(token, hasBody) {
+function buildHeaders(token, hasJsonBody) {
   const headers = {
     Accept: 'application/json',
   };
 
-  if (hasBody) {
+  if (hasJsonBody) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -45,12 +45,14 @@ async function parseResponse(response) {
 async function request(service, path, { method = 'GET', token, body } = {}) {
   let response;
   const resolvedToken = token ? await getValidAccessToken().then((refreshedToken) => refreshedToken ?? token) : token;
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+  const hasJsonBody = body !== undefined && !isFormData;
 
   try {
     response = await fetch(`${serviceBaseUrls[service]}${path}`, {
       method,
-      headers: buildHeaders(resolvedToken, body !== undefined),
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: buildHeaders(resolvedToken, hasJsonBody),
+      body: body === undefined || isFormData ? body : JSON.stringify(body),
     });
   } catch (cause) {
     const error = new Error(`Unable to reach the ${service} service.`);
@@ -118,6 +120,34 @@ export function submitAnswer(payload, token) {
     method: 'POST',
     token,
     body: payload,
+  });
+}
+
+export function submitSpeakingAnswer(payload, token) {
+  const formData = new FormData();
+  const audioName = payload.audio?.name || 'speaking-answer.webm';
+
+  formData.append('audio', payload.audio, audioName);
+  formData.append('user_id', String(payload.user_id));
+  formData.append('exercise_id', String(payload.exercise_id));
+  formData.append('lesson_id', String(payload.lesson_id));
+
+  if (payload.plan_id !== undefined && payload.plan_id !== null) {
+    formData.append('plan_id', String(payload.plan_id));
+  }
+
+  if (payload.target_language) {
+    formData.append('target_language', payload.target_language);
+  }
+
+  if (payload.level) {
+    formData.append('level', payload.level);
+  }
+
+  return request('progress', '/api/v1/answers/speaking', {
+    method: 'POST',
+    token,
+    body: formData,
   });
 }
 
