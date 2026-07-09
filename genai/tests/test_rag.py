@@ -315,3 +315,21 @@ def test_rag_learning_plan_schema_repairs_fill_blank_without_blanks():
     assert exercise.question == (
         "Write a short German answer using these terms: Anzug, Bluse, geschlossene Schuhe."
     )
+
+
+def test_rag_learning_plan_schema_repairs_multiple_choice_without_options():
+    exercise = RagLearningPlanExercise.model_validate(
+        {
+            "type": "reading",
+            "subtype": "multiple_choice",
+            "question": "Welcher Tipp gehört zu einem One-Way-Video-Interview?",
+            "expected_answer": "B) Blickkontakt zur Webcam halten",
+            "difficulty": "A2",
+        }
+    )
+
+    assert exercise.type == "writing"
+    assert exercise.subtype == "free_text"
+    assert exercise.question == (
+        "Answer this question in German: Welcher Tipp gehört zu einem One-Way-Video-Interview?"
+    )

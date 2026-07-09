@@ -136,7 +136,12 @@ class RagLearningPlanExercise(BaseModel):
     def ensure_self_contained_question(self) -> "RagLearningPlanExercise":
         if self.subtype == "fill_in_blank" and not _has_blank_marker(self.question):
             self.subtype = "free_text"
+            self.type = "writing"
             self.question = _open_answer_question(self.question, self.expected_answer)
+        if self.subtype in {"multiple_choice", "listening_choice"} and not _has_choice_marker(self.question):
+            self.subtype = "free_text"
+            self.type = "writing"
+            self.question = _open_question_prompt(self.question)
         return self
 
 
@@ -251,7 +256,16 @@ def _has_blank_marker(value: str) -> bool:
     return "___" in value or "____" in value or "[blank]" in value.lower()
 
 
+def _has_choice_marker(value: str) -> bool:
+    normalized = f" {value.lower()} "
+    return any(marker in normalized for marker in (" a)", " b)", " c)", " d)", " a.", " b.", " c.", " d."))
+
+
 def _open_answer_question(question: str, expected_answer: str) -> str:
     if expected_answer.strip():
         return f"Write a short German answer using these terms: {expected_answer.strip()}."
     return question
+
+
+def _open_question_prompt(question: str) -> str:
+    return f"Answer this question in German: {question.strip()}"

@@ -139,6 +139,10 @@ function hasBlankMarker(value = '') {
   return value.includes('___') || value.includes('____') || value.toLowerCase().includes('[blank]');
 }
 
+function hasChoiceMarker(value = '') {
+  return /(^|\s|\n)[a-d][).]/i.test(value);
+}
+
 function formatExercise(subtype, fallbackFormat) {
   switch (subtype) {
     case 'translation':
@@ -163,16 +167,22 @@ function formatExercise(subtype, fallbackFormat) {
 function normalizeExercisePrompt(exercise) {
   const question = exercise.question || exercise.title || '';
   const expectedAnswer = exercise.expected_answer ?? '';
-  const subtype = exercise.subtype === 'fill_in_blank' && !hasBlankMarker(question)
+  const malformedFillBlank = exercise.subtype === 'fill_in_blank' && !hasBlankMarker(question);
+  const malformedChoice = ['multiple_choice', 'listening_choice'].includes(exercise.subtype) && !hasChoiceMarker(question);
+  const subtype = malformedFillBlank || malformedChoice
     ? 'free_text'
     : exercise.subtype;
-  const normalizedQuestion = exercise.subtype === 'fill_in_blank' && subtype === 'free_text' && expectedAnswer
-    ? `Write a short German answer using these terms: ${expectedAnswer}.`
-    : question;
+  let normalizedQuestion = question;
+  if (malformedFillBlank && expectedAnswer) {
+    normalizedQuestion = `Write a short German answer using these terms: ${expectedAnswer}.`;
+  } else if (malformedChoice) {
+    normalizedQuestion = `Answer this question in German: ${question}`;
+  }
 
   return {
     question: normalizedQuestion,
     subtype,
+    type: malformedChoice ? 'writing' : exercise.type,
     format: formatExercise(subtype, exercise.format),
   };
 }
@@ -243,7 +253,7 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     return {
       id: exercise.id,
       lessonId: exercise.lesson_id,
-      type: exercise.type,
+      type: normalizedExercise.type,
       subtype: normalizedExercise.subtype,
       title: normalizedExercise.question || exercise.title,
       question: normalizedExercise.question,
