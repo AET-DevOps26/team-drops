@@ -70,7 +70,36 @@ jobs:
             > /tmp/team-drops-rendered.yaml
 
       - name: Validate rendered Kubernetes manifests
-        run: kubectl apply --dry-run=server -n team-drops -f /tmp/team-drops-rendered.yaml
+        run: |
+          ruby -ryaml -e '
+            failures = []
+
+            YAML.load_stream(File.read("/tmp/team-drops-rendered.yaml")).compact.each do |doc|
+              next unless ["Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob"].include?(doc["kind"])
+
+              pod_spec =
+                if doc["kind"] == "CronJob"
+                  doc.dig("spec", "jobTemplate", "spec", "template", "spec")
+                else
+                  doc.dig("spec", "template", "spec")
+                end
+
+              next unless pod_spec
+
+              containers = pod_spec.fetch("initContainers", []) + pod_spec.fetch("containers", [])
+              containers.each do |container|
+                container.fetch("env", []).each_with_index do |env, index|
+                  next unless env.key?("value") && env.key?("valueFrom")
+
+                  failures << "#{doc["kind"]}/#{doc.dig("metadata", "name")} #{container["name"]} env[#{index}] #{env["name"]}"
+                end
+              end
+            end
+
+            unless failures.empty?
+              abort("Rendered env vars define both value and valueFrom:\n- #{failures.join("\n- ")}")
+            end
+          '
 
       - name: Deploy Team Drops
         run: |
