@@ -136,6 +136,7 @@ export function LearningPage({
                 listeningSelections={listeningSelections}
                 onListeningSelect={onListeningSelect}
                 onSubmitAnswer={onSubmitAnswer}
+                t={t}
               />
             ) : learningStep === 'exercise' ? (
               <ExerciseDetailView
@@ -615,7 +616,7 @@ function ExerciseCard({ exercise, index, t, onOpenExercise }) {
       <span className="lesson-progress-copy">
         <strong>{exercise.title}</strong>
         <em>{exercise.format}</em>
-        <span className="status-pill">{formatStatus(exercise.status, exercise.language)}</span>
+        <span className="status-pill">{formatStatus(exercise.status, t)}</span>
       </span>
       <small className="lesson-percent">{exercise.grade ? `${exercise.grade}` : '--'}</small>
     </button>
@@ -636,6 +637,7 @@ function ListeningExerciseView({
   listeningSelections,
   onListeningSelect,
   onSubmitAnswer,
+  t,
 }) {
   const allAnswered = listeningContent
     && listeningContent.questions.length > 0
@@ -659,7 +661,7 @@ function ListeningExerciseView({
       </div>
 
       <div className="exercise-status-row">
-        <span className="status-pill">{formatStatus(activeExercise.status)}</span>
+        <span className="status-pill">{formatStatus(activeExercise.status, t)}</span>
         {activeExercise.status === 'finished' && (
           <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
         )}
@@ -790,7 +792,7 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
       </div>
 
       <div className="exercise-status-row">
-        <span className="status-pill">{formatStatus(activeExercise.status, activeExercise.language)}</span>
+        <span className="status-pill">{formatStatus(activeExercise.status, t)}</span>
         {activeExercise.status === 'finished' && (
           <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
         )}
@@ -894,16 +896,14 @@ function ExerciseTypeIcon({ type }) {
   return <TextCursorInput size={18} aria-hidden="true" />;
 }
 
-function formatStatus(status, language) {
-  const isGerman = language?.toLowerCase() === 'german';
-
+function formatStatus(status, t) {
   if (status === 'not-started') {
-    return isGerman ? 'Noch nicht begonnen' : 'Not started';
+    return t.statusNotStarted;
   }
 
   if (status === 'ongoing') {
-    return isGerman ? 'In Bearbeitung' : 'Ongoing';
+    return t.statusOngoing;
   }
 
-  return isGerman ? 'Abgeschlossen' : 'Finished';
+  return t.statusFinished;
 }
