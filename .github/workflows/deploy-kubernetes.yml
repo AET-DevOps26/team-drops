@@ -165,7 +165,7 @@ jobs:
             --set image.tag="${{ steps.image-tag.outputs.value }}" \
             --set genai.llmApiKey="${{ secrets.LLM_API_KEY }}" \
             --set monitoring.standalone.grafanaAdminPassword="${{ secrets.GRAFANA_ADMIN_PASSWORD }}" \
-            --force-conflicts \
+            --server-side=false \
             --wait \
             --timeout 10m
 
@@ -176,6 +176,11 @@ jobs:
           kubectl -n team-drops get pods || true
           kubectl -n team-drops get deployments || true
           kubectl -n team-drops get replicasets || true
+          kubectl -n team-drops get statefulset mongo postgres -o wide || true
+          kubectl -n team-drops get statefulset mongo postgres -o=jsonpath='{range .items[*]}{.metadata.name}{" uid="}{.metadata.uid}{" ready="}{.status.readyReplicas}{"/"}{.spec.replicas}{"\n"}{end}' || true
+          kubectl -n team-drops get pvc mongo-data-mongo-0 postgres-data-postgres-0 -o wide || true
+          kubectl -n team-drops describe statefulset mongo || true
+          kubectl -n team-drops describe statefulset postgres || true
           kubectl -n team-drops describe deployment genai-service || true
           kubectl -n team-drops describe deployment keycloak || true
           kubectl -n team-drops get events --sort-by=.lastTimestamp || true
