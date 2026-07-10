@@ -71,6 +71,8 @@ spec:
         name: postgres-data
         labels:
           {{- include "team-drops.labels" . | nindent 10 }}
+          # Kept for compatibility with existing StatefulSets; this template is immutable.
+          monitoring: "true"
       spec:
         accessModes: ["ReadWriteOnce"]
         resources:
