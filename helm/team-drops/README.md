@@ -9,14 +9,19 @@ Nginx on port 80.
 ## Render and validate safely
 
 ```bash
+helm dependency build ./helm/team-drops
+
 helm lint ./helm/team-drops \
+  --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
-  --set genai.llmApiKey=dummy
+  --set genai.llmApiKey=dummy \
+  --set monitoring.standalone.grafanaAdminPassword=dummy
 
 helm template team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
   --set genai.llmApiKey=dummy \
+  --set monitoring.standalone.grafanaAdminPassword=dummy \
   > /tmp/team-drops-rendered.yaml
 ```
 
@@ -55,7 +60,8 @@ settings: host, staging TLS, and Ollama mode.
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
-  --set image.tag=kubernetes
+  --set image.tag=kubernetes \
+  --set monitoring.standalone.grafanaAdminPassword=<password>
 ```
 
 If GHCR packages are private, create an image pull secret in the namespace and
@@ -65,7 +71,8 @@ install with:
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
-  --set imagePullSecrets[0]=<secret-name>
+  --set imagePullSecrets[0]=<secret-name> \
+  --set monitoring.standalone.grafanaAdminPassword=<password>
 ```
 
 ## Automatic deployment
@@ -79,6 +86,8 @@ Required repository secret:
 - `KUBE_CONFIG`: kubeconfig content for a Rancher user or service account with
   permission to manage Helm releases and workloads in the `team-drops`
   namespace.
+- `GRAFANA_ADMIN_PASSWORD`: administrator password for the namespace-owned
+  Grafana instance; it is written only to the Kubernetes Secret.
 
 Automatic runs deploy the immutable `sha-<commit>` image tag published by the
 `Docker Publish` workflow. Manual runs default to `latest`, but allow choosing a
@@ -126,6 +135,63 @@ kubectl -n team-drops port-forward svc/genai-service 8084:80
 curl http://localhost:8084/health
 ```
 
+## Prometheus and Grafana monitoring
+
+The Rancher values deploy a private Prometheus and Grafana stack inside the
+`team-drops` namespace. Prometheus retains seven days of data on a 2 GiB PVC,
+Grafana uses a 1 GiB PVC, and discovery is restricted by namespaced RBAC to API
+Services labeled `monitoring: "true"`. Neither UI is exposed through Ingress.
+
+Check the stack and persistent storage:
+
+```bash
+kubectl -n team-drops get pods,svc,pvc | grep -E 'prometheus|grafana'
+kubectl -n team-drops get role,rolebinding team-drops-prometheus
+```
+
+Access Grafana:
+
+```bash
+kubectl -n team-drops port-forward svc/team-drops-grafana 3000:80
+```
+
+Open `http://localhost:3000`, sign in as `admin` with the value of
+`GRAFANA_ADMIN_PASSWORD`, and open **Dashboards > Team Drops > Team Drops
+Overview**.
+
+Access the Prometheus query and target UI:
+
+```bash
+kubectl -n team-drops port-forward svc/team-drops-prometheus-server 9090:80
+```
+
+Open `http://localhost:9090`. Useful queries are:
+
+```promql
+up{job="team-drops-services"}
+application_info{namespace="team-drops"}
+sum(rate(http_server_requests_seconds_count{namespace="team-drops"}[5m]))
+sum(rate(http_requests_total{namespace="team-drops"}[5m]))
+```
+
+Inspect raw application metrics without exposing them through Ingress:
+
+```bash
+kubectl -n team-drops port-forward svc/user-service 8081:80
+curl http://localhost:8081/actuator/prometheus
+```
+
+```bash
+kubectl -n team-drops port-forward svc/genai-service 8084:80
+curl http://localhost:8084/metrics
+```
+
+`up{job="team-drops-services"}` should contain four healthy targets. The
+`application_info` version label should match the deployed `sha-<commit>` image
+tag. Rancher `ServiceMonitor` resources remain available through
+`monitoring.rancherServiceMonitors.enabled`, but are disabled in
+`values-rancher.yaml` because this stack does not use the cluster Prometheus.
+
 Rollback or uninstall:
 
 ```bash
@@ -144,7 +210,8 @@ helm upgrade --install team-drops ./helm/team-drops \
   -f helm/team-drops/values-rancher.yaml \
   --set image.tag=<sha-tag> \
   --set genai.llmProvider=openai \
-  --set genai.llmApiKey=<api-key>
+  --set genai.llmApiKey=<api-key> \
+  --set monitoring.standalone.grafanaAdminPassword=<password>
 ```
 
 For Rancher deployments, always pass the commit image tag, for example
@@ -160,7 +227,8 @@ fail until a backend is configured.
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
-  -f helm/team-drops/values-rancher.yaml
+  -f helm/team-drops/values-rancher.yaml \
+  --set monitoring.standalone.grafanaAdminPassword=<password>
 ```
 
 To opt into in-cluster Ollama:
@@ -169,6 +237,7 @@ To opt into in-cluster Ollama:
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
+  --set monitoring.standalone.grafanaAdminPassword=<password> \
   --set ollama.enabled=true
 ```
 
@@ -185,6 +254,7 @@ cluster admins or tutors:
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
+  --set monitoring.standalone.grafanaAdminPassword=<password> \
   --set ingress.tls.enabled=true \
   --set ingress.tls.clusterIssuer=<issuer-name>
 ```

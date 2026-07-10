@@ -10,6 +10,150 @@ rollout:
   maxSurge: 0
   maxUnavailable: 1
 
+monitoring:
+  applicationVersionFallback: unknown
+  rancherServiceMonitors:
+    enabled: true
+    labels:
+      release: rancher-monitoring
+    interval: 30s
+    scrapeTimeout: 10s
+  standalone:
+    enabled: false
+    namespace: team-drops
+    grafanaAdminUser: admin
+    grafanaAdminPassword: ""
+
+prometheus:
+  rbac:
+    create: false
+  serviceAccounts:
+    server:
+      create: false
+      name: team-drops-prometheus
+  alertmanager:
+    enabled: false
+  kube-state-metrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+  scrapeConfigs:
+    kubernetes-api-servers:
+      enabled: false
+    kubernetes-nodes:
+      enabled: false
+    kubernetes-nodes-cadvisor:
+      enabled: false
+    kubernetes-service-endpoints:
+      enabled: false
+    kubernetes-service-endpoints-slow:
+      enabled: false
+    prometheus-pushgateway:
+      enabled: false
+    kubernetes-services:
+      enabled: false
+    kubernetes-pods:
+      enabled: false
+    kubernetes-pods-slow:
+      enabled: false
+  configmapReload:
+    prometheus:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+  server:
+    fullnameOverride: team-drops-prometheus-server
+    retention: 7d
+    persistentVolume:
+      enabled: true
+      accessModes: [ReadWriteOnce]
+      size: 2Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+  serverFiles:
+    prometheus.yml:
+      scrape_configs:
+        - job_name: team-drops-services
+          kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names: [team-drops]
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_service_label_monitoring]
+              action: keep
+              regex: "true"
+            - source_labels: [__meta_kubernetes_endpoint_port_name]
+              action: keep
+              regex: http
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+              target_label: __metrics_path__
+              action: replace
+            - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_component]
+              target_label: service
+              action: replace
+            - source_labels: [__meta_kubernetes_namespace]
+              target_label: namespace
+              action: replace
+
+grafana:
+  fullnameOverride: team-drops-grafana
+  rbac:
+    create: true
+    namespaced: true
+  testFramework:
+    enabled: false
+  admin:
+    existingSecret: team-drops-secret
+    userKey: GRAFANA_ADMIN_USER
+    passwordKey: GRAFANA_ADMIN_PASSWORD
+  persistence:
+    enabled: true
+    type: pvc
+    accessModes: [ReadWriteOnce]
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://team-drops-prometheus-server
+          access: proxy
+          isDefault: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: Team Drops
+          type: file
+          disableDeletion: true
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards/default
+  dashboardsConfigMaps:
+    default: team-drops-grafana-dashboards
+
 auth:
   enabled: true
   # Public issuer URL expected in browser-issued tokens.

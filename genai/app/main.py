@@ -1,8 +1,11 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, APIRouter, Depends
 from fastapi.security import HTTPBearer
+from prometheus_client import Gauge
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.config import settings
 from app.llm import llm_configuration_status
@@ -16,6 +19,14 @@ from app.routers.writing import router as writing_router
 
 
 bearer_auth = HTTPBearer(auto_error=False)
+application_info = Gauge(
+    "application_info",
+    "Deployed application version information.",
+    ("service", "version"),
+)
+application_info.labels(
+    service="genai-service", version=os.getenv("APP_VERSION", "unknown")
+).set(1)
 
 
 @asynccontextmanager
@@ -49,6 +60,9 @@ app = FastAPI(
 
 add_error_handlers(app)
 add_auth_middleware(app)
+Instrumentator().instrument(app).expose(
+    app, endpoint="/metrics", include_in_schema=False
+)
 
 api_v1 = APIRouter(prefix="/api/v1/genai", dependencies=[Depends(bearer_auth)])
 api_v1.include_router(exercises_router)

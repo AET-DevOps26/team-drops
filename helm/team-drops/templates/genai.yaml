@@ -2,9 +2,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: genai-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
   labels:
     {{- include "team-drops.labels" . | nindent 4 }}
-    app.kubernetes.io/component: ai
+    app.kubernetes.io/component: genai-service
+    app.kubernetes.io/tier: backend
+    monitoring: "true"
 spec:
   selector:
     {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "genai-service") | nindent 4 }}
@@ -35,6 +40,7 @@ spec:
       labels:
         {{- include "team-drops.labels" . | nindent 8 }}
         {{- include "team-drops.selectorLabels" (dict "Release" .Release "component" "genai-service") | nindent 8 }}
+        monitoring: "true"
     spec:
       {{- include "team-drops.imagePullSecrets" . | nindent 6 }}
       containers:
@@ -49,6 +55,9 @@ spec:
                 name: team-drops-config
             - secretRef:
                 name: team-drops-secret
+          env:
+            - name: APP_VERSION
+              value: {{ default .Values.monitoring.applicationVersionFallback .Values.image.tag | quote }}
           readinessProbe:
             httpGet:
               path: /health

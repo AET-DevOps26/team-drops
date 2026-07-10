@@ -1,0 +1,64 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red"}, {"color": "green", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "targets": [{"expr": "sum(up{job=\"team-drops-services\"})", "refId": "A"}],
+      "title": "Healthy API Targets",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 9, "x": 6, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "(sum(rate(http_server_requests_seconds_count{namespace=\"team-drops\"}[5m])) or vector(0)) + (sum(rate(http_requests_total{namespace=\"team-drops\"}[5m])) or vector(0))", "legendFormat": "requests", "refId": "A"}],
+      "title": "Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 9, "x": 15, "y": 0},
+      "id": 3,
+      "targets": [{"expr": "(sum(rate(http_server_requests_seconds_count{namespace=\"team-drops\",status=~\"5..\"}[5m])) or vector(0)) + (sum(rate(http_requests_total{namespace=\"team-drops\",status=~\"5..\"}[5m])) or vector(0))", "legendFormat": "5xx errors", "refId": "A"}],
+      "title": "Server Error Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 4,
+      "targets": [{"expr": "((sum(rate(http_server_requests_seconds_sum{namespace=\"team-drops\"}[5m])) or vector(0)) + (sum(rate(http_request_duration_seconds_sum{namespace=\"team-drops\"}[5m])) or vector(0))) / clamp_min(((sum(rate(http_server_requests_seconds_count{namespace=\"team-drops\"}[5m])) or vector(0)) + (sum(rate(http_request_duration_seconds_count{namespace=\"team-drops\"}[5m])) or vector(0))), 0.001)", "legendFormat": "average", "refId": "A"}],
+      "title": "Average Response Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 5,
+      "options": {"showHeader": true},
+      "targets": [{"expr": "application_info{namespace=\"team-drops\"}", "format": "table", "instant": true, "refId": "A"}],
+      "title": "Deployed Application Versions",
+      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "Value": true, "__name__": true, "instance": true, "job": true, "namespace": true}, "indexByName": {}, "renameByName": {"service": "Service", "version": "Version"}}}],
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["team-drops", "observability"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timezone": "browser",
+  "title": "Team Drops Overview",
+  "uid": "team-drops-overview",
+  "version": 1
+}
