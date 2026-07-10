@@ -13,6 +13,19 @@ def test_auth_middleware_allows_public_health_when_enabled(client, monkeypatch):
     assert response.status_code == 200
 
 
+def test_auth_middleware_allows_metrics_when_enabled(client, monkeypatch):
+    monkeypatch.setattr(settings, "auth_enabled", True)
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/plain")
+    assert (
+        'application_info{service="genai-service",version="unknown"} 1.0'
+        in response.text
+    )
+
+
 def test_auth_middleware_rejects_missing_bearer_token(client, monkeypatch):
     monkeypatch.setattr(settings, "auth_enabled", True)
 
