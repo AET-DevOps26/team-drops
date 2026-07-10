@@ -47,3 +47,6 @@ bin/
 out/
 *.tmp
 !gradle/wrapper/gradle-wrapper.jar
+
+# Helm dependencies (recreated from Chart.lock)
+helm/team-drops/charts/

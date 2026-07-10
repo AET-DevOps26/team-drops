@@ -13,6 +13,12 @@ genai:
       cpu: 500m
       memory: 1Gi
 
+monitoring:
+  rancherServiceMonitors:
+    enabled: false
+  standalone:
+    enabled: true
+
 auth:
   issuerUri: https://team-drops.stud.k8s.aet.cit.tum.de/realms/team-drops
   jwksUri: http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs

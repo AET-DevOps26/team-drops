@@ -3,9 +3,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ $service.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/actuator/prometheus"
   labels:
     {{- include "team-drops.labels" $ | nindent 4 }}
-    app.kubernetes.io/component: backend
+    app.kubernetes.io/component: {{ $service.name }}
+    app.kubernetes.io/tier: backend
+    monitoring: "true"
 spec:
   selector:
     {{- include "team-drops.selectorLabels" (dict "Release" $.Release "component" $service.name) | nindent 4 }}
@@ -36,6 +41,7 @@ spec:
       labels:
         {{- include "team-drops.labels" $ | nindent 8 }}
         {{- include "team-drops.selectorLabels" (dict "Release" $.Release "component" $service.name) | nindent 8 }}
+        monitoring: "true"
     spec:
       {{- include "team-drops.imagePullSecrets" $ | nindent 6 }}
       initContainers:
@@ -60,6 +66,8 @@ spec:
             - name: app
               containerPort: {{ $service.port }}
           env:
+            - name: APP_VERSION
+              value: {{ default $.Values.monitoring.applicationVersionFallback $.Values.image.tag | quote }}
             - name: SPRING_DATASOURCE_URL
               valueFrom:
                 configMapKeyRef:
