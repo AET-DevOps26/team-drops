@@ -32,6 +32,7 @@ import {
   toProfile,
   toProgressSummary,
 } from './api/mappers';
+import { IntroOverlay } from './components/IntroOverlay';
 import { SettingsOverlay } from './components/SettingsOverlay';
 import { languages, targetLanguages } from './data/languages';
 import { AuthPage } from './pages/AuthPage';
@@ -48,6 +49,8 @@ const defaultProfile = {
   currentLevel: 'A2',
   learningGoal: 'Prepare for a software engineering job interview',
 };
+
+const introPendingKey = 'teamDropsIntroPending';
 
 const translations = {
   English: {
@@ -73,8 +76,6 @@ const translations = {
     planOverview: 'Plan overview',
     currentPlan: 'plan',
     lessonsInProgress: 'lessons in progress',
-    exercisesDone: 'Exercises done',
-    averageScore: 'Average score',
     recentProgress: 'Recent progress',
     recentFinish: 'Recent finish',
     topLessons: 'Top 3 lessons',
@@ -126,8 +127,6 @@ const translations = {
     planOverview: 'Planübersicht',
     currentPlan: 'Plan',
     lessonsInProgress: 'Lektionen laufen',
-    exercisesDone: 'Übungen erledigt',
-    averageScore: 'Durchschnitt',
     recentProgress: 'Aktueller Fortschritt',
     recentFinish: 'Abgeschlossen',
     topLessons: 'Top 3 Lektionen',
@@ -179,8 +178,6 @@ const translations = {
     planOverview: 'Apercu du plan',
     currentPlan: 'plan',
     lessonsInProgress: 'lecons en cours',
-    exercisesDone: 'Exercices faits',
-    averageScore: 'Score moyen',
     recentProgress: 'Progression recente',
     recentFinish: 'Termine recemment',
     topLessons: 'Top 3 lecons',
@@ -215,6 +212,7 @@ export function App() {
   const [screen, setScreen] = React.useState('auth');
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [settingsClosing, setSettingsClosing] = React.useState(false);
+  const [introOpen, setIntroOpen] = React.useState(false);
   const [darkMode, setDarkMode] = React.useState(false);
   const [language, setLanguage] = React.useState('English');
   const [targetLanguage, setTargetLanguage] = React.useState(defaultProfile.targetLanguage);
@@ -451,6 +449,7 @@ export function App() {
     }
 
     let cancelled = false;
+    let introTimeoutId = 0;
 
     async function bootstrapOidcSession() {
       setAuthPending(true);
@@ -486,6 +485,14 @@ export function App() {
           navigateToScreen('main');
           setSettingsOpen(false);
           setSettingsClosing(false);
+          if (window.localStorage.getItem(introPendingKey) === 'true') {
+            window.localStorage.removeItem(introPendingKey);
+            introTimeoutId = window.setTimeout(() => {
+              if (!cancelled) {
+                setIntroOpen(true);
+              }
+            }, 260);
+          }
         }
       } catch (error) {
         if (!cancelled) {
@@ -503,6 +510,7 @@ export function App() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(introTimeoutId);
     };
   }, [navigateToScreen, syncLearningData]);
 
@@ -572,6 +580,7 @@ export function App() {
     navigateToScreen('main');
     setSettingsOpen(false);
     setSettingsClosing(false);
+    setIntroOpen(false);
   };
 
   const bypassAuth = async () => {
@@ -644,10 +653,17 @@ export function App() {
   const handleRegister = () => {
     setAuthError('');
     setAuthPending(true);
+    window.localStorage.setItem(introPendingKey, 'true');
     registerWithKeycloak().catch((error) => {
       setAuthPending(false);
+      window.localStorage.removeItem(introPendingKey);
       setAuthError(error.message || 'Unable to start Keycloak registration.');
     });
+  };
+
+  const finishIntro = () => {
+    window.localStorage.removeItem(introPendingKey);
+    setIntroOpen(false);
   };
 
   const openLessonFromDashboard = (planIndex, lessonIndex) => {
@@ -936,8 +952,6 @@ export function App() {
               dashboardError={dashboardError}
               hasLearningPlans={learningPlans.length > 0}
               hasLessons={activePlan.lessons.length > 0}
-              loading={loadingInitialData}
-              progress={progress}
               recentFinishedLessons={recentFinishedLessons}
               recentLessons={recentLessons}
               profile={profile}
@@ -1033,6 +1047,10 @@ export function App() {
               onProfile={() => closeSettings('profile')}
               onToggleDarkMode={() => setDarkMode((value) => !value)}
             />
+          )}
+
+          {introOpen && screen === 'main' && !settingsOpen && (
+            <IntroOverlay onFinish={finishIntro} />
           )}
 
           <div className="home-indicator" aria-hidden="true"></div>
