@@ -108,6 +108,14 @@ prometheus:
 
 grafana:
   fullnameOverride: team-drops-grafana
+  initChownData:
+    resources:
+      requests:
+        cpu: 5m
+        memory: 8Mi
+      limits:
+        cpu: 20m
+        memory: 32Mi
   rbac:
     create: true
     namespaced: true

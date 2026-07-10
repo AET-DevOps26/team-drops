@@ -134,6 +134,27 @@ jobs:
             abort("Missing Prometheus PVC") unless pvcs.any? { |name| name.include?("prometheus") }
             abort("Missing Grafana PVC") unless pvcs.any? { |name| name.include?("grafana") }
             abort("Missing namespace-scoped Prometheus Role") unless documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-prometheus" }
+
+            statefulsets = documents.select { |doc| doc["kind"] == "StatefulSet" }
+            expected_statefulsets = ["mongo", "postgres"]
+            expected_statefulsets.each do |name|
+              statefulset = statefulsets.find { |doc| doc.dig("metadata", "name") == name }
+              abort("Missing StatefulSet/#{name}") unless statefulset
+
+              claims = statefulset.dig("spec", "volumeClaimTemplates") || []
+              abort("StatefulSet/#{name} PVC template is missing compatibility monitoring label") unless claims.all? { |claim| claim.dig("metadata", "labels", "monitoring") == "true" }
+            end
+
+            workload_documents = documents.select { |doc| ["Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob"].include?(doc["kind"]) }
+            workload_documents.each do |doc|
+              pod_spec = doc["kind"] == "CronJob" ? doc.dig("spec", "jobTemplate", "spec", "template", "spec") : doc.dig("spec", "template", "spec")
+              next unless pod_spec
+
+              pod_spec.fetch("initContainers", []).each do |container|
+                limits = container.dig("resources", "limits") || {}
+                abort("#{doc["kind"]}/#{doc.dig("metadata", "name")} init container #{container["name"]} is missing CPU or memory limits") unless limits["cpu"] && limits["memory"]
+              end
+            end
           '
 
       - name: Deploy Team Drops

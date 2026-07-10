@@ -123,6 +123,12 @@ kubectl -n team-drops logs <pod-name>
 kubectl -n team-drops get events --sort-by=.lastTimestamp
 ```
 
+The `monitoring: "true"` labels on the Mongo and Postgres
+`volumeClaimTemplates` are retained for upgrade compatibility with existing
+StatefulSets. Kubernetes treats this section as immutable; removing or changing
+these labels requires a controlled StatefulSet recreation while preserving the
+existing PVCs.
+
 Internal health checks via port-forward:
 
 ```bash
