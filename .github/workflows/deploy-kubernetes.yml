@@ -48,6 +48,9 @@ jobs:
             echo "value=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Build Helm dependencies
+        run: helm dependency build ./helm/team-drops
+
       - name: Configure kubeconfig
         run: |
           mkdir -p "$HOME/.kube"
@@ -57,8 +60,10 @@ jobs:
       - name: Lint Helm chart
         run: |
           helm lint ./helm/team-drops \
+            --namespace team-drops \
             -f helm/team-drops/values-rancher.yaml \
-            --set genai.llmApiKey=dummy
+            --set genai.llmApiKey=dummy \
+            --set monitoring.standalone.grafanaAdminPassword=dummy
 
       - name: Render Helm chart
         run: |
@@ -67,6 +72,7 @@ jobs:
             -f helm/team-drops/values-rancher.yaml \
             --set image.tag="${{ steps.image-tag.outputs.value }}" \
             --set genai.llmApiKey="${{ secrets.LLM_API_KEY }}" \
+            --set monitoring.standalone.grafanaAdminPassword="${{ secrets.GRAFANA_ADMIN_PASSWORD }}" \
             > /tmp/team-drops-rendered.yaml
 
       - name: Validate rendered Kubernetes manifests
@@ -99,6 +105,32 @@ jobs:
             unless failures.empty?
               abort("Rendered env vars define both value and valueFrom:\n- #{failures.join("\n- ")}")
             end
+
+            documents = YAML.load_stream(File.read("/tmp/team-drops-rendered.yaml")).compact
+            services = documents.select { |doc| doc["kind"] == "Service" }
+            service_monitors = documents.select { |doc| doc["kind"] == "ServiceMonitor" }
+            expected_paths = {
+              "user-service" => "/actuator/prometheus",
+              "learning-service" => "/actuator/prometheus",
+              "progress-feedback-service" => "/actuator/prometheus",
+              "genai-service" => "/metrics"
+            }
+
+            expected_paths.each do |name, path|
+              service = services.find { |doc| doc.dig("metadata", "name") == name }
+              abort("Missing Service/#{name}") unless service
+              abort("Service/#{name} does not expose named port http") unless service.dig("spec", "ports").any? { |port| port["name"] == "http" }
+              abort("Service/#{name} is missing monitoring label") unless service.dig("metadata", "labels", "monitoring") == "true"
+              abort("Service/#{name} has the wrong Prometheus path") unless service.dig("metadata", "annotations", "prometheus.io/path") == path
+            end
+
+            abort("Rancher ServiceMonitors must be disabled for the standalone stack") unless service_monitors.empty?
+            cluster_scoped_rbac = documents.select { |doc| ["ClusterRole", "ClusterRoleBinding"].include?(doc["kind"]) }
+            abort("Standalone monitoring rendered cluster-scoped RBAC") unless cluster_scoped_rbac.empty?
+            pvcs = documents.select { |doc| doc["kind"] == "PersistentVolumeClaim" }.map { |doc| doc.dig("metadata", "name") }
+            abort("Missing Prometheus PVC") unless pvcs.any? { |name| name.include?("prometheus") }
+            abort("Missing Grafana PVC") unless pvcs.any? { |name| name.include?("grafana") }
+            abort("Missing namespace-scoped Prometheus Role") unless documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-prometheus" }
           '
 
       - name: Deploy Team Drops
@@ -108,6 +140,7 @@ jobs:
             -f helm/team-drops/values-rancher.yaml \
             --set image.tag="${{ steps.image-tag.outputs.value }}" \
             --set genai.llmApiKey="${{ secrets.LLM_API_KEY }}" \
+            --set monitoring.standalone.grafanaAdminPassword="${{ secrets.GRAFANA_ADMIN_PASSWORD }}" \
             --force-conflicts \
             --wait \
             --timeout 10m
@@ -122,4 +155,6 @@ jobs:
           kubectl -n team-drops describe deployment genai-service || true
           kubectl -n team-drops describe deployment keycloak || true
           kubectl -n team-drops get events --sort-by=.lastTimestamp || true
+          kubectl -n team-drops get pods,svc,pvc | grep -E 'prometheus|grafana' || true
+          kubectl -n team-drops get role,rolebinding team-drops-prometheus || true
           kubectl -n team-drops get deployment frontend -o=jsonpath='{.spec.template.spec.containers[0].image}{"\n"}' || true
