@@ -41,6 +41,7 @@ export function LearningPage({
   onOpenPlanDetail,
   onOpenSettings,
   onListeningSelect,
+  onRetryListeningExercise,
   onSubmitAnswer,
   onSubmitSpeakingAnswer,
   onOpenLesson,
@@ -137,6 +138,7 @@ export function LearningPage({
                 listeningLoading={listeningLoading}
                 listeningSelections={listeningSelections}
                 onListeningSelect={onListeningSelect}
+                onRetryListeningExercise={onRetryListeningExercise}
                 onSubmitAnswer={onSubmitAnswer}
                 t={t}
               />
@@ -615,6 +617,7 @@ function LessonBlock({ block, exercises, t, onOpenExercise }) {
 
 function ExerciseCard({ exercise, index, t, onOpenExercise }) {
   const comingSoon = isComingSoonType(exercise.type);
+  const statusClass = exercise.status === 'finished' ? 'status-pill-finished' : '';
 
   return (
     <button
@@ -628,7 +631,7 @@ function ExerciseCard({ exercise, index, t, onOpenExercise }) {
       <span className="lesson-progress-copy">
         <strong>{exercise.title}</strong>
         <em>{exercise.format}</em>
-        <span className="status-pill">{formatStatus(exercise.status, t)}</span>
+        <span className={`status-pill ${statusClass}`}>{formatStatus(exercise.status, t)}</span>
       </span>
       <small className="lesson-percent">{exercise.grade ? `${exercise.grade}` : '--'}</small>
     </button>
@@ -644,6 +647,108 @@ function isSpeakingExercise(exercise) {
   return exercise?.type === 'speaking' || subtype.toLowerCase().includes('speaking');
 }
 
+function hasReviewedAnswer(exercise) {
+  return Boolean(
+    exercise?.feedback
+      || exercise?.status === 'finished'
+      || exercise?.grade != null
+      || exercise?.score != null
+      || String(exercise?.answerText ?? '').trim(),
+  );
+}
+
+function getExerciseScore(exercise) {
+  return exercise?.grade ?? exercise?.score ?? exercise?.feedback?.score ?? null;
+}
+
+function parseListeningAnswerSummary(answerText) {
+  const trimmedAnswer = String(answerText ?? '').trim();
+
+  if (!trimmedAnswer) {
+    return { type: 'empty', rows: [] };
+  }
+
+  try {
+    const parsedAnswer = JSON.parse(trimmedAnswer);
+
+    if (Array.isArray(parsedAnswer)) {
+      const rows = parsedAnswer
+        .map((value, index) => ({
+          label: `Question ${index + 1}`,
+          value: typeof value === 'string' ? value : JSON.stringify(value),
+        }))
+        .filter((row) => row.value);
+
+      return rows.length > 0 ? { type: 'selections', rows } : { type: 'empty', rows: [] };
+    }
+
+    if (parsedAnswer && typeof parsedAnswer === 'object') {
+      const rows = Object.entries(parsedAnswer)
+        .sort(([left], [right]) => Number(left) - Number(right))
+        .map(([index, value]) => {
+          const questionNumber = Number.isFinite(Number(index)) ? Number(index) + 1 : index;
+
+          return {
+            label: `Question ${questionNumber}`,
+            value: typeof value === 'string' ? value : JSON.stringify(value),
+          };
+        })
+        .filter((row) => row.value);
+
+      return rows.length > 0 ? { type: 'selections', rows } : { type: 'empty', rows: [] };
+    }
+  } catch {
+    return { type: 'plain', rows: [{ label: 'Submitted answer', value: trimmedAnswer }] };
+  }
+
+  return { type: 'plain', rows: [{ label: 'Submitted answer', value: trimmedAnswer }] };
+}
+
+function ExerciseDetailHeader({ activeExercise, icon, label, t }) {
+  const score = getExerciseScore(activeExercise);
+  const statusClass = activeExercise.status === 'finished' ? 'status-pill-finished' : '';
+
+  return (
+    <>
+      <div className="exercise-detail-header">
+        <span className={`exercise-type-icon ${label}`}>
+          {icon}
+        </span>
+        <div>
+          <p>{label}</p>
+          <h3>{activeExercise.title}</h3>
+        </div>
+      </div>
+
+      <div className="exercise-status-row">
+        <span className={`status-pill ${statusClass}`}>{formatStatus(activeExercise.status, t)}</span>
+        {score != null && (
+          <strong className="grade-pill">Grade {score}/100</strong>
+        )}
+      </div>
+    </>
+  );
+}
+
+function ReviewedAnswerCard({ answerLabel, answerText, emptyMessage }) {
+  const normalizedAnswer = String(answerText ?? '').trim();
+
+  return (
+    <section className="reviewed-exercise-card" aria-label={answerLabel}>
+      <div className="section-heading">
+        <h3>{answerLabel}</h3>
+        <span>Reviewed</span>
+      </div>
+
+      {normalizedAnswer ? (
+        <p className="reviewed-answer-text">{normalizedAnswer}</p>
+      ) : (
+        <p className="reviewed-unavailable">{emptyMessage ?? 'Submitted answer is not available.'}</p>
+      )}
+    </section>
+  );
+}
+
 function ListeningExerciseView({
   activeExercise,
   answerError,
@@ -653,48 +758,110 @@ function ListeningExerciseView({
   listeningLoading,
   listeningSelections,
   onListeningSelect,
+  onRetryListeningExercise,
   onSubmitAnswer,
   t,
 }) {
+  const [retryActive, setRetryActive] = React.useState(false);
+  const [retryPending, setRetryPending] = React.useState(false);
+  const reviewed = hasReviewedAnswer(activeExercise);
+  const listeningAnswerSummary = parseListeningAnswerSummary(activeExercise.answerText);
+  const reviewedFeedback = activeExercise.feedback
+    ? { ...activeExercise.feedback, transcription: null }
+    : null;
   const allAnswered = listeningContent
     && listeningContent.questions.length > 0
     && listeningContent.questions.every((_, i) => listeningSelections[i] !== undefined);
+
+  React.useEffect(() => {
+    setRetryActive(false);
+    setRetryPending(false);
+  }, [activeExercise.id]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     await onSubmitAnswer(activeExercise, null);
   };
 
+  const handleRetry = async () => {
+    setRetryPending(true);
+
+    try {
+      const retryContent = await onRetryListeningExercise?.(activeExercise);
+      if (retryContent) {
+        setRetryActive(true);
+      }
+    } finally {
+      setRetryPending(false);
+    }
+  };
+
   return (
     <section className="exercise-detail" aria-label="Listening exercise">
-      <div className="exercise-detail-header">
-        <span className="exercise-type-icon listening">
-          <Headphones size={18} aria-hidden="true" />
-        </span>
-        <div>
-          <p>listening</p>
-          <h3>{activeExercise.title}</h3>
-        </div>
-      </div>
+      <ExerciseDetailHeader
+        activeExercise={activeExercise}
+        icon={<Headphones size={18} aria-hidden="true" />}
+        label="listening"
+        t={t}
+      />
 
-      <div className="exercise-status-row">
-        <span className="status-pill">{formatStatus(activeExercise.status, t)}</span>
-        {activeExercise.status === 'finished' && (
-          <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
-        )}
-      </div>
+      {reviewed && !retryActive && (
+        <>
+          <section className="reviewed-exercise-card reviewed-state-hero" aria-label="Reviewed listening answer">
+            <div className="section-heading">
+              <h3>Reviewed listening result</h3>
+              <span>Saved attempt</span>
+            </div>
+            <p>Your listening attempt has already been submitted and reviewed.</p>
+          </section>
 
-      {listeningLoading && (
+          <section className="reviewed-answer-summary" aria-label="Saved listening selections">
+            <div className="section-heading">
+              <h3>Saved selections</h3>
+              <span>{listeningAnswerSummary.type === 'selections' ? 'Answers' : 'Summary'}</span>
+            </div>
+
+            {listeningAnswerSummary.rows.length > 0 ? (
+              <div className="reviewed-selection-list">
+                {listeningAnswerSummary.rows.map((row) => (
+                  <div className="reviewed-answer-row" key={`${row.label}-${row.value}`}>
+                    <span>{row.label}</span>
+                    <strong>{row.value}</strong>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="reviewed-unavailable">Saved answer details are not available.</p>
+            )}
+          </section>
+
+          {reviewedFeedback ? (
+            <ExerciseFeedback feedback={reviewedFeedback} />
+          ) : (
+            <p className="reviewed-unavailable reviewed-feedback-notice">Feedback is not available yet.</p>
+          )}
+
+          {listeningError && <p className="auth-error" role="alert">{listeningError}</p>}
+
+          <div className="secondary-exercise-action">
+            <button className="text-login" disabled={retryPending} type="button" onClick={handleRetry}>
+              {retryPending ? 'Generating...' : 'Generate a new attempt'}
+            </button>
+          </div>
+        </>
+      )}
+
+      {(!reviewed || retryActive) && listeningLoading && (
         <section className="summary-card">
           <p>Generating listening exercise...</p>
         </section>
       )}
 
-      {listeningError && (
+      {(!reviewed || retryActive) && listeningError && (
         <p className="auth-error" role="alert">{listeningError}</p>
       )}
 
-      {listeningContent && !listeningLoading && (
+      {(!reviewed || retryActive) && listeningContent && !listeningLoading && (
         <>
           <section className="summary-card">
             <div className="section-heading">
@@ -703,12 +870,12 @@ function ListeningExerciseView({
             </div>
             {listeningContent.audio_b64 ? (
               <audio
+                className="listening-audio"
                 controls
                 src={`data:audio/wav;base64,${listeningContent.audio_b64}`}
-                style={{ width: '100%', marginBottom: '0.5rem' }}
               />
             ) : (
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted, #888)' }}>
+              <p className="listening-unavailable-audio">
                 Audio is not available in the current configuration.
               </p>
             )}
@@ -720,24 +887,14 @@ function ListeningExerciseView({
                 <div className="section-heading">
                   <h3>Question {qIndex + 1}</h3>
                 </div>
-                <p style={{ marginBottom: '0.75rem' }}>{question.question}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <p className="listening-question-prompt">{question.question}</p>
+                <div className="listening-options">
                   {question.options.map((option, oIndex) => {
                     const selected = listeningSelections[qIndex] === option.text;
                     return (
                       <label
+                        className={`listening-option ${selected ? 'selected' : ''}`}
                         key={oIndex}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.5rem 0.75rem',
-                          borderRadius: '8px',
-                          border: `1px solid ${selected ? '#2f8f62' : 'var(--border-color, #ddd)'}`,
-                          background: selected ? 'rgba(47,143,98,0.08)' : 'transparent',
-                          cursor: 'pointer',
-                          fontSize: '0.9rem',
-                        }}
                       >
                         <input
                           type="radio"
@@ -759,15 +916,12 @@ function ListeningExerciseView({
               className="auth-button register-button"
               disabled={answerPending || !allAnswered}
               type="submit"
-              style={{ marginTop: '0.5rem' }}
             >
               {answerPending ? 'Submitting...' : 'Submit answers'}
             </button>
           </form>
         </>
       )}
-
-      {activeExercise.feedback && <ExerciseFeedback feedback={activeExercise.feedback} />}
     </section>
   );
 }
@@ -776,10 +930,12 @@ function SpeakingExerciseView({ activeExercise, answerError, answerPending, onSu
   const [selectedAudio, setSelectedAudio] = React.useState(null);
   const [audioPreviewUrl, setAudioPreviewUrl] = React.useState('');
   const [recording, setRecording] = React.useState(false);
+  const [reanswerActive, setReanswerActive] = React.useState(false);
   const [localError, setLocalError] = React.useState('');
   const recorderRef = React.useRef(null);
   const streamRef = React.useRef(null);
   const chunksRef = React.useRef([]);
+  const reviewed = hasReviewedAnswer(activeExercise);
   const recorderSupported = typeof navigator !== 'undefined'
     && Boolean(navigator.mediaDevices?.getUserMedia)
     && typeof window !== 'undefined'
@@ -789,6 +945,7 @@ function SpeakingExerciseView({ activeExercise, answerError, answerPending, onSu
     setSelectedAudio(null);
     setAudioPreviewUrl('');
     setLocalError('');
+    setReanswerActive(false);
   }, [activeExercise.id]);
 
   React.useEffect(() => {
@@ -897,96 +1054,121 @@ function SpeakingExerciseView({ activeExercise, answerError, answerPending, onSu
 
   return (
     <section className="exercise-detail" aria-label="Speaking exercise">
-      <div className="exercise-detail-header">
-        <span className="exercise-type-icon speaking">
-          <Mic size={18} aria-hidden="true" />
-        </span>
-        <div>
-          <p>speaking</p>
-          <h3>{activeExercise.title}</h3>
-        </div>
-      </div>
+      <ExerciseDetailHeader
+        activeExercise={activeExercise}
+        icon={<Mic size={18} aria-hidden="true" />}
+        label="speaking"
+        t={t}
+      />
 
-      <div className="exercise-status-row">
-        <span className="status-pill">{formatStatus(activeExercise.status, t)}</span>
-        {activeExercise.status === 'finished' && (
-          <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
-        )}
-      </div>
+      {reviewed && !reanswerActive && (
+        <>
+          <section className="reviewed-exercise-card reviewed-state-hero" aria-label="Reviewed speaking answer">
+            <div className="section-heading">
+              <h3>Reviewed speaking result</h3>
+              <span>Saved attempt</span>
+            </div>
+            <p>Your speaking answer has already been evaluated. Review the result before recording another attempt.</p>
+          </section>
 
-      <section className="summary-card">
-        <div className="section-heading">
-          <h3>Task</h3>
-          <span>{activeExercise.format ?? 'Spoken answer'}</span>
-        </div>
-        <p>{activeExercise.task}</p>
-      </section>
+          <ReviewedAnswerCard
+            answerLabel="Submitted answer"
+            answerText={activeExercise.answerText || activeExercise.feedback?.transcription}
+            emptyMessage="Submitted transcription is not available."
+          />
 
-      <section className="summary-card">
-        <div className="section-heading">
-          <h3>Expected answer</h3>
-          <span>{formatExerciseLabel(activeExercise.subtype ?? activeExercise.type)}</span>
-        </div>
-        <p>{activeExercise.expectedAnswer ?? 'Open-ended speaking exercise.'}</p>
-      </section>
-
-      <form className="summary-card speaking-recorder" onSubmit={handleSubmit}>
-        <div className="section-heading">
-          <h3>Your audio</h3>
-          <span>Progress feedback</span>
-        </div>
-
-        <div className="speaking-record-actions">
-          {recorderSupported ? (
-            recording ? (
-              <button className="text-login speaking-action-button" type="button" onClick={stopRecording}>
-                Stop recording
-              </button>
-            ) : (
-              <button className="text-login speaking-action-button" type="button" onClick={startRecording}>
-                Start recording
-              </button>
-            )
+          {activeExercise.feedback ? (
+            <ExerciseFeedback feedback={activeExercise.feedback} />
           ) : (
-            <p className="speaking-help">Recording is unavailable in this browser.</p>
+            <p className="reviewed-unavailable reviewed-feedback-notice">Feedback is not available yet.</p>
           )}
 
-          <label className="speaking-file-control">
-            <span>Select audio</span>
-            <input accept="audio/*" type="file" onChange={handleFileChange} />
-          </label>
-        </div>
-
-        {recording && <p className="speaking-recording-state" role="status">Recording...</p>}
-
-        {selectedAudio && (
-          <div className="speaking-audio-preview">
-            <p>{selectedAudio.name || 'Recorded answer'}</p>
-            {audioPreviewUrl && <audio controls src={audioPreviewUrl} />}
+          <div className="secondary-exercise-action">
+            <button className="text-login" type="button" onClick={() => setReanswerActive(true)}>
+              Record another answer
+            </button>
           </div>
-        )}
+        </>
+      )}
 
-        {(localError || answerError) && (
-          <p className="auth-error" role="alert">{localError || answerError}</p>
-        )}
+      {(!reviewed || reanswerActive) && (
+        <>
+          <section className="summary-card">
+            <div className="section-heading">
+              <h3>Task</h3>
+              <span>{activeExercise.format ?? 'Spoken answer'}</span>
+            </div>
+            <p>{activeExercise.task}</p>
+          </section>
 
-        <button className="auth-button register-button" disabled={answerPending || !selectedAudio} type="submit">
-          {answerPending ? 'Submitting...' : 'Submit audio'}
-        </button>
-      </form>
+          <section className="summary-card">
+            <div className="section-heading">
+              <h3>Expected answer</h3>
+              <span>{formatExerciseLabel(activeExercise.subtype ?? activeExercise.type)}</span>
+            </div>
+            <p>{activeExercise.expectedAnswer ?? 'Open-ended speaking exercise.'}</p>
+          </section>
 
-      {activeExercise.feedback && <ExerciseFeedback feedback={activeExercise.feedback} />}
+          <form className="summary-card speaking-recorder" onSubmit={handleSubmit}>
+            <div className="section-heading">
+              <h3>Your audio</h3>
+              <span>Progress feedback</span>
+            </div>
+
+            <div className="speaking-record-actions">
+              {recorderSupported ? (
+                recording ? (
+                  <button className="text-login speaking-action-button" type="button" onClick={stopRecording}>
+                    Stop recording
+                  </button>
+                ) : (
+                  <button className="text-login speaking-action-button" type="button" onClick={startRecording}>
+                    Start recording
+                  </button>
+                )
+              ) : (
+                <p className="speaking-help">Recording is unavailable in this browser.</p>
+              )}
+
+              <label className="speaking-file-control">
+                <span>Select audio</span>
+                <input accept="audio/*" type="file" onChange={handleFileChange} />
+              </label>
+            </div>
+
+            {recording && <p className="speaking-recording-state" role="status">Recording...</p>}
+
+            {selectedAudio && (
+              <div className="speaking-audio-preview">
+                <p>{selectedAudio.name || 'Recorded answer'}</p>
+                {audioPreviewUrl && <audio controls src={audioPreviewUrl} />}
+              </div>
+            )}
+
+            {(localError || answerError) && (
+              <p className="auth-error" role="alert">{localError || answerError}</p>
+            )}
+
+            <button className="auth-button register-button" disabled={answerPending || !selectedAudio} type="submit">
+              {answerPending ? 'Submitting...' : 'Submit audio'}
+            </button>
+          </form>
+        </>
+      )}
     </section>
   );
 }
 
 function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubmitAnswer, t }) {
   const [answerText, setAnswerText] = React.useState(activeExercise.answerText ?? '');
+  const [reanswerActive, setReanswerActive] = React.useState(false);
   const [hintsVisible, setHintsVisible] = React.useState(false);
+  const reviewed = hasReviewedAnswer(activeExercise);
   const keywords = activeExercise.keywords ?? [];
 
   React.useEffect(() => {
     setAnswerText(activeExercise.answerText ?? '');
+    setReanswerActive(false);
     setHintsVisible(false);
   }, [activeExercise.id, activeExercise.answerText]);
 
@@ -994,6 +1176,42 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
     event.preventDefault();
     await onSubmitAnswer(activeExercise, answerText);
   };
+
+  const handleReanswer = () => {
+    setAnswerText('');
+    setHintsVisible(false);
+    setReanswerActive(true);
+  };
+
+  const taskCard = (
+    <section className="summary-card">
+      <div className="section-heading">
+        <h3>Task</h3>
+        {activeExercise.format && <span>{activeExercise.format}</span>}
+      </div>
+      <p>{activeExercise.task}</p>
+      {keywords.length > 0 && (
+        <div className="exercise-hints">
+          <button
+            className="hint-toggle-button"
+            type="button"
+            aria-expanded={hintsVisible}
+            onClick={() => setHintsVisible((visible) => !visible)}
+          >
+            <Lightbulb size={16} aria-hidden="true" />
+            {hintsVisible ? 'Hide hints' : 'Show hints'}
+          </button>
+          {hintsVisible && (
+            <div className="keyword-hint-list" aria-label="Keyword hints">
+              {keywords.map((keyword) => (
+                <span key={keyword}>{keyword}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
 
   if (!activeExercise.id) {
     return (
@@ -1009,76 +1227,67 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
 
   return (
     <section className="exercise-detail" aria-label="Exercise detail">
-      <div className="exercise-detail-header">
-        <span className={`exercise-type-icon ${activeExercise.type}`}>
-          <ExerciseTypeIcon type={activeExercise.type} />
-        </span>
-        <div>
-          <p>{activeExercise.type}</p>
-          <h3>{activeExercise.title}</h3>
-        </div>
-      </div>
+      <ExerciseDetailHeader
+        activeExercise={activeExercise}
+        icon={<ExerciseTypeIcon type={activeExercise.type} />}
+        label={activeExercise.type}
+        t={t}
+      />
 
-      <div className="exercise-status-row">
-        <span className="status-pill">{formatStatus(activeExercise.status, t)}</span>
-        {activeExercise.status === 'finished' && (
-          <strong className="grade-pill">Grade {activeExercise.grade}/100</strong>
-        )}
-      </div>
+      {reviewed && !reanswerActive && (
+        <>
+          <section className="reviewed-exercise-card reviewed-state-hero" aria-label="Reviewed exercise answer">
+            <div className="section-heading">
+              <h3>Reviewed {formatExerciseLabel(activeExercise.type)} result</h3>
+              <span>Saved attempt</span>
+            </div>
+            <p>Your answer has already been submitted and reviewed.</p>
+          </section>
 
-      <section className="summary-card">
-        <div className="section-heading">
-          <h3>Task</h3>
-        </div>
-        <p>{activeExercise.task}</p>
-        {keywords.length > 0 && (
-          <div className="exercise-hints">
-            <button
-              className="hint-toggle-button"
-              type="button"
-              aria-expanded={hintsVisible}
-              onClick={() => setHintsVisible((visible) => !visible)}
-            >
-              <Lightbulb size={16} aria-hidden="true" />
-              {hintsVisible ? 'Hide hints' : 'Show hints'}
+          {taskCard}
+
+          <ReviewedAnswerCard
+            answerLabel="Submitted answer"
+            answerText={activeExercise.answerText}
+            emptyMessage="Submitted answer is not available."
+          />
+
+          {activeExercise.feedback ? (
+            <ExerciseFeedback feedback={activeExercise.feedback} />
+          ) : (
+            <p className="reviewed-unavailable reviewed-feedback-notice">Feedback is not available yet.</p>
+          )}
+
+          <div className="secondary-exercise-action">
+            <button className="text-login" type="button" onClick={handleReanswer}>
+              Write another answer
             </button>
-            {hintsVisible && (
-              <div className="keyword-hint-list" aria-label="Keyword hints">
-                {keywords.map((keyword) => (
-                  <span key={keyword}>{keyword}</span>
-                ))}
-              </div>
-            )}
           </div>
-        )}
-      </section>
+        </>
+      )}
 
-      <section className="summary-card">
-        <div className="section-heading">
-          <h3>Expected answer</h3>
-          <span>{activeExercise.type}</span>
-        </div>
-        <p>{activeExercise.expectedAnswer ?? 'Open-ended exercise.'}</p>
-      </section>
+      {(!reviewed || reanswerActive) && (
+        <>
+          {taskCard}
 
-      <form className="summary-card" onSubmit={handleSubmit}>
-        <div className="section-heading">
-          <h3>Your answer</h3>
-        </div>
-        <textarea
-          className="auth-field"
-          name="answerText"
-          rows={5}
-          value={answerText}
-          onChange={(event) => setAnswerText(event.target.value)}
-        />
-        {answerError && <p className="auth-error" role="alert">{answerError}</p>}
-        <button className="auth-button register-button" disabled={answerPending} type="submit">
-          {answerPending ? 'Submitting...' : 'Submit answer'}
-        </button>
-      </form>
-
-      {activeExercise.feedback && <ExerciseFeedback feedback={activeExercise.feedback} />}
+          <form className="summary-card" onSubmit={handleSubmit}>
+            <div className="section-heading">
+              <h3>Your answer</h3>
+            </div>
+            <textarea
+              className="auth-field"
+              name="answerText"
+              rows={5}
+              value={answerText}
+              onChange={(event) => setAnswerText(event.target.value)}
+            />
+            {answerError && <p className="auth-error" role="alert">{answerError}</p>}
+            <button className="auth-button register-button" disabled={answerPending || !answerText.trim()} type="submit">
+              {answerPending ? 'Submitting...' : 'Submit answer'}
+            </button>
+          </form>
+        </>
+      )}
     </section>
   );
 }
