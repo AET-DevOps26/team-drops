@@ -19,6 +19,20 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: team-drops
 {{- end -}}
 
+{{/*
+These labels match the PVC templates created by chart 0.1.0. StatefulSet
+volumeClaimTemplates are immutable, so do not derive them from chart metadata.
+*/}}
+{{- define "team-drops.legacyVolumeClaimLabels" -}}
+helm.sh/chart: team-drops-0.1.0
+app.kubernetes.io/name: team-drops
+app.kubernetes.io/instance: team-drops
+app.kubernetes.io/version: "0.1.0"
+app.kubernetes.io/managed-by: Helm
+app.kubernetes.io/part-of: team-drops
+monitoring: "true"
+{{- end -}}
+
 {{- define "team-drops.selectorLabels" -}}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/part-of: team-drops
