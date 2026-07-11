@@ -142,7 +142,13 @@ jobs:
               abort("Missing StatefulSet/#{name}") unless statefulset
 
               claims = statefulset.dig("spec", "volumeClaimTemplates") || []
-              abort("StatefulSet/#{name} PVC template is missing compatibility monitoring label") unless claims.all? { |claim| claim.dig("metadata", "labels", "monitoring") == "true" }
+              abort("StatefulSet/#{name} is missing its PVC template") if claims.empty?
+              claims.each do |claim|
+                labels = claim.dig("metadata", "labels") || {}
+                abort("StatefulSet/#{name} PVC template has incompatible chart label") unless labels["helm.sh/chart"] == "team-drops-0.1.0"
+                abort("StatefulSet/#{name} PVC template has incompatible app version") unless labels["app.kubernetes.io/version"] == "0.1.0"
+                abort("StatefulSet/#{name} PVC template is missing compatibility monitoring label") unless labels["monitoring"] == "true"
+              end
             end
 
             workload_documents = documents.select { |doc| ["Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob"].include?(doc["kind"]) }
