@@ -17,6 +17,7 @@ import {
   TextCursorInput,
 } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
+import { hasReviewedAnswer } from '../utils/exercises';
 
 export function LearningPage({
   activeExercise,
@@ -645,16 +646,6 @@ function isComingSoonType() {
 function isSpeakingExercise(exercise) {
   const subtype = exercise?.subtype ?? '';
   return exercise?.type === 'speaking' || subtype.toLowerCase().includes('speaking');
-}
-
-function hasReviewedAnswer(exercise) {
-  return Boolean(
-    exercise?.feedback
-      || exercise?.status === 'finished'
-      || exercise?.grade != null
-      || exercise?.score != null
-      || String(exercise?.answerText ?? '').trim(),
-  );
 }
 
 function getExerciseScore(exercise) {

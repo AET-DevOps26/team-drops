@@ -16,6 +16,8 @@
   --blue-dark: #0f4ea8;
   --blue-soft: #d8eaff;
   --sky: #60a5fa;
+  --success: #26784d;
+  --success-soft: #eaf8ef;
 }
 
 * {
@@ -89,6 +91,8 @@ button {
   --surface: #172a49;
   --line: #29466d;
   --blue-soft: #183d72;
+  --success: #8bd9a9;
+  --success-soft: #173b2b;
   background:
     linear-gradient(180deg, rgba(96, 165, 250, 0.18), rgba(15, 29, 51, 0) 34%),
     var(--paper);
@@ -646,13 +650,13 @@ h1 {
 
 .week-day.done {
   border-color: rgba(47, 143, 98, 0.4);
-  background: #eaf8ef;
-  color: #26784d;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .dark-mode .week-day.done {
-  background: #183c2c;
-  color: #85d9a9;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .progress-row {
@@ -1321,13 +1325,13 @@ h1 {
 }
 
 .status-pill-finished {
-  background: #eaf8ef;
-  color: #26784d;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .grade-pill {
-  background: #eaf8ef;
-  color: #26784d;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .completion-comment {
@@ -1337,13 +1341,13 @@ h1 {
   padding: 14px;
   border: 1px solid rgba(47, 143, 98, 0.28);
   border-radius: 18px;
-  background: #eaf8ef;
-  color: #26784d;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .completion-comment p {
   margin: 0;
-  color: #26784d;
+  color: var(--success);
   font-size: 0.84rem;
   line-height: 1.42;
 }
@@ -1478,7 +1482,7 @@ h1 {
   grid-template-columns: 28px minmax(0, 1fr);
   gap: 9px;
   align-items: center;
-  color: #26784d;
+  color: var(--success);
 }
 
 .feedback-score p,
@@ -1489,7 +1493,7 @@ h1 {
 }
 
 .feedback-score p {
-  color: #26784d;
+  color: var(--success);
   font-size: 0.74rem;
   font-weight: 850;
   text-transform: uppercase;
@@ -1498,7 +1502,7 @@ h1 {
 .feedback-score strong {
   display: block;
   margin-top: 2px;
-  color: #26784d;
+  color: var(--success);
   font-size: 1.24rem;
 }
 
@@ -2753,7 +2757,6 @@ button.settings-row {
   flex: 0 0 auto;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  position: relative;
   z-index: 3;
   padding: 8px;
   border: 1px solid var(--line);

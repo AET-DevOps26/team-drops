@@ -40,6 +40,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LanguagePage } from './pages/LanguagePage';
 import { LearningPage } from './pages/LearningPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { hasReviewedAnswer } from './utils/exercises';
 import { getRecentFinishedLessons, getRecentLessons } from './utils/learning';
 
 const defaultProfile = {
@@ -49,16 +50,6 @@ const defaultProfile = {
   currentLevel: 'A2',
   learningGoal: 'Prepare for a software engineering job interview',
 };
-
-function hasReviewedAnswer(exercise) {
-  return Boolean(
-    exercise?.feedback
-      || exercise?.status === 'finished'
-      || exercise?.grade != null
-      || exercise?.score != null
-      || String(exercise?.answerText ?? '').trim(),
-  );
-}
 
 function isReviewedListeningExercise(exercise) {
   return exercise?.type === 'listening' && hasReviewedAnswer(exercise);
