@@ -10,8 +10,8 @@ monitoring:
       limits.cpu: "4"
       limits.memory: 8Gi
       requests.storage: 20Gi
-      persistentvolumeclaims: "5"
-      pods: "20"
+      persistentvolumeclaims: "6"
+      pods: "50"
       services: "20"
   limitRange:
     default:
@@ -87,7 +87,27 @@ prometheus:
         cpu: 50m
         memory: 96Mi
   prometheus-node-exporter:
-    enabled: false
+    enabled: true
+    fullnameOverride: team-drops-node-exporter
+    kubeRBACProxy:
+      enabled: false
+    rbac:
+      create: false
+    serviceAccount:
+      create: true
+      automountServiceAccountToken: false
+    hostNetwork: true
+    hostPID: true
+    hostRootFsMount:
+      enabled: true
+      mountPropagation: HostToContainer
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 96Mi
   prometheus-pushgateway:
     enabled: false
   scrapeConfigs:
@@ -199,6 +219,21 @@ prometheus:
         - job_name: kube-state-metrics
           static_configs:
             - targets: [team-drops-monitoring-kube-state-metrics:8080]
+        - job_name: node-exporter
+          kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names: [drops-monitoring]
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_service_name]
+              action: keep
+              regex: team-drops-node-exporter
+            - source_labels: [__meta_kubernetes_endpoint_port_name]
+              action: keep
+              regex: metrics
+            - source_labels: [__meta_kubernetes_pod_node_name]
+              target_label: instance
+              action: replace
 
 grafana:
   fullnameOverride: team-drops-grafana
@@ -241,6 +276,12 @@ grafana:
           url: http://team-drops-prometheus-server
           access: proxy
           isDefault: true
+        - name: Loki
+          type: loki
+          uid: loki
+          url: http://team-drops-loki:3100
+          access: proxy
+          isDefault: false
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -255,3 +296,191 @@ grafana:
             path: /var/lib/grafana/dashboards/default
   dashboardsConfigMaps:
     default: team-drops-grafana-dashboards
+
+loki:
+  fullnameOverride: team-drops-loki
+  deploymentMode: Monolithic
+  rbac:
+    namespaced: true
+  serviceAccount:
+    automountServiceAccountToken: false
+  loki:
+    auth_enabled: false
+    automountServiceAccountToken: false
+    commonConfig:
+      path_prefix: /var/loki
+      replication_factor: 1
+      compactor_grpc_address: ""
+    storage:
+      type: filesystem
+      filesystem:
+        chunks_directory: /var/loki/chunks
+        rules_directory: /var/loki/rules
+    schemaConfig:
+      configs:
+        - from: "2024-04-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    limits_config:
+      retention_period: 72h
+      reject_old_samples: true
+      reject_old_samples_max_age: 72h
+      volume_enabled: true
+    compactor:
+      working_directory: /var/loki/compactor
+      retention_enabled: true
+      delete_request_store: filesystem
+  singleBinary:
+    replicas: 1
+    sidecar: false
+    podDisruptionBudget:
+      enabled: false
+    persistence:
+      enabled: true
+      accessModes: [ReadWriteOnce]
+      size: 2Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+  gateway:
+    enabled: false
+  lokiCanary:
+    enabled: false
+  test:
+    enabled: false
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
+  minio:
+    enabled: false
+  sidecar:
+    rules:
+      enabled: false
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+
+alloy:
+  fullnameOverride: team-drops-alloy
+  crds:
+    create: false
+  rbac:
+    create: false
+  serviceAccount:
+    create: true
+    name: team-drops-alloy
+    automountServiceAccountToken: true
+  global:
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 473
+      runAsGroup: 473
+      fsGroup: 473
+  controller:
+    type: deployment
+    replicas: 1
+  alloy:
+    enableReporting: false
+    listenAddr: 0.0.0.0
+    storagePath: /tmp/alloy
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 473
+      runAsGroup: 473
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    configMap:
+      content: |-
+        logging {
+          level  = "info"
+          format = "logfmt"
+        }
+
+        discovery.kubernetes "team_drops_pods" {
+          role = "pod"
+
+          namespaces {
+            names = ["team-drops"]
+          }
+        }
+
+        discovery.relabel "team_drops_pods" {
+          targets = discovery.kubernetes.team_drops_pods.targets
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+            target_label  = "application"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_component"]
+            target_label  = "component"
+          }
+        }
+
+        loki.source.kubernetes "team_drops" {
+          targets    = discovery.relabel.team_drops_pods.output
+          forward_to = [loki.process.team_drops.receiver]
+        }
+
+        loki.process "team_drops" {
+          forward_to = [loki.write.local.receiver]
+        }
+
+        loki.write "local" {
+          endpoint {
+            url = "http://team-drops-loki:3100/loki/api/v1/push"
+          }
+        }
+  configReloader:
+    resources:
+      requests:
+        cpu: 5m
+        memory: 16Mi
+      limits:
+        cpu: 25m
+        memory: 32Mi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
