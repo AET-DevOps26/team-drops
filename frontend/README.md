@@ -1,73 +1,101 @@
-# React + TypeScript + Vite
+# Team Drops Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The Team Drops frontend is a React 19 single-page application built with Vite
+6. It provides authentication, language selection, learning-plan navigation,
+exercise submission, feedback, progress views, and profile management.
 
-Currently, two official plugins are available:
+The production image builds the application into static assets and serves them
+through Nginx. The project includes a TypeScript toolchain, while the current UI
+implementation is primarily JSX and JavaScript.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Requirements
 
-## React Compiler
+- Node.js 20, matching the frontend CI workflow
+- npm
+- The user, learning, and progress services when testing API-backed features
+- Keycloak when authentication is enabled
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Install and run
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The development server listens on <http://localhost:3000> and proxies relative
+service paths to these defaults:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Browser path | Default target |
+| --- | --- |
+| `/user-service` | `http://127.0.0.1:8081` |
+| `/learning-service` | `http://127.0.0.1:8082` |
+| `/progress-service` | `http://127.0.0.1:8083` |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+To override proxy targets, provide `VITE_USER_SERVICE_URL`,
+`VITE_LEARNING_SERVICE_URL`, or `VITE_PROGRESS_SERVICE_URL` in the shell that
+starts Vite. Running the complete repository with Docker Compose configures the
+service routing automatically.
+
+## Authentication configuration
+
+For direct frontend development, create `frontend/.env.local` when the defaults
+are not suitable:
+
+```dotenv
+VITE_AUTH_ENABLED=true
+VITE_KEYCLOAK_URL=http://localhost:8090
+VITE_KEYCLOAK_REALM=team-drops
+VITE_KEYCLOAK_CLIENT_ID=team-drops
 ```
+
+Authentication is disabled by the frontend when `VITE_AUTH_ENABLED` is absent
+or set to `false`. When enabled, start Keycloak and the protected APIs with
+compatible issuer and realm settings. Runtime deployment values can also be
+provided through `window.__APP_CONFIG__`; they take precedence over Vite build
+variables.
+
+## Quality checks
+
+```bash
+npm run lint
+npm run build
+npm run preview
+```
+
+`npm run build` runs the TypeScript project build before producing the Vite
+bundle. The frontend CI workflow also builds the production Docker image.
+
+## Source layout
+
+```text
+src/
+|-- api/          # Relative-path API client and response mappers
+|-- auth/         # Keycloak initialization and token handling
+|-- components/   # Shared UI components
+|-- data/         # Language and learning-plan presentation data
+|-- pages/        # Main application screens
+`-- utils/        # Learning-related helpers
+```
+
+The browser must use relative service paths instead of Docker-only hostnames.
+Vite handles these paths locally, and Nginx or Kubernetes Ingress handles them
+after deployment.
+
+## API contract changes
+
+The source of truth is [`../api/openapi.yaml`](../api/openapi.yaml). The
+frontend does not currently commit a generated TypeScript API client. When the
+contract changes, update `src/api/client.js` and `src/api/mappers.js` together
+with the affected UI behavior. Do not introduce duplicate request or response
+shapes that conflict with the OpenAPI contract.
+
+Export the central and service contracts from the repository root before
+committing an API change:
+
+```bash
+bash api/scripts/export_openapi.sh
+```
+
+See the repository [API-first workflow](../README.md#api-first-workflow) and
+[frontend/backend integration requirements](../docs/frontend-backend-api-integration.md)
+for additional guidance.
