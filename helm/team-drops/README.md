@@ -88,6 +88,30 @@ Required repository secret:
   namespace.
 - `GRAFANA_ADMIN_PASSWORD`: administrator password for the namespace-owned
   Grafana instance; it is written only to the Kubernetes Secret.
+- `ALERTMANAGER_SLACK_WEBHOOK_URL`: incoming webhook used by Alertmanager for
+  the `#team-drops-alerts` channel.
+
+Optional repository secrets, required only when their receiver is enabled:
+
+- `ALERTMANAGER_SMTP_PASSWORD`: SMTP password for email notifications.
+- `ALERTMANAGER_PAGERDUTY_ROUTING_KEY`: PagerDuty Events API v2 integration
+  key.
+
+The workflow writes alerting credentials to the
+`team-drops-alertmanager-credentials` Kubernetes Secret. They are mounted as
+files and are never stored in Helm values or the Alertmanager ConfigMap.
+For a manual deployment, create the same Secret from local files before running
+Helm:
+
+```bash
+kubectl -n team-drops create secret generic team-drops-alertmanager-credentials \
+  --from-file=slack-webhook-url=/secure/path/slack-webhook-url \
+  --from-file=smtp-password=/secure/path/smtp-password \
+  --from-file=pagerduty-routing-key=/secure/path/pagerduty-routing-key
+```
+
+Only the Slack file is required by `values-rancher.yaml`; omit files for
+disabled receivers.
 
 Automatic runs deploy the immutable `sha-<commit>` image tag published by the
 `Docker Publish` workflow. Manual runs default to `latest`, but allow choosing a
@@ -144,16 +168,17 @@ curl http://localhost:8084/health
 
 ## Prometheus and Grafana monitoring
 
-The Rancher values deploy a private Prometheus and Grafana stack inside the
-`team-drops` namespace. Prometheus retains seven days of data on a 2 GiB PVC,
-Grafana uses a 1 GiB PVC, and discovery is restricted by namespaced RBAC to API
-Services labeled `monitoring: "true"`. Neither UI is exposed through Ingress.
+The Rancher values deploy a private Prometheus, Alertmanager, kube-state-metrics,
+and Grafana stack inside the `team-drops` namespace. Prometheus retains seven
+days of data on a 2 GiB PVC, Alertmanager and Grafana use 1 GiB PVCs, and
+discovery is restricted by namespaced RBAC. None of the monitoring UIs is
+exposed through Ingress.
 
 Check the stack and persistent storage:
 
 ```bash
-kubectl -n team-drops get pods,svc,pvc | grep -E 'prometheus|grafana'
-kubectl -n team-drops get role,rolebinding team-drops-prometheus
+kubectl -n team-drops get pods,svc,pvc | grep -E 'prometheus|alertmanager|grafana|kube-state'
+kubectl -n team-drops get role,rolebinding | grep -E 'prometheus|kube-state'
 ```
 
 Access Grafana:
@@ -179,6 +204,7 @@ up{job="team-drops-services"}
 application_info{namespace="team-drops"}
 sum(rate(http_server_requests_seconds_count{namespace="team-drops"}[5m]))
 sum(rate(http_requests_total{namespace="team-drops"}[5m]))
+increase(kube_pod_container_status_restarts_total{namespace="team-drops"}[15m])
 ```
 
 Inspect raw application metrics without exposing them through Ingress:
@@ -195,7 +221,67 @@ curl http://localhost:8084/metrics
 
 `up{job="team-drops-services"}` should contain four healthy targets. The
 `application_info` version label should match the deployed `sha-<commit>` image
-tag. Rancher `ServiceMonitor` resources remain available through
+tag. The dashboard separates request rate, HTTP 5xx percentage, and mean
+latency by service, and also shows target availability and the number of firing
+runtime alerts.
+
+Four alert rules are installed with the standalone Prometheus stack:
+
+- `TeamDropsServiceDown` fires after a service cannot be scraped for 2 minutes.
+- `TeamDropsHighErrorRate` fires when more than 5% of requests fail with HTTP
+  5xx for 5 minutes, provided the service is receiving traffic.
+- `TeamDropsSlowResponses` fires when mean latency is above 1.5 seconds for 5
+  minutes, provided the service is receiving traffic.
+- `TeamDropsPodRestartBurst` fires when a container restarts more than 5 times
+  in 15 minutes.
+
+Open **Alerts** in Prometheus or use this query to inspect active alerts:
+
+```promql
+ALERTS{alertname=~"TeamDrops.+"}
+```
+
+Access Alertmanager to inspect routed alerts and create temporary silences:
+
+```bash
+kubectl -n team-drops port-forward svc/team-drops-alertmanager 9093:9093
+```
+
+Open `http://localhost:9093`. Warning alerts are sent to enabled Slack and
+email receivers. Critical alerts are sent to enabled Slack, email, and
+PagerDuty receivers. Resolved notifications are enabled for every receiver;
+unrelated alerts go to a null receiver.
+
+With the port-forward running, send a five-minute synthetic warning to verify
+Slack routing and the resolved notification:
+
+```bash
+STARTS_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+ENDS_AT=$(date -u -d '+5 minutes' +%Y-%m-%dT%H:%M:%SZ)
+curl -X POST http://localhost:9093/api/v2/alerts \
+  -H 'Content-Type: application/json' \
+  -d "[{\"labels\":{\"alertname\":\"TeamDropsRoutingTest\",\"team\":\"team-drops\",\"severity\":\"warning\",\"service\":\"manual-test\"},\"annotations\":{\"summary\":\"Team Drops routing test\"},\"startsAt\":\"$STARTS_AT\",\"endsAt\":\"$ENDS_AT\"}]"
+```
+
+Slack is enabled by `values-rancher.yaml`. To enable email, set
+`monitoring.alertmanager.email.enabled=true` and provide `smarthost`, `from`,
+`to`, and optionally `authUsername`. To enable PagerDuty, set
+`monitoring.alertmanager.pagerduty.enabled=true`. Store the corresponding
+password or routing key in the GitHub repository secrets listed above rather
+than passing it through Helm. After changing receiver values or manually
+updating the credential Secret, reload Alertmanager with:
+
+```bash
+kubectl -n team-drops rollout restart statefulset/team-drops-alertmanager
+kubectl -n team-drops rollout status statefulset/team-drops-alertmanager
+```
+
+The automatic deployment workflow performs this reload after every Helm
+upgrade.
+
+When the chart uses Rancher Monitoring instead, the same rules are installed as
+a `PrometheusRule`. Set `monitoring.alerts.enabled=false` to omit that resource.
+Rancher `ServiceMonitor` resources remain available through
 `monitoring.rancherServiceMonitors.enabled`, but are disabled in
 `values-rancher.yaml` because this stack does not use the cluster Prometheus.
 
@@ -205,6 +291,7 @@ Rollback or uninstall:
 helm history team-drops -n team-drops
 helm rollback team-drops <revision> -n team-drops
 helm uninstall team-drops -n team-drops
+kubectl -n team-drops delete secret team-drops-alertmanager-credentials
 ```
 
 ## GenAI configuration
