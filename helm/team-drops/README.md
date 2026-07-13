@@ -180,8 +180,10 @@ The observability stack is a separate Helm release in the dedicated
 `drops-monitoring` namespace. The application remains in `team-drops`.
 Prometheus, kube-state-metrics, and Alloy use read-only Roles and RoleBindings;
 no cluster-scoped RBAC is created. Alloy can read pod logs only from
-`team-drops`. A ResourceQuota and LimitRange bound monitoring CPU, memory,
-storage, pod, PVC, and Service consumption independently from the application.
+`team-drops`. The chart supports an optional ResourceQuota and LimitRange, but
+they are disabled in `values-rancher.yaml` because the deployment identity is
+not authorized to create them. A Rancher administrator can configure equivalent
+limits on the namespace separately.
 The stack does not deploy node-exporter, DaemonSets, host mounts, or other
 privileged node-level collectors.
 
@@ -216,7 +218,7 @@ can be removed.
 Check the stack and persistent storage:
 
 ```bash
-kubectl -n drops-monitoring get pods,svc,pvc,resourcequota,limitrange
+kubectl -n drops-monitoring get pods,svc,pvc
 kubectl -n team-drops get role,rolebinding | grep -E 'prometheus|kube-state|alloy'
 ```
 

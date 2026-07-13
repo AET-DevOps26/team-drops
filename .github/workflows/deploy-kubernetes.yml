@@ -166,8 +166,8 @@ jobs:
               abort("#{doc["kind"]}/#{doc.dig("metadata", "name")} uses the host PID namespace") if pod_spec["hostPID"]
               abort("#{doc["kind"]}/#{doc.dig("metadata", "name")} uses a hostPath volume") if pod_spec.fetch("volumes", []).any? { |volume| volume.key?("hostPath") }
             end
-            abort("Missing monitoring ResourceQuota") unless monitoring_documents.any? { |doc| doc["kind"] == "ResourceQuota" && doc.dig("metadata", "name") == "team-drops-monitoring" }
-            abort("Missing monitoring LimitRange") unless monitoring_documents.any? { |doc| doc["kind"] == "LimitRange" && doc.dig("metadata", "name") == "team-drops-monitoring-defaults" }
+            abort("Rancher deployment must not render ResourceQuota") if monitoring_documents.any? { |doc| doc["kind"] == "ResourceQuota" }
+            abort("Rancher deployment must not render LimitRange") if monitoring_documents.any? { |doc| doc["kind"] == "LimitRange" }
             pvcs = monitoring_documents.select { |doc| doc["kind"] == "PersistentVolumeClaim" }.map { |doc| doc.dig("metadata", "name") }
             abort("Missing Prometheus PVC") unless pvcs.any? { |name| name.include?("prometheus") }
             abort("Missing Grafana PVC") unless pvcs.any? { |name| name.include?("grafana") }
@@ -320,6 +320,6 @@ jobs:
           kubectl -n team-drops describe deployment genai-service || true
           kubectl -n team-drops describe deployment keycloak || true
           kubectl -n team-drops get events --sort-by=.lastTimestamp || true
-          kubectl -n drops-monitoring get pods,svc,pvc,resourcequota,limitrange || true
+          kubectl -n drops-monitoring get pods,svc,pvc || true
           kubectl -n team-drops get role,rolebinding | grep -E 'prometheus|kube-state|alloy' || true
           kubectl -n team-drops get deployment frontend -o=jsonpath='{.spec.template.spec.containers[0].image}{"\n"}' || true
