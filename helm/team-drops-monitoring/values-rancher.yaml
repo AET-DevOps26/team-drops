@@ -1,4 +1,6 @@
 monitoring:
+  resourceQuota:
+    enabled: false
   alertmanager:
     slack:
       enabled: true
