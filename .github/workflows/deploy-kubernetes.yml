@@ -52,6 +52,7 @@ jobs:
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add grafana-community https://grafana-community.github.io/helm-charts
           helm dependency build ./helm/team-drops-monitoring
 
       - name: Configure kubeconfig
@@ -99,7 +100,7 @@ jobs:
 
       - name: Validate rendered Kubernetes manifests
         run: |
-          ruby -ryaml -e '
+          ruby -ryaml -rjson -e '
             app_documents = YAML.load_stream(File.read("/tmp/team-drops-app-rendered.yaml")).compact
             monitoring_documents = YAML.load_stream(File.read("/tmp/team-drops-monitoring-rendered.yaml")).compact
             documents = app_documents + monitoring_documents
@@ -151,26 +152,65 @@ jobs:
             abort("Rancher ServiceMonitors must be disabled for the standalone stack") unless service_monitors.empty?
             monitoring_workloads = monitoring_documents.select { |doc| ["Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob"].include?(doc["kind"]) }
             abort("Monitoring chart rendered a workload outside the drops-monitoring namespace") unless monitoring_workloads.all? { |doc| doc.dig("metadata", "namespace") == "drops-monitoring" }
-            monitoring_names = /prometheus|grafana|alertmanager|kube-state/
+            monitoring_names = /prometheus|grafana|alertmanager|kube-state|node-exporter|loki|alloy/
             abort("Application chart still renders monitoring workloads") if app_documents.any? { |doc| ["Deployment", "StatefulSet"].include?(doc["kind"]) && doc.dig("metadata", "name")&.match?(monitoring_names) }
 
             cluster_scoped_rbac = monitoring_documents.select { |doc| ["ClusterRole", "ClusterRoleBinding"].include?(doc["kind"]) }
             abort("Standalone monitoring rendered cluster-scoped RBAC") unless cluster_scoped_rbac.empty?
             abort("Missing monitoring ResourceQuota") unless monitoring_documents.any? { |doc| doc["kind"] == "ResourceQuota" && doc.dig("metadata", "name") == "team-drops-monitoring" }
             abort("Missing monitoring LimitRange") unless monitoring_documents.any? { |doc| doc["kind"] == "LimitRange" && doc.dig("metadata", "name") == "team-drops-monitoring-defaults" }
+            monitoring_quota = monitoring_documents.find { |doc| doc["kind"] == "ResourceQuota" && doc.dig("metadata", "name") == "team-drops-monitoring" }
+            abort("Monitoring pod quota must allow node-exporter on every cluster node") unless monitoring_quota.dig("spec", "hard", "pods").to_i >= 50
             pvcs = monitoring_documents.select { |doc| doc["kind"] == "PersistentVolumeClaim" }.map { |doc| doc.dig("metadata", "name") }
             abort("Missing Prometheus PVC") unless pvcs.any? { |name| name.include?("prometheus") }
             abort("Missing Grafana PVC") unless pvcs.any? { |name| name.include?("grafana") }
             abort("Missing application-scoped Prometheus reader Role") unless monitoring_documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-prometheus-reader" && doc.dig("metadata", "namespace") == "team-drops" }
             abort("Missing application-scoped kube-state-metrics Role") unless monitoring_documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-monitoring-kube-state-metrics" && doc.dig("metadata", "namespace") == "team-drops" }
             abort("Missing cross-namespace Prometheus RoleBinding") unless monitoring_documents.any? { |doc| doc["kind"] == "RoleBinding" && doc.dig("metadata", "name") == "team-drops-prometheus-reader" && doc.dig("subjects", 0, "namespace") == "drops-monitoring" }
+            abort("Missing monitoring-scoped Prometheus reader Role") unless monitoring_documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-prometheus-local-reader" && doc.dig("metadata", "namespace") == "drops-monitoring" }
+            abort("Missing application-scoped Alloy log reader Role") unless monitoring_documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-alloy-log-reader" && doc.dig("metadata", "namespace") == "team-drops" && doc.fetch("rules", []).any? { |rule| rule.fetch("resources", []).include?("pods/log") && rule.fetch("verbs", []).include?("get") } }
+            abort("Missing cross-namespace Alloy RoleBinding") unless monitoring_documents.any? { |doc| doc["kind"] == "RoleBinding" && doc.dig("metadata", "name") == "team-drops-alloy-log-reader" && doc.dig("subjects", 0, "name") == "team-drops-alloy" && doc.dig("subjects", 0, "namespace") == "drops-monitoring" }
             abort("Missing kube-state-metrics Deployment") unless monitoring_documents.any? { |doc| doc["kind"] == "Deployment" && doc.dig("metadata", "name") == "team-drops-monitoring-kube-state-metrics" }
+
+            node_exporter = monitoring_documents.find { |doc| doc["kind"] == "DaemonSet" && doc.dig("metadata", "name") == "team-drops-node-exporter" }
+            abort("Missing node-exporter DaemonSet") unless node_exporter
+            node_exporter_pod = node_exporter.dig("spec", "template", "spec")
+            abort("node-exporter must use host networking and PID visibility") unless node_exporter_pod["hostNetwork"] && node_exporter_pod["hostPID"]
+            node_exporter_host_paths = node_exporter_pod.fetch("volumes", []).filter_map { |volume| volume.dig("hostPath", "path") }
+            ["/", "/proc", "/sys"].each { |path| abort("node-exporter is missing host mount #{path}") unless node_exporter_host_paths.include?(path) }
+
+            alloy = monitoring_documents.find { |doc| doc["kind"] == "Deployment" && doc.dig("metadata", "name") == "team-drops-alloy" }
+            abort("Missing Alloy Deployment") unless alloy
+            alloy_config = monitoring_documents.find { |doc| doc["kind"] == "ConfigMap" && doc.dig("metadata", "name") == "team-drops-alloy" }
+            abort("Missing Alloy configuration") unless alloy_config
+            alloy_content = alloy_config.dig("data", "config.alloy")
+            abort("Alloy discovery is not limited to team-drops") unless alloy_content.include?("names = [\"team-drops\"]")
+            abort("Alloy does not write to local Loki") unless alloy_content.include?("http://team-drops-loki:3100/loki/api/v1/push")
+
+            loki = monitoring_documents.find { |doc| doc["kind"] == "StatefulSet" && doc.dig("metadata", "name") == "team-drops-loki" }
+            abort("Missing monolithic Loki StatefulSet") unless loki
+            abort("Loki must run as one replica") unless loki.dig("spec", "replicas") == 1
+            loki_claims = loki.dig("spec", "volumeClaimTemplates") || []
+            abort("Loki persistence is disabled") if loki_claims.empty?
+            abort("Loki PVC must be 2Gi") unless loki_claims.any? { |claim| claim.dig("spec", "resources", "requests", "storage") == "2Gi" }
+            loki_config = monitoring_documents.find { |doc| doc["kind"] == "ConfigMap" && doc.dig("metadata", "labels", "app.kubernetes.io/name") == "loki" && doc.dig("data", "config.yaml") }
+            abort("Missing Loki configuration") unless loki_config
+            abort("Loki retention must be 72 hours") unless loki_config.dig("data", "config.yaml").include?("retention_period: 72h")
+
+            grafana_datasources = monitoring_documents.find { |doc| doc["kind"] == "ConfigMap" && doc.dig("data", "datasources.yaml") }
+            abort("Grafana Loki datasource is missing") unless grafana_datasources&.dig("data", "datasources.yaml")&.include?("uid: loki")
+            dashboards = monitoring_documents.find { |doc| doc["kind"] == "ConfigMap" && doc.dig("metadata", "name") == "team-drops-grafana-dashboards" }
+            abort("Infrastructure dashboard is missing") unless dashboards&.dig("data")&.key?("team-drops-infrastructure.json")
+            abort("Logs dashboard is missing") unless dashboards&.dig("data")&.key?("team-drops-logs.json")
+            parsed_dashboards = dashboards.fetch("data").transform_values { |content| JSON.parse(content) }
+            abort("Application dashboard must retain exactly 13 panels") unless parsed_dashboards.fetch("team-drops-overview.json").fetch("panels").length == 13
 
             prometheus_config = monitoring_documents.find { |doc| doc["kind"] == "ConfigMap" && doc.dig("data", "alerting_rules.yml") }
             abort("Missing standalone Prometheus alert rules") unless prometheus_config
             alert_count = prometheus_config.dig("data", "alerting_rules.yml").scan(/alert: TeamDrops/).length
             abort("Expected four Team Drops alert rules, found #{alert_count}") unless alert_count == 4
             abort("Prometheus does not scrape kube-state-metrics") unless prometheus_config.dig("data", "prometheus.yml").include?("job_name: kube-state-metrics")
+            abort("Prometheus does not scrape node-exporter") unless prometheus_config.dig("data", "prometheus.yml").include?("job_name: node-exporter")
 
             alertmanager_config = monitoring_documents.find { |doc| doc["kind"] == "Secret" && doc.dig("metadata", "name") == "team-drops-alertmanager-config" }
             abort("Missing Team Drops Alertmanager configuration") unless alertmanager_config
@@ -226,7 +266,16 @@ jobs:
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         run: |
           kubectl create namespace drops-monitoring --dry-run=client -o yaml | kubectl apply -f -
-          kubectl label namespace drops-monitoring app.kubernetes.io/part-of=team-drops purpose=monitoring --overwrite
+          kubectl label namespace drops-monitoring \
+            app.kubernetes.io/part-of=team-drops \
+            purpose=monitoring \
+            pod-security.kubernetes.io/enforce=privileged \
+            pod-security.kubernetes.io/enforce-version=latest \
+            pod-security.kubernetes.io/audit=restricted \
+            pod-security.kubernetes.io/audit-version=latest \
+            pod-security.kubernetes.io/warn=restricted \
+            pod-security.kubernetes.io/warn-version=latest \
+            --overwrite
           kubectl -n drops-monitoring create secret generic team-drops-alertmanager-credentials \
             --from-literal=slack-webhook-url="$ALERTMANAGER_SLACK_WEBHOOK_URL" \
             --from-literal=smtp-password="$ALERTMANAGER_SMTP_PASSWORD" \
@@ -244,7 +293,13 @@ jobs:
             -f helm/team-drops-monitoring/values-rancher.yaml \
             --server-side=false \
             --wait \
-            --timeout 10m
+            --timeout 15m
+
+      - name: Verify monitoring rollouts
+        run: |
+          kubectl -n drops-monitoring rollout status statefulset/team-drops-loki --timeout=10m
+          kubectl -n drops-monitoring rollout status deployment/team-drops-alloy --timeout=5m
+          kubectl -n drops-monitoring rollout status daemonset/team-drops-node-exporter --timeout=10m
 
       - name: Deploy Team Drops
         run: |
@@ -279,5 +334,6 @@ jobs:
           kubectl -n team-drops describe deployment keycloak || true
           kubectl -n team-drops get events --sort-by=.lastTimestamp || true
           kubectl -n drops-monitoring get pods,svc,pvc,resourcequota,limitrange || true
-          kubectl -n team-drops get role,rolebinding | grep -E 'prometheus|kube-state' || true
+          kubectl -n drops-monitoring get daemonset team-drops-node-exporter -o wide || true
+          kubectl -n team-drops get role,rolebinding | grep -E 'prometheus|kube-state|alloy' || true
           kubectl -n team-drops get deployment frontend -o=jsonpath='{.spec.template.spec.containers[0].image}{"\n"}' || true

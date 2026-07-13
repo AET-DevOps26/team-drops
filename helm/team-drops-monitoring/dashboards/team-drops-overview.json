@@ -69,6 +69,64 @@
       "targets": [{"expr": "up{namespace=\"team-drops\", service=~\"user-service|learning-service|progress-feedback-service|genai-service\"}", "legendFormat": "{{service}}", "refId": "A"}],
       "title": "API Service Availability",
       "type": "state-timeline"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps", "min": 0}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 23},
+      "id": 8,
+      "targets": [{"expr": "sum by (service, status) (rate({__name__=~\"http_server_requests_seconds_count|http_requests_total\", namespace=\"team-drops\"}[5m]))", "legendFormat": "{{service}} HTTP {{status}}", "refId": "A"}],
+      "title": "HTTP Responses by Status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"min": 0}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 23},
+      "id": 9,
+      "targets": [
+        {"expr": "kube_deployment_spec_replicas{namespace=\"team-drops\", deployment=~\"user-service|learning-service|progress-feedback-service|genai-service\"}", "legendFormat": "{{deployment}} desired", "refId": "A"},
+        {"expr": "kube_deployment_status_replicas_available{namespace=\"team-drops\", deployment=~\"user-service|learning-service|progress-feedback-service|genai-service\"}", "legendFormat": "{{deployment}} available", "refId": "B"}
+      ],
+      "title": "Desired vs Available Replicas",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"min": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 31},
+      "id": 10,
+      "targets": [{"expr": "sum by (pod, container) (increase(kube_pod_container_status_restarts_total{namespace=\"team-drops\", pod=~\"(user-service|learning-service|progress-feedback-service|genai-service)-.+\", container!=\"\", container!=\"POD\"}[15m]))", "legendFormat": "{{pod}} / {{container}}", "refId": "A"}],
+      "title": "Container Restarts in 15 Minutes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "yellow", "value": 70}, {"color": "red", "value": 85}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 31},
+      "id": 11,
+      "description": "Heap usage for the Java services. The Python GenAI service does not expose JVM metrics.",
+      "targets": [{"expr": "100 * sum by (service) (jvm_memory_used_bytes{namespace=\"team-drops\", area=\"heap\"}) / clamp_min(sum by (service) (jvm_memory_max_bytes{namespace=\"team-drops\", area=\"heap\"} > 0), 1)", "legendFormat": "{{service}}", "refId": "A"}],
+      "title": "JVM Heap Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"min": 0, "max": 1, "mappings": [{"options": {"0": {"color": "red", "text": "NOT READY"}, "1": {"color": "green", "text": "READY"}}, "type": "value"}]}, "overrides": []},
+      "gridPos": {"h": 7, "w": 16, "x": 0, "y": 39},
+      "id": 12,
+      "targets": [{"expr": "kube_pod_status_ready{namespace=\"team-drops\", condition=\"true\", pod=~\"(user-service|learning-service|progress-feedback-service|genai-service)-.+\"}", "legendFormat": "{{pod}}", "refId": "A"}],
+      "title": "Application Pod Readiness",
+      "type": "state-timeline"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s", "min": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "yellow", "value": 1}, {"color": "red", "value": 3}]}}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 16, "y": 39},
+      "id": 13,
+      "targets": [{"expr": "scrape_duration_seconds{job=\"team-drops-services\"}", "legendFormat": "{{service}}", "refId": "A"}],
+      "title": "Prometheus Scrape Duration",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",
@@ -79,5 +137,5 @@
   "timezone": "browser",
   "title": "Team Drops Overview",
   "uid": "team-drops-overview",
-  "version": 2
+  "version": 3
 }

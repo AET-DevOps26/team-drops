@@ -1,0 +1,97 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{"expr": "sum by (component) (count_over_time({namespace=\"team-drops\", component=~\"$component\", pod=~\"$pod\", container=~\"$container\"}[$__auto]))", "legendFormat": "{{component}}", "queryType": "range", "refId": "A"}],
+      "title": "Log Volume by Component",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "fieldConfig": {"defaults": {"unit": "short", "min": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "yellow", "value": 1}, {"color": "red", "value": 10}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "sum by (component) (count_over_time({namespace=\"team-drops\", component=~\"$component\", pod=~\"$pod\", container=~\"$container\"} |~ \"(?i)(error|exception|failed)\" [$__auto]))", "legendFormat": "{{component}}", "queryType": "range", "refId": "A"}],
+      "title": "Error and Exception Log Volume",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8},
+      "id": 3,
+      "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
+      "targets": [{"expr": "{namespace=\"team-drops\", component=~\"$component\", pod=~\"$pod\", container=~\"$container\"}", "queryType": "range", "refId": "A"}],
+      "title": "Recent Application Logs by Container",
+      "type": "logs"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 18},
+      "id": 4,
+      "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
+      "targets": [{"expr": "{namespace=\"team-drops\", component=~\"$component\", pod=~\"$pod\", container=~\"$container\"} |~ \"(?i)(error|exception|failed)\"", "queryType": "range", "refId": "A"}],
+      "title": "Error and Exception Log Stream",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["team-drops", "logs", "loki"],
+  "templating": {
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {"text": "All", "value": "$__all"},
+        "datasource": {"type": "loki", "uid": "loki"},
+        "definition": "label_values({namespace=\"team-drops\"}, component)",
+        "includeAll": true,
+        "label": "Component",
+        "multi": true,
+        "name": "component",
+        "options": [],
+        "query": "label_values({namespace=\"team-drops\"}, component)",
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {"text": "All", "value": "$__all"},
+        "datasource": {"type": "loki", "uid": "loki"},
+        "definition": "label_values({namespace=\"team-drops\", component=~\"$component\"}, pod)",
+        "includeAll": true,
+        "label": "Pod",
+        "multi": true,
+        "name": "pod",
+        "options": [],
+        "query": "label_values({namespace=\"team-drops\", component=~\"$component\"}, pod)",
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {"text": "All", "value": "$__all"},
+        "datasource": {"type": "loki", "uid": "loki"},
+        "definition": "label_values({namespace=\"team-drops\", component=~\"$component\", pod=~\"$pod\"}, container)",
+        "includeAll": true,
+        "label": "Container",
+        "multi": true,
+        "name": "container",
+        "options": [],
+        "query": "label_values({namespace=\"team-drops\", component=~\"$component\", pod=~\"$pod\"}, container)",
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {"from": "now-1h", "to": "now"},
+  "timezone": "browser",
+  "title": "Team Drops Logs",
+  "uid": "team-drops-logs",
+  "version": 1
+}
