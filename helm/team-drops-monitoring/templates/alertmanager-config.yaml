@@ -1,4 +1,3 @@
-{{- if and .Values.monitoring.standalone.enabled .Values.prometheus.alertmanager.enabled }}
 {{- $routing := .Values.monitoring.alertmanager }}
 {{- $slack := $routing.slack }}
 {{- $email := $routing.email }}
@@ -24,7 +23,7 @@ kind: Secret
 metadata:
   name: team-drops-alertmanager-config
   labels:
-    {{- include "team-drops.labels" . | nindent 4 }}
+    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
     app.kubernetes.io/component: alertmanager
 type: Opaque
 stringData:
@@ -94,4 +93,3 @@ stringData:
             send_resolved: true
         {{- end }}
       {{- end }}
-{{- end }}

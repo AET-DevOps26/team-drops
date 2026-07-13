@@ -2,14 +2,5 @@ apiVersion: v2
 name: team-drops
 description: Helm chart for the Team Drops microservice application
 type: application
-version: 0.2.0
+version: 0.3.0
 appVersion: "0.1.0"
-dependencies:
-  - name: prometheus
-    version: 29.14.0
-    repository: https://prometheus-community.github.io/helm-charts
-    condition: monitoring.standalone.enabled
-  - name: grafana
-    version: 10.5.15
-    repository: https://grafana.github.io/helm-charts
-    condition: monitoring.standalone.enabled

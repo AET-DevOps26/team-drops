@@ -50,3 +50,4 @@ out/
 
 # Helm dependencies (recreated from Chart.lock)
 helm/team-drops/charts/
+helm/team-drops-monitoring/charts/

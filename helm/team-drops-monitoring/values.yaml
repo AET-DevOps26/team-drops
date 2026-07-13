@@ -1,0 +1,257 @@
+application:
+  namespace: team-drops
+
+monitoring:
+  resourceQuota:
+    enabled: true
+    hard:
+      requests.cpu: "2"
+      requests.memory: 4Gi
+      limits.cpu: "4"
+      limits.memory: 8Gi
+      requests.storage: 20Gi
+      persistentvolumeclaims: "5"
+      pods: "20"
+      services: "20"
+  limitRange:
+    default:
+      cpu: 500m
+      memory: 512Mi
+    defaultRequest:
+      cpu: 25m
+      memory: 64Mi
+  alertmanager:
+    resolveTimeout: 5m
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 3h
+    slack:
+      enabled: false
+      channel: "#team-drops-alerts"
+    email:
+      enabled: false
+      smarthost: ""
+      from: ""
+      to: ""
+      authUsername: ""
+      requireTLS: true
+    pagerduty:
+      enabled: false
+
+prometheus:
+  rbac:
+    create: false
+  serviceAccounts:
+    server:
+      create: false
+      name: team-drops-prometheus
+  alertmanager:
+    enabled: true
+    fullnameOverride: team-drops-alertmanager
+    persistence:
+      enabled: true
+      size: 1Gi
+    extraArgs:
+      config.file: /etc/team-drops-alertmanager/alertmanager.yml
+    extraSecretMounts:
+      - name: team-drops-alertmanager-config
+        mountPath: /etc/team-drops-alertmanager
+        subPath: ""
+        secretName: team-drops-alertmanager-config
+        readOnly: true
+      - name: team-drops-alertmanager-credentials
+        mountPath: /etc/team-drops-alertmanager-credentials
+        subPath: ""
+        secretName: team-drops-alertmanager-credentials
+        readOnly: true
+        optional: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+  kube-state-metrics:
+    enabled: true
+    fullnameOverride: team-drops-monitoring-kube-state-metrics
+    namespaces: [team-drops]
+    rbac:
+      create: true
+      useClusterRole: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 96Mi
+  prometheus-node-exporter:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+  scrapeConfigs:
+    kubernetes-api-servers:
+      enabled: false
+    kubernetes-nodes:
+      enabled: false
+    kubernetes-nodes-cadvisor:
+      enabled: false
+    kubernetes-service-endpoints:
+      enabled: false
+    kubernetes-service-endpoints-slow:
+      enabled: false
+    prometheus-pushgateway:
+      enabled: false
+    kubernetes-services:
+      enabled: false
+    kubernetes-pods:
+      enabled: false
+    kubernetes-pods-slow:
+      enabled: false
+  configmapReload:
+    prometheus:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+  server:
+    fullnameOverride: team-drops-prometheus-server
+    retention: 7d
+    persistentVolume:
+      enabled: true
+      accessModes: [ReadWriteOnce]
+      size: 2Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+  serverFiles:
+    alerting_rules.yml:
+      groups:
+        - name: team-drops-runtime
+          rules:
+            - alert: TeamDropsServiceDown
+              expr: up{namespace="team-drops", service=~"user-service|learning-service|progress-feedback-service|genai-service"} == 0
+              for: 2m
+              labels:
+                severity: critical
+                team: team-drops
+              annotations:
+                summary: Team Drops API service is unavailable
+                description: Prometheus has been unable to scrape a Team Drops API service for two minutes.
+            - alert: TeamDropsHighErrorRate
+              expr: (sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace="team-drops", status=~"5.."}[5m])) / clamp_min(sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace="team-drops"}[5m])), 0.001) > 0.05) and (sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace="team-drops"}[5m])) > 0.1)
+              for: 5m
+              labels:
+                severity: warning
+                team: team-drops
+              annotations:
+                summary: Team Drops API error rate is above 5 percent
+                description: More than 5 percent of requests have returned HTTP 5xx responses for five minutes.
+            - alert: TeamDropsSlowResponses
+              expr: (sum by (service) (rate({__name__=~"http_server_requests_seconds_sum|http_request_duration_seconds_sum", namespace="team-drops"}[5m])) / clamp_min(sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_request_duration_seconds_count", namespace="team-drops"}[5m])), 0.001) > 1.5) and (sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace="team-drops"}[5m])) > 0.1)
+              for: 5m
+              labels:
+                severity: warning
+                team: team-drops
+              annotations:
+                summary: Team Drops API responses are slow
+                description: Mean response latency has exceeded 1.5 seconds for five minutes while the service is receiving traffic.
+            - alert: TeamDropsPodRestartBurst
+              expr: sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total{namespace="team-drops", container!="", container!="POD"}[15m])) > 5
+              for: 1m
+              labels:
+                severity: critical
+                team: team-drops
+              annotations:
+                summary: Team Drops container is restarting repeatedly
+                description: A container restarted more than five times during the last 15 minutes.
+    prometheus.yml:
+      scrape_configs:
+        - job_name: team-drops-services
+          kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names: [team-drops]
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_service_label_monitoring]
+              action: keep
+              regex: "true"
+            - source_labels: [__meta_kubernetes_endpoint_port_name]
+              action: keep
+              regex: http
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+              target_label: __metrics_path__
+              action: replace
+            - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_component]
+              target_label: service
+              action: replace
+            - source_labels: [__meta_kubernetes_namespace]
+              target_label: namespace
+              action: replace
+        - job_name: kube-state-metrics
+          static_configs:
+            - targets: [team-drops-monitoring-kube-state-metrics:8080]
+
+grafana:
+  fullnameOverride: team-drops-grafana
+  initChownData:
+    resources:
+      requests:
+        cpu: 5m
+        memory: 8Mi
+      limits:
+        cpu: 20m
+        memory: 32Mi
+  rbac:
+    create: true
+    namespaced: true
+  testFramework:
+    enabled: false
+  admin:
+    existingSecret: team-drops-grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  persistence:
+    enabled: true
+    type: pvc
+    accessModes: [ReadWriteOnce]
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://team-drops-prometheus-server
+          access: proxy
+          isDefault: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: Team Drops
+          type: file
+          disableDeletion: true
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards/default
+  dashboardsConfigMaps:
+    default: team-drops-grafana-dashboards

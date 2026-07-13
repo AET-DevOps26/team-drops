@@ -14,18 +14,8 @@ genai:
       memory: 1Gi
 
 monitoring:
-  alertmanager:
-    slack:
-      enabled: true
-      channel: "#team-drops-alerts"
-    email:
-      enabled: false
-    pagerduty:
-      enabled: false
   rancherServiceMonitors:
     enabled: false
-  standalone:
-    enabled: true
 
 auth:
   issuerUri: https://team-drops.stud.k8s.aet.cit.tum.de/realms/team-drops
