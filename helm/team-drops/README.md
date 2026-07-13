@@ -1,16 +1,68 @@
-# Team Drops Helm Chart
+# Team Drops Helm Deployment and Operations
 
-Deploys the Team Drops frontend, backend services, GenAI service, Postgres, and
-MongoDB into an existing Rancher namespace.
+Team Drops is deployed as two Helm releases:
 
-The frontend image builds the Vite app into static files and serves them with
-Nginx on port 80.
+| Release | Chart | Namespace | Contents |
+| --- | --- | --- | --- |
+| `team-drops` | `helm/team-drops` | `team-drops` | Frontend, APIs, Keycloak, PostgreSQL, and MongoDB |
+| `team-drops-monitoring` | `helm/team-drops-monitoring` | `drops-monitoring` | Prometheus, Grafana, Alertmanager, Loki, Alloy, and kube-state-metrics |
 
-## Render and validate safely
+Both namespaces must already exist. The GitHub Actions deployment deliberately
+does not create, label, or otherwise modify Namespace objects.
+
+## Prerequisites
+
+- Helm and `kubectl` configured for the Rancher cluster
+- Permission to manage namespaced workloads, Secrets, Roles, RoleBindings, and
+  Helm releases in `team-drops` and `drops-monitoring`
+- A default dynamic storage class supporting `ReadWriteOnce` volumes
+- The two namespaces created once through Rancher by an authorized user
+
+The Rancher monitoring profile requires no privileged Pod Security policy. It
+does not deploy node-exporter, DaemonSets, host networking, host PID, hostPath
+mounts, ClusterRoles, or ClusterRoleBindings.
+
+## Automatic deployment
+
+`.github/workflows/deploy-kubernetes.yml` runs after a successful main-branch
+Docker publication and can also be started manually. It validates both charts,
+creates or updates namespaced credential Secrets, deploys monitoring first,
+waits for its rollouts, and then deploys the application.
+
+Required GitHub repository secrets:
+
+| Secret | Purpose |
+| --- | --- |
+| `KUBE_CONFIG` | Kubeconfig for a Rancher identity with access to both namespaces |
+| `LLM_API_KEY` | API key used by the Rancher OpenAI-compatible GenAI configuration |
+| `GRAFANA_ADMIN_PASSWORD` | Password stored in `team-drops-grafana-admin` |
+| `ALERTMANAGER_SLACK_WEBHOOK_URL` | Slack incoming webhook for `#team-drops-alerts` |
+
+Optional secrets are needed only when their Alertmanager receiver is enabled:
+
+- `ALERTMANAGER_SMTP_PASSWORD`
+- `ALERTMANAGER_PAGERDUTY_ROUTING_KEY`
+
+Alertmanager credentials are stored in
+`team-drops-alertmanager-credentials` in `drops-monitoring` and mounted as
+files. Grafana credentials are stored in `team-drops-grafana-admin` in the same
+namespace.
+
+Automatic deployments use the immutable `sha-<commit>` image tag published by
+the Docker workflow. Manual workflow runs default to `latest` but accept an
+explicit image tag.
+
+## Render and validate
+
+Build the monitoring dependencies first:
 
 ```bash
 helm dependency build ./helm/team-drops-monitoring
+```
 
+Lint both releases. The dummy API key is used only for local rendering:
+
+```bash
 helm lint ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
@@ -19,7 +71,11 @@ helm lint ./helm/team-drops \
 helm lint ./helm/team-drops-monitoring \
   --namespace drops-monitoring \
   -f helm/team-drops-monitoring/values-rancher.yaml
+```
 
+Render manifests without changing the cluster:
+
+```bash
 helm template team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
@@ -32,112 +88,69 @@ helm template team-drops-monitoring ./helm/team-drops-monitoring \
   > /tmp/team-drops-monitoring-rendered.yaml
 ```
 
-Inspect the rendered manifests:
+Expected results:
+
+- Application images point to `ghcr.io/aet-devops26/...`.
+- Application workloads render in `team-drops` and monitoring workloads render
+  in `drops-monitoring`.
+- Monitoring Roles and RoleBindings grant read-only access to application
+  metrics, Kubernetes state, and application pod logs.
+- No cluster-scoped RBAC or privileged host access is rendered.
+- Backend environment variables never contain both `value` and `valueFrom`.
+
+When the current identity supports server-side dry runs:
 
 ```bash
-grep -n "image:" /tmp/team-drops-app-rendered.yaml
-grep -n "host:" /tmp/team-drops-app-rendered.yaml
-grep -n "storage:" /tmp/team-drops-monitoring-rendered.yaml
-grep -n "namespace:" /tmp/team-drops-monitoring-rendered.yaml
+kubectl apply --dry-run=server -n team-drops \
+  -f /tmp/team-drops-app-rendered.yaml
+kubectl apply --dry-run=server -n drops-monitoring \
+  -f /tmp/team-drops-monitoring-rendered.yaml
 ```
 
-Expected:
+## Manual installation
 
-- app images point to `ghcr.io/aet-devops26/...`
-- ingress hosts use `*.stud.k8s.aet.cit.tum.de`
-- Postgres and Mongo storage defaults are small
-- all monitoring workloads explicitly render into `drops-monitoring`
-- read-only monitoring Roles and RoleBindings explicitly render into `team-drops`
-- backend env vars use either `value` or `valueFrom`, never both
-
-Validate against the Kubernetes API without creating resources:
-
-```bash
-kubectl apply --dry-run=server -n team-drops -f /tmp/team-drops-app-rendered.yaml
-kubectl apply --dry-run=server -n drops-monitoring -f /tmp/team-drops-monitoring-rendered.yaml
-```
-
-## Install or update
-
-Use the real ingress host for the namespace. For a branch-image test before
-merging to `main`, use `--set image.tag=kubernetes`. OpenAI mode requires
-`genai.llmApiKey`; infrastructure-only tests can use `genai.llmProvider=ollama`.
-The committed `values-rancher.yaml` file contains the non-secret Rancher
-settings: host, staging TLS, and Ollama mode.
-
-```bash
-helm upgrade --install team-drops ./helm/team-drops \
-  --namespace team-drops \
-  -f helm/team-drops/values-rancher.yaml \
-  --set image.tag=kubernetes
-```
-
-If GHCR packages are private, create an image pull secret in the namespace and
-install with:
-
-```bash
-helm upgrade --install team-drops ./helm/team-drops \
-  --namespace team-drops \
-  -f helm/team-drops/values-rancher.yaml \
-  --set imagePullSecrets[0]=<secret-name>
-```
-
-## Automatic deployment
-
-The `Deploy Kubernetes` GitHub Actions workflow deploys this chart after the
-`Docker Publish` workflow succeeds on `main`. It can also be started manually
-from the Actions tab.
-
-Required repository secret:
-
-- `KUBE_CONFIG`: kubeconfig content for a Rancher user or service account with
-  permission to manage workloads in the existing `team-drops` and
-  `drops-monitoring` namespaces and manage both Helm releases.
-- `GRAFANA_ADMIN_PASSWORD`: administrator password for Grafana; it is written
-  only to `team-drops-grafana-admin` in the `drops-monitoring` namespace.
-- `ALERTMANAGER_SLACK_WEBHOOK_URL`: incoming webhook used by Alertmanager for
-  the `#team-drops-alerts` channel.
-
-Optional repository secrets, required only when their receiver is enabled:
-
-- `ALERTMANAGER_SMTP_PASSWORD`: SMTP password for email notifications.
-- `ALERTMANAGER_PAGERDUTY_ROUTING_KEY`: PagerDuty Events API v2 integration
-  key.
-
-The workflow writes alerting credentials to the
-`team-drops-alertmanager-credentials` Kubernetes Secret in `drops-monitoring`. They
-are mounted as files and are never stored in Helm values or the Alertmanager
-ConfigMap.
-For a manual deployment, create the same Secret from local files before running
-Helm:
+Create the monitoring Secrets before the first installation. Use local files
+for alerting credentials to avoid putting their contents in shell history:
 
 ```bash
 kubectl -n drops-monitoring create secret generic team-drops-alertmanager-credentials \
   --from-file=slack-webhook-url=/secure/path/slack-webhook-url \
   --from-file=smtp-password=/secure/path/smtp-password \
   --from-file=pagerduty-routing-key=/secure/path/pagerduty-routing-key
+
+kubectl -n drops-monitoring create secret generic team-drops-grafana-admin \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password=<password>
 ```
 
-Only the Slack file is required by `values-rancher.yaml`; omit files for
-disabled receivers.
+Only the Slack credential is required by `values-rancher.yaml`; omit the SMTP
+and PagerDuty files while those receivers are disabled.
 
-Automatic runs deploy the immutable `sha-<commit>` image tag published by the
-`Docker Publish` workflow. Manual runs default to `latest`, but allow choosing a
-specific image tag from the Actions tab. The workflow waits up to 15 minutes
-for the monitoring stack and 10 minutes for the application stack.
-
-## Check the deployment
+Install monitoring, then the application:
 
 ```bash
-kubectl -n team-drops get pods
-kubectl -n team-drops get svc
-kubectl -n team-drops get ingress
-kubectl -n team-drops get pvc
+helm dependency build ./helm/team-drops-monitoring
+
+helm upgrade --install team-drops-monitoring ./helm/team-drops-monitoring \
+  --namespace drops-monitoring \
+  -f helm/team-drops-monitoring/values-rancher.yaml \
+  --wait --timeout 15m
+
+helm upgrade --install team-drops ./helm/team-drops \
+  --namespace team-drops \
+  -f helm/team-drops/values-rancher.yaml \
+  --set image.tag=sha-<commit> \
+  --set genai.llmApiKey=<api-key> \
+  --wait --timeout 10m
 ```
 
-Check app rollouts:
+If GHCR images are private, create an image-pull Secret in `team-drops` and add
+`--set imagePullSecrets[0]=<secret-name>` to the application installation.
+
+## Verify the application
 
 ```bash
+kubectl -n team-drops get pods,svc,ingress,pvc
 kubectl -n team-drops rollout status deployment/frontend
 kubectl -n team-drops rollout status deployment/user-service
 kubectl -n team-drops rollout status deployment/learning-service
@@ -147,22 +160,7 @@ kubectl -n team-drops rollout status statefulset/postgres
 kubectl -n team-drops rollout status statefulset/mongo
 ```
 
-Useful debugging commands:
-
-```bash
-kubectl -n team-drops describe pod <pod-name>
-kubectl -n team-drops logs <pod-name>
-kubectl -n team-drops get events --sort-by=.lastTimestamp
-```
-
-The `monitoring: "true"` labels on the Mongo and Postgres
-`volumeClaimTemplates` are retained for upgrade compatibility with existing
-StatefulSets. Their chart and application version labels also remain pinned to
-the original `0.1.0` values. Kubernetes treats this section as immutable;
-removing or changing these labels requires a controlled StatefulSet recreation
-while preserving the existing PVCs.
-
-Internal health checks via port-forward:
+Check internal health endpoints without exposing them through Ingress:
 
 ```bash
 kubectl -n team-drops port-forward svc/user-service 8081:80
@@ -174,109 +172,80 @@ kubectl -n team-drops port-forward svc/genai-service 8084:80
 curl http://localhost:8084/health
 ```
 
-## Prometheus, Loki, and Grafana monitoring
-
-The observability stack is a separate Helm release in the dedicated
-`drops-monitoring` namespace. The application remains in `team-drops`.
-Prometheus, kube-state-metrics, and Alloy use read-only Roles and RoleBindings;
-no cluster-scoped RBAC is created. Alloy can read pod logs only from
-`team-drops`. The chart supports an optional ResourceQuota and LimitRange, but
-they are disabled in `values-rancher.yaml` because the deployment identity is
-not authorized to create them. A Rancher administrator can configure equivalent
-limits on the namespace separately.
-The stack does not deploy node-exporter, DaemonSets, host mounts, or other
-privileged node-level collectors.
-
-Prometheus retains seven days of data on a 2 GiB PVC. Loki retains three days
-of logs on a separate 2 GiB PVC. Alertmanager and Grafana use 1 GiB PVCs. None
-of the monitoring services is exposed through Ingress. The
-`drops-monitoring` namespace must be created once in Rancher by an authorized
-user; CI deliberately does not create, label, or otherwise modify the
-Namespace object. No privileged Pod Security setting is required. For a manual
-installation, create the namespaced secrets and install the second chart:
+For failures, inspect the pod, logs, and namespace events:
 
 ```bash
-kubectl -n drops-monitoring create secret generic team-drops-alertmanager-credentials \
-  --from-file=slack-webhook-url=/secure/path/slack-webhook-url
-kubectl -n drops-monitoring create secret generic team-drops-grafana-admin \
-  --from-literal=admin-user=admin \
-  --from-literal=admin-password=<password>
-
-helm dependency build ./helm/team-drops-monitoring
-helm upgrade --install team-drops-monitoring ./helm/team-drops-monitoring \
-  --namespace drops-monitoring \
-  -f helm/team-drops-monitoring/values-rancher.yaml \
-  --wait --timeout 15m
+kubectl -n team-drops describe pod <pod-name>
+kubectl -n team-drops logs <pod-name>
+kubectl -n team-drops get events --sort-by=.lastTimestamp
 ```
 
-The first deployment of this split layout starts fresh monitoring PVCs in the
-new namespace; Kubernetes volumes cannot be moved between namespaces. Existing
-application database PVCs in `team-drops` are unaffected. After verifying the
-new stack, any old manually-created alerting credential Secret in `team-drops`
-can be removed.
+The `monitoring: "true"` and original chart-version labels on the PostgreSQL and
+MongoDB `volumeClaimTemplates` are retained for compatibility with existing
+StatefulSets. That template section is immutable; changing it requires a
+controlled StatefulSet recreation while preserving the PVCs.
 
-Check the stack and persistent storage:
+## Monitoring stack
+
+The Rancher profile provisions persistent internal-only services:
+
+| Component | Retention/storage | Purpose |
+| --- | --- | --- |
+| Prometheus | 7 days, 2 GiB PVC | Application and Kubernetes-state metrics |
+| Grafana | 1 GiB PVC | Provisioned dashboards and Prometheus/Loki datasources |
+| Loki | 3 days, 2 GiB PVC | Logs from `team-drops` only |
+| Alertmanager | 1 GiB PVC | Grouping, silencing, and notification routing |
+| Alloy | Ephemeral | Kubernetes API log collection from `team-drops` |
+| kube-state-metrics | Ephemeral | Namespaced workload and restart metrics |
+
+ResourceQuota and LimitRange support remains available in the chart but is
+disabled in `values-rancher.yaml` because the deployment identity cannot create
+those resources. A Rancher administrator can configure equivalent namespace
+limits separately. Monitoring services have no public Ingress.
+
+Verify the monitoring workloads and cross-namespace access:
 
 ```bash
 kubectl -n drops-monitoring get pods,svc,pvc
-kubectl -n team-drops get role,rolebinding | grep -E 'prometheus|kube-state|alloy'
+kubectl -n team-drops get role,rolebinding
 ```
 
-Access Grafana:
+### Grafana dashboards
 
 ```bash
 kubectl -n drops-monitoring port-forward svc/team-drops-grafana 3000:80
 ```
 
-Open `http://localhost:3000`, sign in as `admin` with the value of
-`GRAFANA_ADMIN_PASSWORD`, and open **Dashboards > Team Drops > Team Drops
-Overview**. The same folder also contains **Team Drops Logs**, which can filter
-by component, pod, and container.
+Open <http://localhost:3000> and sign in as `admin` using
+`GRAFANA_ADMIN_PASSWORD`. The **Team Drops** folder contains:
 
-Access the Prometheus query and target UI:
+- **Team Drops Overview**: 13 application traffic, reliability, deployment,
+  and runtime panels
+- **Team Drops Logs**: log volume, error volume, recent logs, and error streams
+
+### Prometheus metrics
 
 ```bash
-kubectl -n drops-monitoring port-forward svc/team-drops-prometheus-server 9090:80
+kubectl -n drops-monitoring port-forward \
+  svc/team-drops-prometheus-server 9090:80
 ```
 
-Open `http://localhost:9090`. Useful queries are:
+Open <http://localhost:9090>. Useful queries include:
 
 ```promql
 up{job="team-drops-services"}
 application_info{namespace="team-drops"}
-sum(rate(http_server_requests_seconds_count{namespace="team-drops"}[5m]))
-sum(rate(http_requests_total{namespace="team-drops"}[5m]))
+sum by (service) (rate(http_server_requests_seconds_count{namespace="team-drops"}[5m]))
 increase(kube_pod_container_status_restarts_total{namespace="team-drops"}[15m])
+ALERTS{alertname=~"TeamDrops.+"}
 ```
 
-Inspect raw application metrics without exposing them through Ingress:
+The `up` query should show four healthy API targets. The `application_info`
+version label should match the deployed `sha-<commit>` image tag.
 
-```bash
-kubectl -n team-drops port-forward svc/user-service 8081:80
-curl http://localhost:8081/actuator/prometheus
-```
+### Loki logs
 
-```bash
-kubectl -n team-drops port-forward svc/genai-service 8084:80
-curl http://localhost:8084/metrics
-```
-
-`up{job="team-drops-services"}` should contain four healthy targets. The
-`application_info` version label should match the deployed `sha-<commit>` image
-tag. The dashboard separates request rate, HTTP 5xx percentage, and mean
-latency by service, and also shows target availability and the number of firing
-runtime alerts.
-
-Access Loki directly for health and label checks:
-
-```bash
-kubectl -n drops-monitoring port-forward svc/team-drops-loki 3100:3100
-curl http://localhost:3100/ready
-curl http://localhost:3100/loki/api/v1/labels
-```
-
-In Grafana, open **Explore**, choose the `Loki` datasource, and use LogQL such
-as:
+In Grafana Explore, choose the `Loki` datasource and use LogQL such as:
 
 ```logql
 {namespace="team-drops"}
@@ -284,137 +253,82 @@ as:
 {namespace="team-drops"} |~ "(?i)(error|exception|failed)"
 ```
 
-Alloy discovers new and restarted pods automatically through the Kubernetes
-API. It attaches only the namespace, pod, container, application, and component
-labels; it does not extract request IDs or other unbounded values. Confirm the
-scope and delivery with:
+Alloy discovers new and restarted application pods automatically. It attaches
+only bounded namespace, pod, container, application, and component labels. To
+inspect collection directly:
 
 ```bash
 kubectl -n drops-monitoring logs deployment/team-drops-alloy
-kubectl -n team-drops logs deployment/genai-service --tail=5
-curl -G http://localhost:3100/loki/api/v1/query_range \
-  --data-urlencode 'query={namespace="team-drops"}' \
-  --data-urlencode 'limit=20'
+kubectl -n drops-monitoring port-forward svc/team-drops-loki 3100:3100
+curl http://localhost:3100/ready
+curl http://localhost:3100/loki/api/v1/labels
 ```
 
-Four alert rules are installed with the standalone Prometheus stack:
+## Alerting
 
-- `TeamDropsServiceDown` fires after a service cannot be scraped for 2 minutes.
-- `TeamDropsHighErrorRate` fires when more than 5% of requests fail with HTTP
-  5xx for 5 minutes, provided the service is receiving traffic.
-- `TeamDropsSlowResponses` fires when mean latency is above 1.5 seconds for 5
-  minutes, provided the service is receiving traffic.
-- `TeamDropsPodRestartBurst` fires when a container restarts more than 5 times
-  in 15 minutes.
+Four application alerts are installed:
 
-Open **Alerts** in Prometheus or use this query to inspect active alerts:
+- `TeamDropsServiceDown`: a service cannot be scraped for two minutes
+- `TeamDropsHighErrorRate`: more than 5% HTTP 5xx responses for five minutes
+  while receiving traffic
+- `TeamDropsSlowResponses`: mean latency above 1.5 seconds for five minutes
+  while receiving traffic
+- `TeamDropsPodRestartBurst`: more than five container restarts in 15 minutes
 
-```promql
-ALERTS{alertname=~"TeamDrops.+"}
-```
+Warnings route to enabled Slack and email receivers. Critical alerts route to
+enabled Slack, email, and PagerDuty receivers. Every receiver sends resolved
+notifications, while unrelated alerts use a null receiver.
 
-Access Alertmanager to inspect routed alerts and create temporary silences:
+Access Alertmanager to inspect alerts and create silences:
 
 ```bash
 kubectl -n drops-monitoring port-forward svc/team-drops-alertmanager 9093:9093
 ```
 
-Open `http://localhost:9093`. Warning alerts are sent to enabled Slack and
-email receivers. Critical alerts are sent to enabled Slack, email, and
-PagerDuty receivers. Resolved notifications are enabled for every receiver;
-unrelated alerts go to a null receiver.
+Open <http://localhost:9093>. Slack is enabled in
+`helm/team-drops-monitoring/values-rancher.yaml`. To enable email, configure the
+non-secret SMTP fields and set `monitoring.alertmanager.email.enabled=true`. To
+enable PagerDuty, set `monitoring.alertmanager.pagerduty.enabled=true`. Store
+their credentials in the repository secrets listed above.
 
-With the port-forward running, send a five-minute synthetic warning to verify
-Slack routing and the resolved notification:
-
-```bash
-STARTS_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-ENDS_AT=$(date -u -d '+5 minutes' +%Y-%m-%dT%H:%M:%SZ)
-curl -X POST http://localhost:9093/api/v2/alerts \
-  -H 'Content-Type: application/json' \
-  -d "[{\"labels\":{\"alertname\":\"TeamDropsRoutingTest\",\"team\":\"team-drops\",\"severity\":\"warning\",\"service\":\"manual-test\"},\"annotations\":{\"summary\":\"Team Drops routing test\"},\"startsAt\":\"$STARTS_AT\",\"endsAt\":\"$ENDS_AT\"}]"
-```
-
-Slack is enabled by `helm/team-drops-monitoring/values-rancher.yaml`. To enable email, set
-`monitoring.alertmanager.email.enabled=true` and provide `smarthost`, `from`,
-`to`, and optionally `authUsername`. To enable PagerDuty, set
-`monitoring.alertmanager.pagerduty.enabled=true`. Store the corresponding
-password or routing key in the GitHub repository secrets listed above rather
-than passing it through Helm. After changing receiver values or manually
-updating the credential Secret, reload Alertmanager with:
+After manually changing receiver configuration or credentials:
 
 ```bash
 kubectl -n drops-monitoring rollout restart statefulset/team-drops-alertmanager
 kubectl -n drops-monitoring rollout status statefulset/team-drops-alertmanager
 ```
 
-The automatic deployment workflow performs this reload after every Helm
-upgrade.
+The application chart also supports Operator-compatible `ServiceMonitor` and
+`PrometheusRule` resources. They are disabled in the Rancher values because the
+dedicated standalone Prometheus release is used.
 
-When the chart uses Rancher Monitoring instead, the same rules are installed as
-a `PrometheusRule`. Set `monitoring.alerts.enabled=false` to omit that resource.
-Rancher `ServiceMonitor` resources remain available through
-`monitoring.rancherServiceMonitors.enabled`, but are disabled in
-`values-rancher.yaml` because this stack does not use the cluster Prometheus.
+## GenAI options
 
-Rollback or uninstall:
+The Rancher profile uses an OpenAI-compatible endpoint and requires
+`genai.llmApiKey`. Always deploy a specific immutable image tag.
 
-```bash
-helm history team-drops -n team-drops
-helm rollback team-drops <revision> -n team-drops
-helm history team-drops-monitoring -n drops-monitoring
-helm rollback team-drops-monitoring <revision> -n drops-monitoring
-helm uninstall team-drops -n team-drops
-helm uninstall team-drops-monitoring -n drops-monitoring
-kubectl -n drops-monitoring delete secret team-drops-alertmanager-credentials team-drops-grafana-admin
-```
-
-## GenAI configuration
-
-The default chart does not deploy Ollama. OpenAI mode requires an API key:
+For an infrastructure-only test without an API key, override the provider to
+Ollama. AI requests will fail unless an Ollama backend is reachable:
 
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
-  --set image.tag=<sha-tag> \
-  --set genai.llmProvider=openai \
-  --set genai.llmApiKey=<api-key>
+  --set image.tag=sha-<commit> \
+  --set genai.llmProvider=ollama
 ```
 
-For Rancher deployments, always pass the commit image tag, for example
-`--set image.tag=sha-<commit>`. The chart default is `latest` for local
-development, and using it manually can roll different services to a mutable tag.
-Pass only the raw API key to `genai.llmApiKey`; do not paste `.env` lines such as
-`LLM_API_KEY=...` or `LLM_MODEL=...`.
-
-For infrastructure tests without an OpenAI key, use Ollama mode without deploying
-Ollama. The GenAI service starts, but AI requests that need an Ollama backend may
-fail until a backend is configured.
-
-```bash
-helm upgrade --install team-drops ./helm/team-drops \
-  --namespace team-drops \
-  -f helm/team-drops/values-rancher.yaml
-```
-
-To opt into in-cluster Ollama:
-
-```bash
-helm upgrade --install team-drops ./helm/team-drops \
-  --namespace team-drops \
-  -f helm/team-drops/values-rancher.yaml \
-  --set ollama.enabled=true
-```
+To opt into the chart's in-cluster Ollama workload, also set
+`ollama.enabled=true`.
 
 ## TLS and browser access
 
-HTTP works through the Ingress by default. Browsers may force HTTPS for
-`*.stud.k8s.aet.cit.tum.de` because of HSTS; if the cluster serves a self-signed
-certificate, the browser can block access even though HTTP and `curl` checks work.
+The Rancher values configure the project ingress host and TLS. Browsers may
+enforce HTTPS for `*.stud.k8s.aet.cit.tum.de` through HSTS. The cert-manager
+issuer must be supplied by the cluster administrators; do not guess an issuer
+name.
 
-The chart supports TLS, but the correct cert-manager issuer must come from the
-cluster admins or tutors:
+To override it during a manual installation:
 
 ```bash
 helm upgrade --install team-drops ./helm/team-drops \
@@ -422,4 +336,22 @@ helm upgrade --install team-drops ./helm/team-drops \
   -f helm/team-drops/values-rancher.yaml \
   --set ingress.tls.enabled=true \
   --set ingress.tls.clusterIssuer=<issuer-name>
+```
+
+## Rollback and removal
+
+```bash
+helm history team-drops -n team-drops
+helm rollback team-drops <revision> -n team-drops
+helm history team-drops-monitoring -n drops-monitoring
+helm rollback team-drops-monitoring <revision> -n drops-monitoring
+```
+
+Uninstalling releases does not automatically remove every PVC or manually
+created Secret. Review retained data before deleting it:
+
+```bash
+helm uninstall team-drops -n team-drops
+helm uninstall team-drops-monitoring -n drops-monitoring
+kubectl -n drops-monitoring get pvc,secret
 ```
