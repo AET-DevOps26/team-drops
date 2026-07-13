@@ -9,6 +9,14 @@ The repository contains the browser application, three Spring Boot domain
 services, a FastAPI GenAI service, local Docker infrastructure, Kubernetes Helm
 charts, and the project documentation.
 
+## Project status
+
+The repository represents the final integrated project architecture. The local
+stack runs through Docker Compose, and the Rancher deployment uses separate
+application and monitoring releases. `api/openapi.yaml`, the Helm values, and
+the GitHub Actions workflows are the sources of truth for runtime behavior;
+older proposal and diagram files are retained as historical design material.
+
 ## Capabilities
 
 - User registration, authentication, and profile management
@@ -193,6 +201,8 @@ The dedicated `drops-monitoring` release provides:
 - A **Team Drops Logs** dashboard for log volume, errors, and container streams
 - Loki with three-day retention on a persistent 2 GiB volume
 - Alloy collecting logs only from the `team-drops` namespace
+- kube-state-metrics collecting only pod and deployment state from
+  `team-drops`, using namespaced read-only RBAC
 - Alertmanager routing warnings to enabled Slack and email receivers and
   critical alerts to enabled Slack, email, and PagerDuty receivers
 - Four runtime alerts: service down, high error rate, slow responses, and pod

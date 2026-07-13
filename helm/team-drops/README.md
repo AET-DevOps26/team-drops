@@ -22,6 +22,10 @@ The Rancher monitoring profile requires no privileged Pod Security policy. It
 does not deploy node-exporter, DaemonSets, host networking, host PID, hostPath
 mounts, ClusterRoles, or ClusterRoleBindings.
 
+kube-state-metrics uses a Role in `team-drops` limited to `list` and `watch` on
+pods and deployments. This is sufficient for readiness, replica, and restart
+metrics and avoids the cluster-resource permissions rejected by Rancher.
+
 ## Automatic deployment
 
 `.github/workflows/deploy-kubernetes.yml` runs after a successful main-branch
@@ -95,6 +99,8 @@ Expected results:
   in `drops-monitoring`.
 - Monitoring Roles and RoleBindings grant read-only access to application
   metrics, Kubernetes state, and application pod logs.
+- The kube-state-metrics Role contains only `list` and `watch` for pods and
+  deployments in `team-drops`.
 - No cluster-scoped RBAC or privileged host access is rendered.
 - Backend environment variables never contain both `value` and `valueFrom`.
 
@@ -196,7 +202,7 @@ The Rancher profile provisions persistent internal-only services:
 | Loki | 3 days, 2 GiB PVC | Logs from `team-drops` only |
 | Alertmanager | 1 GiB PVC | Grouping, silencing, and notification routing |
 | Alloy | Ephemeral | Kubernetes API log collection from `team-drops` |
-| kube-state-metrics | Ephemeral | Namespaced workload and restart metrics |
+| kube-state-metrics | Ephemeral | Pod and deployment state from `team-drops` only |
 
 ResourceQuota and LimitRange support remains available in the chart but is
 disabled in `values-rancher.yaml` because the deployment identity cannot create
@@ -242,6 +248,18 @@ ALERTS{alertname=~"TeamDrops.+"}
 
 The `up` query should show four healthy API targets. The `application_info`
 version label should match the deployed `sha-<commit>` image tag.
+
+If Rancher reports that the deployment user is attempting to grant RBAC
+permissions it does not hold, inspect the rendered
+`team-drops-monitoring-kube-state-metrics` Role. It must contain only pods and
+deployments. The chart deliberately sets an explicit collector allowlist so
+kube-state-metrics defaults cannot add cluster resources such as admission
+webhooks, certificate requests, storage classes, or volume attachments.
+
+A failed monitoring revision can be recovered by fixing the values and running
+the same `helm upgrade --install` command again. Helm reconciles the partially
+created namespaced resources; the working application release in `team-drops`
+does not need to be reinstalled.
 
 ### Loki logs
 
