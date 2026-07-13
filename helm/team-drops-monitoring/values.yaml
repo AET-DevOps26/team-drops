@@ -11,7 +11,7 @@ monitoring:
       limits.memory: 8Gi
       requests.storage: 20Gi
       persistentvolumeclaims: "6"
-      pods: "50"
+      pods: "20"
       services: "20"
   limitRange:
     default:
@@ -87,27 +87,7 @@ prometheus:
         cpu: 50m
         memory: 96Mi
   prometheus-node-exporter:
-    enabled: true
-    fullnameOverride: team-drops-node-exporter
-    kubeRBACProxy:
-      enabled: false
-    rbac:
-      create: false
-    serviceAccount:
-      create: true
-      automountServiceAccountToken: false
-    hostNetwork: true
-    hostPID: true
-    hostRootFsMount:
-      enabled: true
-      mountPropagation: HostToContainer
-    resources:
-      requests:
-        cpu: 10m
-        memory: 32Mi
-      limits:
-        cpu: 100m
-        memory: 96Mi
+    enabled: false
   prometheus-pushgateway:
     enabled: false
   scrapeConfigs:
@@ -219,21 +199,6 @@ prometheus:
         - job_name: kube-state-metrics
           static_configs:
             - targets: [team-drops-monitoring-kube-state-metrics:8080]
-        - job_name: node-exporter
-          kubernetes_sd_configs:
-            - role: endpoints
-              namespaces:
-                names: [drops-monitoring]
-          relabel_configs:
-            - source_labels: [__meta_kubernetes_service_name]
-              action: keep
-              regex: team-drops-node-exporter
-            - source_labels: [__meta_kubernetes_endpoint_port_name]
-              action: keep
-              regex: metrics
-            - source_labels: [__meta_kubernetes_pod_node_name]
-              target_label: instance
-              action: replace
 
 grafana:
   fullnameOverride: team-drops-grafana

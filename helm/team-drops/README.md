@@ -91,8 +91,8 @@ from the Actions tab.
 Required repository secret:
 
 - `KUBE_CONFIG`: kubeconfig content for a Rancher user or service account with
-  permission to manage workloads in `team-drops`, create/manage the
-  `drops-monitoring` namespace, and manage both Helm releases.
+  permission to manage workloads in the existing `team-drops` and
+  `drops-monitoring` namespaces and manage both Helm releases.
 - `GRAFANA_ADMIN_PASSWORD`: administrator password for Grafana; it is written
   only to `team-drops-grafana-admin` in the `drops-monitoring` namespace.
 - `ALERTMANAGER_SLACK_WEBHOOK_URL`: incoming webhook used by Alertmanager for
@@ -182,32 +182,18 @@ Prometheus, kube-state-metrics, and Alloy use read-only Roles and RoleBindings;
 no cluster-scoped RBAC is created. Alloy can read pod logs only from
 `team-drops`. A ResourceQuota and LimitRange bound monitoring CPU, memory,
 storage, pod, PVC, and Service consumption independently from the application.
-
-Node-exporter runs once on every Rancher node to provide CPU, memory, swap,
-load, filesystem, disk, network, pressure, and uptime metrics. It mounts the
-node root, `/proc`, and `/sys`, so the `drops-monitoring` namespace must allow
-privileged Pod Security. Other monitoring containers retain their non-root and
-restricted security contexts, while restricted audit and warning labels expose
-unexpectedly permissive workloads.
+The stack does not deploy node-exporter, DaemonSets, host mounts, or other
+privileged node-level collectors.
 
 Prometheus retains seven days of data on a 2 GiB PVC. Loki retains three days
 of logs on a separate 2 GiB PVC. Alertmanager and Grafana use 1 GiB PVCs. None
-of the monitoring services is exposed through Ingress. For a manual
-installation, prepare the namespace, Pod Security labels, and secrets, then
-install the second chart:
+of the monitoring services is exposed through Ingress. The
+`drops-monitoring` namespace must be created once in Rancher by an authorized
+user; CI deliberately does not create, label, or otherwise modify the
+Namespace object. No privileged Pod Security setting is required. For a manual
+installation, create the namespaced secrets and install the second chart:
 
 ```bash
-kubectl create namespace drops-monitoring --dry-run=client -o yaml | kubectl apply -f -
-kubectl label namespace drops-monitoring \
-  app.kubernetes.io/part-of=team-drops \
-  purpose=monitoring \
-  pod-security.kubernetes.io/enforce=privileged \
-  pod-security.kubernetes.io/enforce-version=latest \
-  pod-security.kubernetes.io/audit=restricted \
-  pod-security.kubernetes.io/audit-version=latest \
-  pod-security.kubernetes.io/warn=restricted \
-  pod-security.kubernetes.io/warn-version=latest \
-  --overwrite
 kubectl -n drops-monitoring create secret generic team-drops-alertmanager-credentials \
   --from-file=slack-webhook-url=/secure/path/slack-webhook-url
 kubectl -n drops-monitoring create secret generic team-drops-grafana-admin \
@@ -231,7 +217,6 @@ Check the stack and persistent storage:
 
 ```bash
 kubectl -n drops-monitoring get pods,svc,pvc,resourcequota,limitrange
-kubectl -n drops-monitoring get daemonset team-drops-node-exporter -o wide
 kubectl -n team-drops get role,rolebinding | grep -E 'prometheus|kube-state|alloy'
 ```
 
@@ -243,9 +228,8 @@ kubectl -n drops-monitoring port-forward svc/team-drops-grafana 3000:80
 
 Open `http://localhost:3000`, sign in as `admin` with the value of
 `GRAFANA_ADMIN_PASSWORD`, and open **Dashboards > Team Drops > Team Drops
-Overview**. The same folder also contains **Team Drops Infrastructure** and
-**Team Drops Logs**. The infrastructure dashboard can filter one or more nodes;
-the logs dashboard can filter by component, pod, and container.
+Overview**. The same folder also contains **Team Drops Logs**, which can filter
+by component, pod, and container.
 
 Access the Prometheus query and target UI:
 
@@ -261,10 +245,6 @@ application_info{namespace="team-drops"}
 sum(rate(http_server_requests_seconds_count{namespace="team-drops"}[5m]))
 sum(rate(http_requests_total{namespace="team-drops"}[5m]))
 increase(kube_pod_container_status_restarts_total{namespace="team-drops"}[15m])
-100 - (avg by (instance) (rate(node_cpu_seconds_total{job="node-exporter",mode="idle"}[5m])) * 100)
-100 * (1 - node_memory_MemAvailable_bytes{job="node-exporter"} / node_memory_MemTotal_bytes{job="node-exporter"})
-node_load1{job="node-exporter"}
-time() - node_boot_time_seconds{job="node-exporter"}
 ```
 
 Inspect raw application metrics without exposing them through Ingress:
@@ -313,14 +293,6 @@ kubectl -n team-drops logs deployment/genai-service --tail=5
 curl -G http://localhost:3100/loki/api/v1/query_range \
   --data-urlencode 'query={namespace="team-drops"}' \
   --data-urlencode 'limit=20'
-```
-
-If the infrastructure dashboard has no data, verify every node-exporter pod is
-ready and that the Prometheus target is healthy:
-
-```bash
-kubectl -n drops-monitoring rollout status daemonset/team-drops-node-exporter
-kubectl -n drops-monitoring get pods -l app.kubernetes.io/name=prometheus-node-exporter -o wide
 ```
 
 Four alert rules are installed with the standalone Prometheus stack:

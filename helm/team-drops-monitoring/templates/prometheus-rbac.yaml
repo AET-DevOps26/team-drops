@@ -9,36 +9,6 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: team-drops-prometheus-local-reader
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
-    app.kubernetes.io/component: prometheus
-rules:
-  - apiGroups: [""]
-    resources: ["services", "endpoints", "pods"]
-    verbs: ["get", "list", "watch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: team-drops-prometheus-local-reader
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
-    app.kubernetes.io/component: prometheus
-subjects:
-  - kind: ServiceAccount
-    name: team-drops-prometheus
-    namespace: {{ .Release.Namespace }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: team-drops-prometheus-local-reader
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
   name: team-drops-prometheus-reader
   namespace: {{ .Values.application.namespace }}
   labels:
