@@ -8,7 +8,5 @@ metadata:
 data:
   team-drops-overview.json: |
 {{ .Files.Get "dashboards/team-drops-overview.json" | nindent 4 }}
-  team-drops-infrastructure.json: |
-{{ .Files.Get "dashboards/team-drops-infrastructure.json" | nindent 4 }}
   team-drops-logs.json: |
 {{ .Files.Get "dashboards/team-drops-logs.json" | nindent 4 }}
