@@ -16,8 +16,6 @@ genai:
 monitoring:
   rancherServiceMonitors:
     enabled: false
-  standalone:
-    enabled: true
 
 auth:
   issuerUri: https://team-drops.stud.k8s.aet.cit.tum.de/realms/team-drops

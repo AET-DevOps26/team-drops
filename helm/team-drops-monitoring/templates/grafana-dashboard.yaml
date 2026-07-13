@@ -1,12 +1,10 @@
-{{- if .Values.monitoring.standalone.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: team-drops-grafana-dashboards
   labels:
-    {{- include "team-drops.labels" . | nindent 4 }}
+    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
     app.kubernetes.io/component: grafana
 data:
   team-drops-overview.json: |
 {{ .Files.Get "dashboards/team-drops-overview.json" | nindent 4 }}
-{{- end }}

@@ -1,0 +1,9 @@
+monitoring:
+  alertmanager:
+    slack:
+      enabled: true
+      channel: "#team-drops-alerts"
+    email:
+      enabled: false
+    pagerduty:
+      enabled: false

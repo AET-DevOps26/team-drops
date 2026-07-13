@@ -1,0 +1,95 @@
+{{- $routing := .Values.monitoring.alertmanager }}
+{{- $slack := $routing.slack }}
+{{- $email := $routing.email }}
+{{- $pagerduty := $routing.pagerduty }}
+{{- $warningEnabled := or $slack.enabled $email.enabled }}
+{{- $criticalEnabled := or $warningEnabled $pagerduty.enabled }}
+{{- if and $slack.enabled (not $slack.channel) }}
+{{- fail "monitoring.alertmanager.slack.channel is required when Slack alerting is enabled" }}
+{{- end }}
+{{- if $email.enabled }}
+{{- if not $email.smarthost }}
+{{- fail "monitoring.alertmanager.email.smarthost is required when email alerting is enabled" }}
+{{- end }}
+{{- if not $email.from }}
+{{- fail "monitoring.alertmanager.email.from is required when email alerting is enabled" }}
+{{- end }}
+{{- if not $email.to }}
+{{- fail "monitoring.alertmanager.email.to is required when email alerting is enabled" }}
+{{- end }}
+{{- end }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: team-drops-alertmanager-config
+  labels:
+    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
+    app.kubernetes.io/component: alertmanager
+type: Opaque
+stringData:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: {{ $routing.resolveTimeout }}
+      {{- if $email.enabled }}
+      smtp_smarthost: {{ $email.smarthost | quote }}
+      smtp_from: {{ $email.from | quote }}
+      {{- with $email.authUsername }}
+      smtp_auth_username: {{ . | quote }}
+      smtp_auth_password_file: /etc/team-drops-alertmanager-credentials/smtp-password
+      {{- end }}
+      smtp_require_tls: {{ $email.requireTLS }}
+      {{- end }}
+    route:
+      receiver: "null"
+      group_by: [alertname, service, pod, namespace]
+      group_wait: {{ $routing.groupWait }}
+      group_interval: {{ $routing.groupInterval }}
+      repeat_interval: {{ $routing.repeatInterval }}
+      {{- if $criticalEnabled }}
+      routes:
+        {{- if $warningEnabled }}
+        - receiver: team-drops-warning
+          matchers:
+            - 'team="team-drops"'
+            - 'severity="warning"'
+        {{- end }}
+        - receiver: team-drops-critical
+          matchers:
+            - 'team="team-drops"'
+            - 'severity="critical"'
+      {{- end }}
+    receivers:
+      - name: "null"
+      {{- if $warningEnabled }}
+      - name: team-drops-warning
+        {{- if $slack.enabled }}
+        slack_configs:
+          - api_url_file: /etc/team-drops-alertmanager-credentials/slack-webhook-url
+            channel: {{ $slack.channel | quote }}
+            send_resolved: true
+        {{- end }}
+        {{- if $email.enabled }}
+        email_configs:
+          - to: {{ $email.to | quote }}
+            send_resolved: true
+        {{- end }}
+      {{- end }}
+      {{- if $criticalEnabled }}
+      - name: team-drops-critical
+        {{- if $slack.enabled }}
+        slack_configs:
+          - api_url_file: /etc/team-drops-alertmanager-credentials/slack-webhook-url
+            channel: {{ $slack.channel | quote }}
+            send_resolved: true
+        {{- end }}
+        {{- if $email.enabled }}
+        email_configs:
+          - to: {{ $email.to | quote }}
+            send_resolved: true
+        {{- end }}
+        {{- if $pagerduty.enabled }}
+        pagerduty_configs:
+          - routing_key_file: /etc/team-drops-alertmanager-credentials/pagerduty-routing-key
+            send_resolved: true
+        {{- end }}
+      {{- end }}
