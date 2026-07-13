@@ -172,7 +172,18 @@ jobs:
             abort("Missing Prometheus PVC") unless pvcs.any? { |name| name.include?("prometheus") }
             abort("Missing Grafana PVC") unless pvcs.any? { |name| name.include?("grafana") }
             abort("Missing application-scoped Prometheus reader Role") unless monitoring_documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-prometheus-reader" && doc.dig("metadata", "namespace") == "team-drops" }
-            abort("Missing application-scoped kube-state-metrics Role") unless monitoring_documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-monitoring-kube-state-metrics" && doc.dig("metadata", "namespace") == "team-drops" }
+            kube_state_role = monitoring_documents.find { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-monitoring-kube-state-metrics" && doc.dig("metadata", "namespace") == "team-drops" }
+            abort("Missing application-scoped kube-state-metrics Role") unless kube_state_role
+            kube_state_permissions = kube_state_role.fetch("rules").flat_map do |rule|
+              rule.fetch("apiGroups").product(rule.fetch("resources"), rule.fetch("verbs"))
+            end.sort
+            expected_kube_state_permissions = [
+              ["", "pods", "list"],
+              ["", "pods", "watch"],
+              ["apps", "deployments", "list"],
+              ["apps", "deployments", "watch"]
+            ].sort
+            abort("kube-state-metrics Role grants permissions beyond pods and deployments") unless kube_state_permissions == expected_kube_state_permissions
             abort("Missing cross-namespace Prometheus RoleBinding") unless monitoring_documents.any? { |doc| doc["kind"] == "RoleBinding" && doc.dig("metadata", "name") == "team-drops-prometheus-reader" && doc.dig("subjects", 0, "namespace") == "drops-monitoring" }
             abort("Missing application-scoped Alloy log reader Role") unless monitoring_documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-alloy-log-reader" && doc.dig("metadata", "namespace") == "team-drops" && doc.fetch("rules", []).any? { |rule| rule.fetch("resources", []).include?("pods/log") && rule.fetch("verbs", []).include?("get") } }
             abort("Missing cross-namespace Alloy RoleBinding") unless monitoring_documents.any? { |doc| doc["kind"] == "RoleBinding" && doc.dig("metadata", "name") == "team-drops-alloy-log-reader" && doc.dig("subjects", 0, "name") == "team-drops-alloy" && doc.dig("subjects", 0, "namespace") == "drops-monitoring" }

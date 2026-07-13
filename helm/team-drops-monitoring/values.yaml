@@ -76,6 +76,9 @@ prometheus:
     enabled: true
     fullnameOverride: team-drops-monitoring-kube-state-metrics
     namespaces: [team-drops]
+    collectors:
+      - deployments
+      - pods
     rbac:
       create: true
       useClusterRole: false
