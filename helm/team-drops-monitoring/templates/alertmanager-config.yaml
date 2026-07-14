@@ -21,7 +21,8 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: team-drops-alertmanager-config
+  name: team-drops-monitoring-alertmanager-config
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "team-drops-monitoring.labels" . | nindent 4 }}
     app.kubernetes.io/component: alertmanager
@@ -35,7 +36,7 @@ stringData:
       smtp_from: {{ $email.from | quote }}
       {{- with $email.authUsername }}
       smtp_auth_username: {{ . | quote }}
-      smtp_auth_password_file: /etc/team-drops-alertmanager-credentials/smtp-password
+      smtp_auth_password_file: /etc/team-drops-monitoring-alertmanager-credentials/smtp-password
       {{- end }}
       smtp_require_tls: {{ $email.requireTLS }}
       {{- end }}
@@ -64,7 +65,7 @@ stringData:
       - name: team-drops-warning
         {{- if $slack.enabled }}
         slack_configs:
-          - api_url_file: /etc/team-drops-alertmanager-credentials/slack-webhook-url
+          - api_url_file: /etc/team-drops-monitoring-alertmanager-credentials/slack-webhook-url
             channel: {{ $slack.channel | quote }}
             send_resolved: true
         {{- end }}
@@ -78,7 +79,7 @@ stringData:
       - name: team-drops-critical
         {{- if $slack.enabled }}
         slack_configs:
-          - api_url_file: /etc/team-drops-alertmanager-credentials/slack-webhook-url
+          - api_url_file: /etc/team-drops-monitoring-alertmanager-credentials/slack-webhook-url
             channel: {{ $slack.channel | quote }}
             send_resolved: true
         {{- end }}
@@ -89,7 +90,7 @@ stringData:
         {{- end }}
         {{- if $pagerduty.enabled }}
         pagerduty_configs:
-          - routing_key_file: /etc/team-drops-alertmanager-credentials/pagerduty-routing-key
+          - routing_key_file: /etc/team-drops-monitoring-alertmanager-credentials/pagerduty-routing-key
             send_resolved: true
         {{- end }}
       {{- end }}
