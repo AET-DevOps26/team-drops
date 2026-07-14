@@ -269,6 +269,9 @@ jobs:
 
             grafana_datasources = monitoring_documents.find { |doc| doc["kind"] == "ConfigMap" && doc.dig("data", "datasources.yaml") }
             abort("Grafana Loki datasource is missing") unless grafana_datasources&.dig("data", "datasources.yaml")&.include?("uid: loki")
+            grafana = monitoring_documents.find { |doc| doc["kind"] == "Deployment" && doc.dig("metadata", "name") == "team-drops-monitoring-grafana" }
+            abort("Missing Grafana Deployment") unless grafana
+            abort("Grafana must use Recreate with its ReadWriteOnce PVC") unless grafana.dig("spec", "strategy", "type") == "Recreate"
             dashboards = monitoring_documents.find { |doc| doc["kind"] == "ConfigMap" && doc.dig("metadata", "name") == "team-drops-monitoring-grafana-dashboards" }
             abort("Logs dashboard is missing") unless dashboards&.dig("data")&.key?("team-drops-logs.json")
             abort("Infrastructure dashboard must not be provisioned without node-exporter") if dashboards&.dig("data")&.key?("team-drops-infrastructure.json")
@@ -326,6 +329,24 @@ jobs:
                 abort("#{doc["kind"]}/#{doc.dig("metadata", "name")} init container #{container["name"]} is missing CPU or memory limits") unless limits["cpu"] && limits["memory"]
               end
             end
+
+            memory_mib = lambda do |quantity|
+              match = quantity.to_s.match(/\A([0-9]+(?:\.[0-9]+)?)(Mi|Gi)\z/)
+              abort("Unsupported memory quantity in quota check: #{quantity.inspect}") unless match
+              match[1].to_f * (match[2] == "Gi" ? 1024 : 1)
+            end
+            quota_usage_mib = workload_documents.sum do |doc|
+              pod_spec = doc["kind"] == "CronJob" ? doc.dig("spec", "jobTemplate", "spec", "template", "spec") : doc.dig("spec", "template", "spec")
+              next 0 unless pod_spec
+
+              replicas = ["Deployment", "StatefulSet"].include?(doc["kind"]) ? doc.dig("spec", "replicas").to_i : 1
+              replicas = 1 if replicas.zero? && !["Deployment", "StatefulSet"].include?(doc["kind"])
+              regular_mib = pod_spec.fetch("containers", []).sum { |container| memory_mib.call(container.dig("resources", "limits", "memory")) }
+              init_mib = pod_spec.fetch("initContainers", []).map { |container| memory_mib.call(container.dig("resources", "limits", "memory")) }.max || 0
+              [regular_mib, init_mib].max * replicas
+            end
+            quota_budget_mib = 5 * 1024
+            abort("Rendered workload memory limits use #{quota_usage_mib.to_i}Mi; the safe budget is #{quota_budget_mib}Mi under the 6Gi namespace quota") if quota_usage_mib > quota_budget_mib
           '
 
       - name: Prepare monitoring credentials

@@ -187,6 +187,10 @@ prometheus:
 
 grafana:
   fullnameOverride: team-drops-monitoring-grafana
+  # The Grafana data PVC is ReadWriteOnce. Recreate prevents a rolling update
+  # from starting a second pod on another node while the old pod owns the PVC.
+  deploymentStrategy:
+    type: Recreate
   initChownData:
     resources:
       requests:
