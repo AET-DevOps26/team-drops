@@ -31,8 +31,8 @@ metrics and avoids the cluster-resource permissions rejected by Rancher.
 `.github/workflows/deploy-kubernetes.yml` runs after a successful main-branch
 Docker publication and can also be started manually. It validates both charts,
 performs a server-side dry-run of a small non-privileged pod, creates or updates
-namespaced credential Secrets, deploys monitoring first, waits for its
-rollouts, and then deploys the application.
+namespaced credential Secrets, upgrades the application to retire legacy
+monitoring resources, and then deploys and verifies the monitoring release.
 
 The workflow pins Helm 4.2.0 and uses its `legacy` polling wait strategy. This
 avoids the watcher strategy's repeated HTTP/2 stream failures through the
@@ -139,15 +139,10 @@ kubectl -n team-drops create secret generic team-drops-monitoring-grafana-admin 
 Only the Slack credential is required by `values-rancher.yaml`; omit the SMTP
 and PagerDuty files while those receivers are disabled.
 
-Install monitoring, then the application:
+Upgrade the application first, then install monitoring:
 
 ```bash
 helm dependency build ./helm/team-drops-monitoring
-
-helm upgrade --install team-drops-monitoring ./helm/team-drops-monitoring \
-  --namespace team-drops \
-  -f helm/team-drops-monitoring/values-rancher.yaml \
-  --wait=legacy --timeout 15m
 
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
@@ -155,14 +150,25 @@ helm upgrade --install team-drops ./helm/team-drops \
   --set image.tag=sha-<commit> \
   --set genai.llmApiKey=<api-key> \
   --wait=legacy --timeout 10m
+
+helm upgrade --install team-drops-monitoring ./helm/team-drops-monitoring \
+  --namespace team-drops \
+  -f helm/team-drops-monitoring/values-rancher.yaml \
+  --wait=legacy --timeout 15m
 ```
 
 During the first shared-namespace cutover, the monitoring release creates fresh
-PVCs and uses the `team-drops-monitoring-` resource prefix. It can therefore
-start alongside Prometheus or Grafana resources left by an older application
-revision. The following application upgrade removes those obsolete bundled
-resources through their original Helm ownership. Do not manually relabel or
-adopt the old resources into the monitoring release.
+PVCs and uses the `team-drops-monitoring-` resource prefix. The application
+upgrade runs first so Helm removes obsolete bundled Prometheus and Grafana
+resources through their original ownership and frees shared namespace quota.
+Do not manually relabel or adopt old resources into the monitoring release.
+
+The default monitoring profile is sized for the shared Rancher namespace. Its
+six workloads have approximately 576 MiB of aggregate memory requests and
+1.4 GiB of aggregate memory limits. Prometheus and Loki each retain a 384 MiB
+limit; lowering them further can cause out-of-memory restarts during ingestion.
+These settings reduce quota pressure but do not change the Rancher-managed
+namespace quota.
 
 If GHCR images are private, create an image-pull Secret in `team-drops` and add
 `--set imagePullSecrets[0]=<secret-name>` to the application installation.

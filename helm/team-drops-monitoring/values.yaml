@@ -50,10 +50,10 @@ prometheus:
     resources:
       requests:
         cpu: 25m
-        memory: 64Mi
+        memory: 48Mi
       limits:
         cpu: 100m
-        memory: 128Mi
+        memory: 96Mi
   kube-state-metrics:
     enabled: true
     fullnameOverride: team-drops-monitoring-state-metrics
@@ -70,7 +70,7 @@ prometheus:
         memory: 32Mi
       limits:
         cpu: 50m
-        memory: 96Mi
+        memory: 64Mi
   prometheus-node-exporter:
     enabled: false
   prometheus-pushgateway:
@@ -113,10 +113,10 @@ prometheus:
     resources:
       requests:
         cpu: 100m
-        memory: 256Mi
+        memory: 192Mi
       limits:
         cpu: 300m
-        memory: 512Mi
+        memory: 384Mi
   serverFiles:
     alerting_rules.yml:
       groups:
@@ -212,10 +212,10 @@ grafana:
   resources:
     requests:
       cpu: 50m
-      memory: 128Mi
+      memory: 96Mi
     limits:
       cpu: 200m
-      memory: 256Mi
+      memory: 192Mi
   datasources:
     datasources.yaml:
       apiVersion: 1
@@ -297,10 +297,10 @@ loki:
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
+        memory: 96Mi
       limits:
         cpu: 300m
-        memory: 512Mi
+        memory: 384Mi
   gateway:
     enabled: false
   lokiCanary:
@@ -342,10 +342,19 @@ alloy:
   controller:
     type: deployment
     replicas: 1
+    volumes:
+      extra:
+        - name: alloy-storage
+          emptyDir:
+            sizeLimit: 100Mi
   alloy:
     enableReporting: false
     listenAddr: 0.0.0.0
     storagePath: /tmp/alloy
+    mounts:
+      extra:
+        - name: alloy-storage
+          mountPath: /tmp/alloy
     securityContext:
       runAsNonRoot: true
       runAsUser: 473
@@ -360,7 +369,7 @@ alloy:
         memory: 64Mi
       limits:
         cpu: 200m
-        memory: 256Mi
+        memory: 192Mi
     configMap:
       content: |-
         logging {

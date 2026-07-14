@@ -345,6 +345,17 @@ jobs:
             --from-literal=admin-password="$GRAFANA_ADMIN_PASSWORD" \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Deploy Team Drops and retire legacy monitoring
+        run: |
+          helm upgrade --install team-drops ./helm/team-drops \
+            --namespace team-drops \
+            -f helm/team-drops/values-rancher.yaml \
+            --set image.tag="${{ steps.image-tag.outputs.value }}" \
+            --set genai.llmApiKey="${{ secrets.LLM_API_KEY }}" \
+            --server-side=false \
+            --wait=legacy \
+            --timeout 10m
+
       - name: Deploy monitoring stack
         run: |
           helm upgrade --install team-drops-monitoring ./helm/team-drops-monitoring \
@@ -358,17 +369,6 @@ jobs:
         run: |
           kubectl -n team-drops rollout status statefulset/team-drops-monitoring-loki --timeout=10m
           kubectl -n team-drops rollout status deployment/team-drops-monitoring-alloy --timeout=5m
-
-      - name: Deploy Team Drops
-        run: |
-          helm upgrade --install team-drops ./helm/team-drops \
-            --namespace team-drops \
-            -f helm/team-drops/values-rancher.yaml \
-            --set image.tag="${{ steps.image-tag.outputs.value }}" \
-            --set genai.llmApiKey="${{ secrets.LLM_API_KEY }}" \
-            --server-side=false \
-            --wait=legacy \
-            --timeout 10m
 
       - name: Reload Alertmanager configuration
         run: |
@@ -406,6 +406,9 @@ jobs:
           do
             kubectl -n team-drops describe statefulset "$statefulset" || true
           done
+          kubectl -n team-drops logs deployment/team-drops-monitoring-alloy -c alloy --tail=200 || true
+          kubectl -n team-drops logs deployment/team-drops-monitoring-alloy -c alloy --previous --tail=200 || true
+          kubectl -n team-drops logs statefulset/team-drops-monitoring-loki -c loki --tail=200 || true
           kubectl -n team-drops get events --sort-by=.lastTimestamp || true
           kubectl -n team-drops get role,rolebinding | grep -E 'prometheus|kube-state|alloy' || true
           kubectl -n team-drops get deployment frontend -o=jsonpath='{.spec.template.spec.containers[0].image}{"\n"}' || true
