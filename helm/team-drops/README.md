@@ -268,7 +268,7 @@ version label should match the deployed `sha-<commit>` image tag.
 
 If Rancher reports that the deployment user is attempting to grant RBAC
 permissions it does not hold, inspect the rendered
-`team-drops-monitoring-kube-state-metrics` Role. It must contain only pods and
+`team-drops-monitoring-state-metrics` Role. It must contain only pods and
 deployments. The chart deliberately sets an explicit collector allowlist so
 kube-state-metrics defaults cannot add cluster resources such as admission
 webhooks, certificate requests, storage classes, or volume attachments.
@@ -407,7 +407,12 @@ old resources:
 ```bash
 helm status team-drops-monitoring -n drops-monitoring
 kubectl -n drops-monitoring get pods,svc,pvc,secret
+kubectl -n team-drops get role,rolebinding \
+  -l app.kubernetes.io/instance=team-drops-monitoring
 ```
 
 Removing that release or its PVCs permanently deletes retained monitoring data
 and must be performed as a separate, explicitly approved cleanup operation.
+The failed release may also own legacy read-only Roles in `team-drops`. The new
+release uses distinct RBAC names so removing those legacy objects cannot break
+the replacement stack.
