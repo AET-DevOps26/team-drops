@@ -222,7 +222,7 @@ infrastructure dashboards.
 | `frontend-ci.yml` | Installs dependencies and builds the frontend and its Docker image |
 | `genai-ci.yml` | Runs GenAI tests, verifies exported API contracts, and builds its Docker image |
 | `docker-publish.yml` | Builds and publishes application images to GHCR |
-| `deploy-kubernetes.yml` | Validates both Helm charts and deploys monitoring followed by the application |
+| `deploy-kubernetes.yml` | Validates both charts, upgrades the application, and deploys monitoring |
 
 The CI workflows run on relevant pull requests and pushes. Kubernetes
 deployment runs after a successful main-branch image publication and can also
