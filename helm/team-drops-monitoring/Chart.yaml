@@ -2,7 +2,7 @@ apiVersion: v2
 name: team-drops-monitoring
 description: Metrics, alerting, logging, and visualization stack for Team Drops
 type: application
-version: 0.2.7
+version: 0.2.8
 appVersion: "0.1.0"
 dependencies:
   - name: prometheus
