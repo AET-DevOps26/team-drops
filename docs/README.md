@@ -15,8 +15,8 @@ historical project documents for Team Drops. Start with the repository
 
 ## APIs and integration
 
-- [API inventory](API_list.md)
-- [Frontend/backend API integration](frontend-backend-api-integration.md)
+- [Current API inventory](API_list.md)
+- [Current frontend/backend integration](frontend-backend-api-integration.md)
 - [Central OpenAPI contract](../api/openapi.yaml)
 - [Per-service OpenAPI contracts](../api/services/)
 
@@ -35,7 +35,8 @@ historical project documents for Team Drops. Start with the repository
 
 The monitoring operations guide covers Prometheus metrics, Grafana dashboards,
 Loki logs, Alloy collection, Alertmanager routing, persistence, verification,
-and rollback.
+least-privilege kube-state-metrics access, failed-release recovery, and
+rollback.
 
 ## Historical project material
 

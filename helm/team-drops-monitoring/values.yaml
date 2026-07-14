@@ -2,24 +2,6 @@ application:
   namespace: team-drops
 
 monitoring:
-  resourceQuota:
-    enabled: true
-    hard:
-      requests.cpu: "2"
-      requests.memory: 4Gi
-      limits.cpu: "4"
-      limits.memory: 8Gi
-      requests.storage: 20Gi
-      persistentvolumeclaims: "6"
-      pods: "20"
-      services: "20"
-  limitRange:
-    default:
-      cpu: 500m
-      memory: 512Mi
-    defaultRequest:
-      cpu: 25m
-      memory: 64Mi
   alertmanager:
     resolveTimeout: 5m
     groupWait: 30s
@@ -44,25 +26,25 @@ prometheus:
   serviceAccounts:
     server:
       create: false
-      name: team-drops-prometheus
+      name: team-drops-monitoring-prometheus
   alertmanager:
     enabled: true
-    fullnameOverride: team-drops-alertmanager
+    fullnameOverride: team-drops-monitoring-alertmanager
     persistence:
       enabled: true
       size: 1Gi
     extraArgs:
-      config.file: /etc/team-drops-alertmanager/alertmanager.yml
+      config.file: /etc/team-drops-monitoring-alertmanager/alertmanager.yml
     extraSecretMounts:
-      - name: team-drops-alertmanager-config
-        mountPath: /etc/team-drops-alertmanager
+      - name: team-drops-monitoring-alertmanager-config
+        mountPath: /etc/team-drops-monitoring-alertmanager
         subPath: ""
-        secretName: team-drops-alertmanager-config
+        secretName: team-drops-monitoring-alertmanager-config
         readOnly: true
-      - name: team-drops-alertmanager-credentials
-        mountPath: /etc/team-drops-alertmanager-credentials
+      - name: team-drops-monitoring-alertmanager-credentials
+        mountPath: /etc/team-drops-monitoring-alertmanager-credentials
         subPath: ""
-        secretName: team-drops-alertmanager-credentials
+        secretName: team-drops-monitoring-alertmanager-credentials
         readOnly: true
         optional: true
     resources:
@@ -122,7 +104,7 @@ prometheus:
           cpu: 50m
           memory: 64Mi
   server:
-    fullnameOverride: team-drops-prometheus-server
+    fullnameOverride: team-drops-monitoring-prometheus
     retention: 7d
     persistentVolume:
       enabled: true
@@ -204,7 +186,7 @@ prometheus:
             - targets: [team-drops-monitoring-kube-state-metrics:8080]
 
 grafana:
-  fullnameOverride: team-drops-grafana
+  fullnameOverride: team-drops-monitoring-grafana
   initChownData:
     resources:
       requests:
@@ -219,7 +201,7 @@ grafana:
   testFramework:
     enabled: false
   admin:
-    existingSecret: team-drops-grafana-admin
+    existingSecret: team-drops-monitoring-grafana-admin
     userKey: admin-user
     passwordKey: admin-password
   persistence:
@@ -241,13 +223,13 @@ grafana:
         - name: Prometheus
           type: prometheus
           uid: prometheus
-          url: http://team-drops-prometheus-server
+          url: http://team-drops-monitoring-prometheus
           access: proxy
           isDefault: true
         - name: Loki
           type: loki
           uid: loki
-          url: http://team-drops-loki:3100
+          url: http://team-drops-monitoring-loki:3100
           access: proxy
           isDefault: false
   dashboardProviders:
@@ -263,10 +245,11 @@ grafana:
           options:
             path: /var/lib/grafana/dashboards/default
   dashboardsConfigMaps:
-    default: team-drops-grafana-dashboards
+    default: team-drops-monitoring-grafana-dashboards
 
 loki:
-  fullnameOverride: team-drops-loki
+  nameOverride: team-drops-monitoring-loki
+  fullnameOverride: team-drops-monitoring-loki
   deploymentMode: Monolithic
   rbac:
     namespaced: true
@@ -341,14 +324,14 @@ loki:
     replicas: 0
 
 alloy:
-  fullnameOverride: team-drops-alloy
+  fullnameOverride: team-drops-monitoring-alloy
   crds:
     create: false
   rbac:
     create: false
   serviceAccount:
     create: true
-    name: team-drops-alloy
+    name: team-drops-monitoring-alloy
     automountServiceAccountToken: true
   global:
     podSecurityContext:
@@ -433,7 +416,7 @@ alloy:
 
         loki.write "local" {
           endpoint {
-            url = "http://team-drops-loki:3100/loki/api/v1/push"
+            url = "http://team-drops-monitoring-loki:3100/loki/api/v1/push"
           }
         }
   configReloader:

@@ -9,6 +9,14 @@ The repository contains the browser application, three Spring Boot domain
 services, a FastAPI GenAI service, local Docker infrastructure, Kubernetes Helm
 charts, and the project documentation.
 
+## Project status
+
+The repository represents the final integrated project architecture. The local
+stack runs through Docker Compose, and the Rancher deployment uses separate
+application and monitoring releases. `api/openapi.yaml`, the Helm values, and
+the GitHub Actions workflows are the sources of truth for runtime behavior;
+older proposal and diagram files are retained as historical design material.
+
 ## Capabilities
 
 - User registration, authentication, and profile management
@@ -164,15 +172,16 @@ in sync.
 
 ## Kubernetes deployment
 
-Kubernetes uses two Helm releases and two existing Rancher namespaces:
+Kubernetes uses two independently managed Helm releases in the existing
+`team-drops` Rancher namespace:
 
 | Release | Chart | Namespace |
 | --- | --- | --- |
 | `team-drops` | `helm/team-drops` | `team-drops` |
-| `team-drops-monitoring` | `helm/team-drops-monitoring` | `drops-monitoring` |
+| `team-drops-monitoring` | `helm/team-drops-monitoring` | `team-drops` |
 
-The deployment workflow does not create or modify either Namespace object.
-Create them through Rancher with an authorized identity before the first
+The deployment workflow does not create or modify the Namespace object. Create
+`team-drops` through Rancher with an authorized identity before the first
 deployment. Application and monitoring credentials are supplied through GitHub
 repository secrets and namespaced Kubernetes Secrets, never committed values.
 
@@ -182,7 +191,7 @@ troubleshooting commands.
 
 ## Observability
 
-The dedicated `drops-monitoring` release provides:
+The separately owned `team-drops-monitoring` release provides:
 
 - Prometheus with seven-day retention and a persistent 2 GiB volume
 - Grafana with provisioned Prometheus and Loki datasources and persistent
@@ -193,15 +202,17 @@ The dedicated `drops-monitoring` release provides:
 - A **Team Drops Logs** dashboard for log volume, errors, and container streams
 - Loki with three-day retention on a persistent 2 GiB volume
 - Alloy collecting logs only from the `team-drops` namespace
+- kube-state-metrics collecting only pod and deployment state from
+  `team-drops`, using namespaced read-only RBAC
 - Alertmanager routing warnings to enabled Slack and email receivers and
   critical alerts to enabled Slack, email, and PagerDuty receivers
 - Four runtime alerts: service down, high error rate, slow responses, and pod
   restart bursts
 
-The Rancher deployment intentionally disables ResourceQuota, LimitRange,
-node-exporter, privileged host access, and node infrastructure dashboards
-because the deployment identity has namespace-scoped permissions. These can be
-managed separately by a Rancher administrator if required.
+The monitoring chart does not manage ResourceQuota or LimitRange because those
+policies apply to the shared namespace and remain under Rancher administration.
+The deployment also excludes node-exporter, privileged host access, and node
+infrastructure dashboards.
 
 ## CI/CD
 

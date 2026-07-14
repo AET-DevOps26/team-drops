@@ -5,37 +5,48 @@ Team Drops is deployed as two Helm releases:
 | Release | Chart | Namespace | Contents |
 | --- | --- | --- | --- |
 | `team-drops` | `helm/team-drops` | `team-drops` | Frontend, APIs, Keycloak, PostgreSQL, and MongoDB |
-| `team-drops-monitoring` | `helm/team-drops-monitoring` | `drops-monitoring` | Prometheus, Grafana, Alertmanager, Loki, Alloy, and kube-state-metrics |
+| `team-drops-monitoring` | `helm/team-drops-monitoring` | `team-drops` | Prometheus, Grafana, Alertmanager, Loki, Alloy, and kube-state-metrics |
 
-Both namespaces must already exist. The GitHub Actions deployment deliberately
-does not create, label, or otherwise modify Namespace objects.
+The `team-drops` namespace must already exist. The GitHub Actions deployment
+deliberately does not create, label, or otherwise modify Namespace objects.
 
 ## Prerequisites
 
-- Helm and `kubectl` configured for the Rancher cluster
+- Helm 4.2.0 and `kubectl` configured for the Rancher cluster
 - Permission to manage namespaced workloads, Secrets, Roles, RoleBindings, and
-  Helm releases in `team-drops` and `drops-monitoring`
+  both Helm releases in `team-drops`
 - A default dynamic storage class supporting `ReadWriteOnce` volumes
-- The two namespaces created once through Rancher by an authorized user
+- The `team-drops` namespace created once through Rancher by an authorized user
 
 The Rancher monitoring profile requires no privileged Pod Security policy. It
 does not deploy node-exporter, DaemonSets, host networking, host PID, hostPath
 mounts, ClusterRoles, or ClusterRoleBindings.
 
+kube-state-metrics uses a Role in `team-drops` limited to `list` and `watch` on
+pods and deployments. This is sufficient for readiness, replica, and restart
+metrics and avoids the cluster-resource permissions rejected by Rancher.
+
 ## Automatic deployment
 
 `.github/workflows/deploy-kubernetes.yml` runs after a successful main-branch
 Docker publication and can also be started manually. It validates both charts,
-creates or updates namespaced credential Secrets, deploys monitoring first,
-waits for its rollouts, and then deploys the application.
+performs a server-side dry-run of a small non-privileged pod, creates or updates
+namespaced credential Secrets, deploys monitoring first, waits for its
+rollouts, and then deploys the application.
+
+The workflow pins Helm 4.2.0 and uses its `legacy` polling wait strategy. This
+avoids the watcher strategy's repeated HTTP/2 stream failures through the
+Rancher API proxy. The preflight Pod is never persisted. It makes namespace
+quota, LimitRange, Pod Security, and other admission failures visible before a
+15-minute Helm wait.
 
 Required GitHub repository secrets:
 
 | Secret | Purpose |
 | --- | --- |
-| `KUBE_CONFIG` | Kubeconfig for a Rancher identity with access to both namespaces |
+| `KUBE_CONFIG` | Kubeconfig for a Rancher identity with access to `team-drops` |
 | `LLM_API_KEY` | API key used by the Rancher OpenAI-compatible GenAI configuration |
-| `GRAFANA_ADMIN_PASSWORD` | Password stored in `team-drops-grafana-admin` |
+| `GRAFANA_ADMIN_PASSWORD` | Password stored in `team-drops-monitoring-grafana-admin` |
 | `ALERTMANAGER_SLACK_WEBHOOK_URL` | Slack incoming webhook for `#team-drops-alerts` |
 
 Optional secrets are needed only when their Alertmanager receiver is enabled:
@@ -44,9 +55,9 @@ Optional secrets are needed only when their Alertmanager receiver is enabled:
 - `ALERTMANAGER_PAGERDUTY_ROUTING_KEY`
 
 Alertmanager credentials are stored in
-`team-drops-alertmanager-credentials` in `drops-monitoring` and mounted as
-files. Grafana credentials are stored in `team-drops-grafana-admin` in the same
-namespace.
+`team-drops-monitoring-alertmanager-credentials` in `team-drops` and mounted as
+files. Grafana credentials are stored in
+`team-drops-monitoring-grafana-admin` in the same namespace.
 
 Automatic deployments use the immutable `sha-<commit>` image tag published by
 the Docker workflow. Manual workflow runs default to `latest` but accept an
@@ -69,7 +80,7 @@ helm lint ./helm/team-drops \
   --set genai.llmApiKey=dummy
 
 helm lint ./helm/team-drops-monitoring \
-  --namespace drops-monitoring \
+  --namespace team-drops \
   -f helm/team-drops-monitoring/values-rancher.yaml
 ```
 
@@ -83,7 +94,7 @@ helm template team-drops ./helm/team-drops \
   > /tmp/team-drops-app-rendered.yaml
 
 helm template team-drops-monitoring ./helm/team-drops-monitoring \
-  --namespace drops-monitoring \
+  --namespace team-drops \
   -f helm/team-drops-monitoring/values-rancher.yaml \
   > /tmp/team-drops-monitoring-rendered.yaml
 ```
@@ -91,10 +102,12 @@ helm template team-drops-monitoring ./helm/team-drops-monitoring \
 Expected results:
 
 - Application images point to `ghcr.io/aet-devops26/...`.
-- Application workloads render in `team-drops` and monitoring workloads render
-  in `drops-monitoring`.
-- Monitoring Roles and RoleBindings grant read-only access to application
-  metrics, Kubernetes state, and application pod logs.
+- Application and monitoring workloads render in `team-drops`, while their
+  separate Helm releases retain distinct ownership and resource names.
+- Monitoring Roles and RoleBindings grant namespaced read-only access to
+  application metrics, Kubernetes state, and application pod logs.
+- The kube-state-metrics Role contains only `list` and `watch` for pods and
+  deployments in `team-drops`.
 - No cluster-scoped RBAC or privileged host access is rendered.
 - Backend environment variables never contain both `value` and `valueFrom`.
 
@@ -103,7 +116,7 @@ When the current identity supports server-side dry runs:
 ```bash
 kubectl apply --dry-run=server -n team-drops \
   -f /tmp/team-drops-app-rendered.yaml
-kubectl apply --dry-run=server -n drops-monitoring \
+kubectl apply --dry-run=server -n team-drops \
   -f /tmp/team-drops-monitoring-rendered.yaml
 ```
 
@@ -113,12 +126,12 @@ Create the monitoring Secrets before the first installation. Use local files
 for alerting credentials to avoid putting their contents in shell history:
 
 ```bash
-kubectl -n drops-monitoring create secret generic team-drops-alertmanager-credentials \
+kubectl -n team-drops create secret generic team-drops-monitoring-alertmanager-credentials \
   --from-file=slack-webhook-url=/secure/path/slack-webhook-url \
   --from-file=smtp-password=/secure/path/smtp-password \
   --from-file=pagerduty-routing-key=/secure/path/pagerduty-routing-key
 
-kubectl -n drops-monitoring create secret generic team-drops-grafana-admin \
+kubectl -n team-drops create secret generic team-drops-monitoring-grafana-admin \
   --from-literal=admin-user=admin \
   --from-literal=admin-password=<password>
 ```
@@ -132,17 +145,24 @@ Install monitoring, then the application:
 helm dependency build ./helm/team-drops-monitoring
 
 helm upgrade --install team-drops-monitoring ./helm/team-drops-monitoring \
-  --namespace drops-monitoring \
+  --namespace team-drops \
   -f helm/team-drops-monitoring/values-rancher.yaml \
-  --wait --timeout 15m
+  --wait=legacy --timeout 15m
 
 helm upgrade --install team-drops ./helm/team-drops \
   --namespace team-drops \
   -f helm/team-drops/values-rancher.yaml \
   --set image.tag=sha-<commit> \
   --set genai.llmApiKey=<api-key> \
-  --wait --timeout 10m
+  --wait=legacy --timeout 10m
 ```
+
+During the first shared-namespace cutover, the monitoring release creates fresh
+PVCs and uses the `team-drops-monitoring-` resource prefix. It can therefore
+start alongside Prometheus or Grafana resources left by an older application
+revision. The following application upgrade removes those obsolete bundled
+resources through their original Helm ownership. Do not manually relabel or
+adopt the old resources into the monitoring release.
 
 If GHCR images are private, create an image-pull Secret in `team-drops` and add
 `--set imagePullSecrets[0]=<secret-name>` to the application installation.
@@ -196,24 +216,27 @@ The Rancher profile provisions persistent internal-only services:
 | Loki | 3 days, 2 GiB PVC | Logs from `team-drops` only |
 | Alertmanager | 1 GiB PVC | Grouping, silencing, and notification routing |
 | Alloy | Ephemeral | Kubernetes API log collection from `team-drops` |
-| kube-state-metrics | Ephemeral | Namespaced workload and restart metrics |
+| kube-state-metrics | Ephemeral | Pod and deployment state from `team-drops` only |
 
-ResourceQuota and LimitRange support remains available in the chart but is
-disabled in `values-rancher.yaml` because the deployment identity cannot create
-those resources. A Rancher administrator can configure equivalent namespace
-limits separately. Monitoring services have no public Ingress.
+The monitoring chart does not create ResourceQuota or LimitRange objects. These
+policies affect every workload in the shared namespace and remain under Rancher
+administration. Existing project quota must have enough remaining capacity for
+the persistent monitoring stack. Monitoring services have no public Ingress.
 
-Verify the monitoring workloads and cross-namespace access:
+Verify the monitoring workloads and namespaced access:
 
 ```bash
-kubectl -n drops-monitoring get pods,svc,pvc
+kubectl -n team-drops get pods,svc,pvc
+kubectl -n team-drops get deploy,statefulset,replicaset -o wide
+kubectl -n team-drops get resourcequota,limitrange -o yaml
+kubectl -n team-drops get events --sort-by=.lastTimestamp
 kubectl -n team-drops get role,rolebinding
 ```
 
 ### Grafana dashboards
 
 ```bash
-kubectl -n drops-monitoring port-forward svc/team-drops-grafana 3000:80
+kubectl -n team-drops port-forward svc/team-drops-monitoring-grafana 3000:80
 ```
 
 Open <http://localhost:3000> and sign in as `admin` using
@@ -226,8 +249,8 @@ Open <http://localhost:3000> and sign in as `admin` using
 ### Prometheus metrics
 
 ```bash
-kubectl -n drops-monitoring port-forward \
-  svc/team-drops-prometheus-server 9090:80
+kubectl -n team-drops port-forward \
+  svc/team-drops-monitoring-prometheus 9090:80
 ```
 
 Open <http://localhost:9090>. Useful queries include:
@@ -242,6 +265,24 @@ ALERTS{alertname=~"TeamDrops.+"}
 
 The `up` query should show four healthy API targets. The `application_info`
 version label should match the deployed `sha-<commit>` image tag.
+
+If Rancher reports that the deployment user is attempting to grant RBAC
+permissions it does not hold, inspect the rendered
+`team-drops-monitoring-kube-state-metrics` Role. It must contain only pods and
+deployments. The chart deliberately sets an explicit collector allowlist so
+kube-state-metrics defaults cannot add cluster resources such as admission
+webhooks, certificate requests, storage classes, or volume attachments.
+
+A failed monitoring revision can be recovered by fixing the values and running
+the same `helm upgrade --install` command again. Helm reconciles its uniquely
+named resources without taking ownership of application resources.
+
+If every monitoring workload shows one desired replica but zero current pods,
+the workload controllers are being prevented from creating Pods. Ask a Rancher
+administrator to inspect project/namespace quota, LimitRanges, Pod Security,
+and admission policy. Do not delete bound monitoring PVCs while correcting the
+namespace. The automatic deployment prints these policies, workload
+descriptions, and `team-drops` events whenever a run fails.
 
 ### Loki logs
 
@@ -258,8 +299,8 @@ only bounded namespace, pod, container, application, and component labels. To
 inspect collection directly:
 
 ```bash
-kubectl -n drops-monitoring logs deployment/team-drops-alloy
-kubectl -n drops-monitoring port-forward svc/team-drops-loki 3100:3100
+kubectl -n team-drops logs deployment/team-drops-monitoring-alloy
+kubectl -n team-drops port-forward svc/team-drops-monitoring-loki 3100:3100
 curl http://localhost:3100/ready
 curl http://localhost:3100/loki/api/v1/labels
 ```
@@ -282,7 +323,7 @@ notifications, while unrelated alerts use a null receiver.
 Access Alertmanager to inspect alerts and create silences:
 
 ```bash
-kubectl -n drops-monitoring port-forward svc/team-drops-alertmanager 9093:9093
+kubectl -n team-drops port-forward svc/team-drops-monitoring-alertmanager 9093:9093
 ```
 
 Open <http://localhost:9093>. Slack is enabled in
@@ -294,13 +335,13 @@ their credentials in the repository secrets listed above.
 After manually changing receiver configuration or credentials:
 
 ```bash
-kubectl -n drops-monitoring rollout restart statefulset/team-drops-alertmanager
-kubectl -n drops-monitoring rollout status statefulset/team-drops-alertmanager
+kubectl -n team-drops rollout restart statefulset/team-drops-monitoring-alertmanager
+kubectl -n team-drops rollout status statefulset/team-drops-monitoring-alertmanager
 ```
 
 The application chart also supports Operator-compatible `ServiceMonitor` and
 `PrometheusRule` resources. They are disabled in the Rancher values because the
-dedicated standalone Prometheus release is used.
+separately managed standalone Prometheus release is used.
 
 ## GenAI options
 
@@ -343,8 +384,8 @@ helm upgrade --install team-drops ./helm/team-drops \
 ```bash
 helm history team-drops -n team-drops
 helm rollback team-drops <revision> -n team-drops
-helm history team-drops-monitoring -n drops-monitoring
-helm rollback team-drops-monitoring <revision> -n drops-monitoring
+helm history team-drops-monitoring -n team-drops
+helm rollback team-drops-monitoring <revision> -n team-drops
 ```
 
 Uninstalling releases does not automatically remove every PVC or manually
@@ -352,6 +393,21 @@ created Secret. Review retained data before deleting it:
 
 ```bash
 helm uninstall team-drops -n team-drops
-helm uninstall team-drops-monitoring -n drops-monitoring
-kubectl -n drops-monitoring get pvc,secret
+helm uninstall team-drops-monitoring -n team-drops
+kubectl -n team-drops get pvc,secret
 ```
+
+### Clean up the failed legacy namespace release
+
+The failed `team-drops-monitoring` release and its PVCs in `drops-monitoring`
+are not modified during cutover. After the new release in `team-drops` is
+healthy and its dashboards, metrics, logs, and alerts are verified, inspect the
+old resources:
+
+```bash
+helm status team-drops-monitoring -n drops-monitoring
+kubectl -n drops-monitoring get pods,svc,pvc,secret
+```
+
+Removing that release or its PVCs permanently deletes retained monitoring data
+and must be performed as a separate, explicitly approved cleanup operation.
