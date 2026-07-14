@@ -202,7 +202,7 @@ jobs:
               team-drops-monitoring-alertmanager
               team-drops-monitoring-alloy
               team-drops-monitoring-grafana
-              team-drops-monitoring-kube-state-metrics
+              team-drops-monitoring-state-metrics
               team-drops-monitoring-loki
               team-drops-monitoring-prometheus
             ].to_set
@@ -232,7 +232,7 @@ jobs:
             abort("Missing Prometheus PVC") unless pvcs.any? { |name| name.include?("prometheus") }
             abort("Missing Grafana PVC") unless pvcs.any? { |name| name.include?("grafana") }
             abort("Missing namespaced Prometheus reader Role") unless monitoring_documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-monitoring-prometheus-reader" && doc.dig("metadata", "namespace") == "team-drops" }
-            kube_state_role = monitoring_documents.find { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-monitoring-kube-state-metrics" && doc.dig("metadata", "namespace") == "team-drops" }
+            kube_state_role = monitoring_documents.find { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-monitoring-state-metrics" && doc.dig("metadata", "namespace") == "team-drops" }
             abort("Missing application-scoped kube-state-metrics Role") unless kube_state_role
             kube_state_permissions = kube_state_role.fetch("rules").flat_map do |rule|
               rule.fetch("apiGroups").product(rule.fetch("resources"), rule.fetch("verbs"))
@@ -247,7 +247,7 @@ jobs:
             abort("Missing namespaced Prometheus RoleBinding") unless monitoring_documents.any? { |doc| doc["kind"] == "RoleBinding" && doc.dig("metadata", "name") == "team-drops-monitoring-prometheus-reader" && doc.dig("subjects", 0, "name") == "team-drops-monitoring-prometheus" && doc.dig("subjects", 0, "namespace") == "team-drops" }
             abort("Missing namespaced Alloy log reader Role") unless monitoring_documents.any? { |doc| doc["kind"] == "Role" && doc.dig("metadata", "name") == "team-drops-monitoring-alloy-log-reader" && doc.dig("metadata", "namespace") == "team-drops" && doc.fetch("rules", []).any? { |rule| rule.fetch("resources", []).include?("pods/log") && rule.fetch("verbs", []).include?("get") } }
             abort("Missing namespaced Alloy RoleBinding") unless monitoring_documents.any? { |doc| doc["kind"] == "RoleBinding" && doc.dig("metadata", "name") == "team-drops-monitoring-alloy-log-reader" && doc.dig("subjects", 0, "name") == "team-drops-monitoring-alloy" && doc.dig("subjects", 0, "namespace") == "team-drops" }
-            abort("Missing kube-state-metrics Deployment") unless monitoring_documents.any? { |doc| doc["kind"] == "Deployment" && doc.dig("metadata", "name") == "team-drops-monitoring-kube-state-metrics" }
+            abort("Missing kube-state-metrics Deployment") unless monitoring_documents.any? { |doc| doc["kind"] == "Deployment" && doc.dig("metadata", "name") == "team-drops-monitoring-state-metrics" }
 
             alloy = monitoring_documents.find { |doc| doc["kind"] == "Deployment" && doc.dig("metadata", "name") == "team-drops-monitoring-alloy" }
             abort("Missing Alloy Deployment") unless alloy
@@ -397,7 +397,7 @@ jobs:
           for deployment in \
             team-drops-monitoring-alloy \
             team-drops-monitoring-grafana \
-            team-drops-monitoring-kube-state-metrics \
+            team-drops-monitoring-state-metrics \
             team-drops-monitoring-prometheus
           do
             kubectl -n team-drops describe deployment "$deployment" || true

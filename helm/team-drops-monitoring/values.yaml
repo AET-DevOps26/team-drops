@@ -56,7 +56,7 @@ prometheus:
         memory: 128Mi
   kube-state-metrics:
     enabled: true
-    fullnameOverride: team-drops-monitoring-kube-state-metrics
+    fullnameOverride: team-drops-monitoring-state-metrics
     namespaces: [team-drops]
     collectors:
       - deployments
@@ -183,7 +183,7 @@ prometheus:
               action: replace
         - job_name: kube-state-metrics
           static_configs:
-            - targets: [team-drops-monitoring-kube-state-metrics:8080]
+            - targets: [team-drops-monitoring-state-metrics:8080]
 
 grafana:
   fullnameOverride: team-drops-monitoring-grafana
