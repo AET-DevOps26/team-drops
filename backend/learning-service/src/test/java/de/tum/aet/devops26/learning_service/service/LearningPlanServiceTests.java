@@ -109,6 +109,33 @@ class LearningPlanServiceTests {
     }
 
     @Test
+    void createDefaultLearningPlanDoesNotDuplicateLegacyFixedListeningAndSpeakingPlans() {
+        LearningPlanService service = newService();
+        CreateDefaultLearningPlanRequest request = request();
+        LearningPlan existingPlan = fixedPlan(7L, LearningPlanSeeder.DEFAULT_TITLE);
+        LearningPlan legacyListeningPlan = fixedPlan(8L, LearningPlanSeeder.LEGACY_LISTENING_TITLE);
+        LearningPlan legacySpeakingPlan = fixedPlan(9L, LearningPlanSeeder.LEGACY_SPEAKING_TITLE);
+
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.DEFAULT_TITLE))
+            .thenReturn(Optional.of(existingPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LEGACY_LISTENING_TITLE))
+            .thenReturn(Optional.of(legacyListeningPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LEGACY_SPEAKING_TITLE))
+            .thenReturn(Optional.of(legacySpeakingPlan));
+        when(lessonService.findByPlanId(7L)).thenReturn(List.of());
+
+        LearningPlanResponse response = service.createDefaultLearningPlan(request);
+
+        assertThat(response.getId()).isEqualTo(7L);
+        verify(learningPlanSeeder, never()).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanSeeder, never()).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
+    }
+
+    @Test
     void createAiLearningPlanPersistsGeneratedRagPlanLessonsAndExercises() {
         LearningPlanService service = newService();
         configureGeneratedPlanSaves();
@@ -381,7 +408,11 @@ class LearningPlanServiceTests {
             .thenReturn(Optional.empty());
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
             .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LEGACY_LISTENING_TITLE))
+            .thenReturn(Optional.empty());
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LEGACY_SPEAKING_TITLE))
             .thenReturn(Optional.empty());
         when(learningPlanSeeder.createDefaultPlan(request, "job-interview")).thenReturn(defaultPlan);
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
@@ -404,7 +435,11 @@ class LearningPlanServiceTests {
             .thenReturn(Optional.empty());
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
             .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LEGACY_LISTENING_TITLE))
+            .thenReturn(Optional.empty());
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LEGACY_SPEAKING_TITLE))
             .thenReturn(Optional.empty());
         when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(existingPlan));
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());

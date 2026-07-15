@@ -187,7 +187,11 @@ public class LearningPlanService {
     }
 
     private void ensureListeningPlan(CreateDefaultLearningPlanRequest request) {
-        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isPresent()) {
+        if (hasPlanWithAnyTitle(
+                request.getUserId(),
+                LearningPlanSeeder.LISTENING_TITLE,
+                LearningPlanSeeder.LEGACY_LISTENING_TITLE
+        )) {
             return;
         }
 
@@ -199,7 +203,11 @@ public class LearningPlanService {
     }
 
     private void ensureSpeakingPlan(CreateDefaultLearningPlanRequest request) {
-        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.SPEAKING_TITLE).isPresent()) {
+        if (hasPlanWithAnyTitle(
+                request.getUserId(),
+                LearningPlanSeeder.SPEAKING_TITLE,
+                LearningPlanSeeder.LEGACY_SPEAKING_TITLE
+        )) {
             return;
         }
 
@@ -208,6 +216,15 @@ public class LearningPlanService {
         } catch (DataIntegrityViolationException exception) {
             LOGGER.info("Speaking plan already exists for user {} (concurrent creation)", request.getUserId());
         }
+    }
+
+    private boolean hasPlanWithAnyTitle(Long userId, String... titles) {
+        for (String title : titles) {
+            if (learningPlanRepository.findFirstByUserIdAndTitle(userId, title).isPresent()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private LearningPlanResponse toResponse(LearningPlan plan) {
