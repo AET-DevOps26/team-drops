@@ -53,6 +53,57 @@ class DefaultLearningPlanCatalogTests {
     }
 
     @Test
+    void loadsSoftwareEngineeringInterviewTemplateWithPremadeQuestions() throws Exception {
+        DefaultLearningPlanCatalog catalog = new DefaultLearningPlanCatalog(new ObjectMapper());
+
+        DefaultLearningPlanContent template = catalog.findLocalizedByKey("software-engineering-interview", "English");
+
+        assertThat(template.title()).isEqualTo("Software Engineering Interview Track");
+        assertThat(template.defaultGoal()).isEqualTo("Prepare for software engineering interviews");
+        assertThat(template.lessons()).hasSize(8);
+        assertThat(template.lessons().get(0).title()).isEqualTo("Introduction and Role Fit");
+        assertThat(template.lessons().get(0).exercises())
+            .extracting("question")
+            .containsExactly(
+                "Tell me about yourself as a software engineering candidate.",
+                "Why are you interested in this software engineering role?",
+                "What kind of engineering problems do you enjoy solving?"
+            );
+        assertThat(template.lessons().get(3).exercises().get(0).question())
+            .isEqualTo("How would you design a simple URL shortener?");
+        assertThat(template.lessons().get(3).exercises().get(0).keywords())
+            .containsExactly(
+                "requirements",
+                "API",
+                "database",
+                "short code",
+                "scalability"
+            );
+    }
+
+    @Test
+    void loadsGermanSoftwareEngineeringInterviewTemplateWithPremadeQuestions() throws Exception {
+        DefaultLearningPlanCatalog catalog = new DefaultLearningPlanCatalog(new ObjectMapper());
+
+        DefaultLearningPlanContent template = catalog.findLocalizedByKey("software-engineering-interview", "German");
+
+        assertThat(template.title()).isEqualTo("Vorbereitung auf Software-Engineering-Interviews");
+        assertThat(template.defaultLanguage()).isEqualTo("German");
+        assertThat(template.lessons()).hasSize(8);
+        assertThat(template.lessons().get(0).title()).isEqualTo("Vorstellung und Rollenpassung");
+        assertThat(template.lessons().get(0).exercises().get(0).question())
+            .isEqualTo("Erzählen Sie mir etwas über sich als Kandidatin oder Kandidat im Software Engineering.");
+        assertThat(template.lessons().get(3).exercises().get(0).keywords())
+            .containsExactly(
+                "Anforderungen",
+                "API",
+                "Datenbank",
+                "Kurzcode",
+                "Skalierbarkeit"
+            );
+    }
+
+    @Test
     void loadsMachineLearningInterviewTemplateWithKeywordHints() throws Exception {
         DefaultLearningPlanCatalog catalog = new DefaultLearningPlanCatalog(new ObjectMapper());
 
