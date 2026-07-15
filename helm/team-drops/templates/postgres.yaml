@@ -70,7 +70,7 @@ spec:
     - metadata:
         name: postgres-data
         labels:
-          {{- include "team-drops.labels" . | nindent 10 }}
+          {{- include "team-drops.legacyVolumeClaimLabels" . | nindent 10 }}
       spec:
         accessModes: ["ReadWriteOnce"]
         resources:

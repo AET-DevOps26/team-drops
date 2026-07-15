@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  createAiLearningPlan,
   createDefaultLearningPlan,
   generateListeningContent,
   getCurrentUser,
@@ -244,6 +245,66 @@ export function App() {
   const [listeningLoading, setListeningLoading] = React.useState(false);
   const [listeningError, setListeningError] = React.useState('');
   const listeningRequestIdRef = React.useRef(0);
+  const screenRef = React.useRef(screen);
+  const selectedPlanRef = React.useRef(selectedPlan);
+  const selectedLessonRef = React.useRef(selectedLesson);
+  const selectedExerciseRef = React.useRef(selectedExercise);
+  const targetLanguageRef = React.useRef(targetLanguage);
+  const initialAuthRedirectDoneRef = React.useRef(false);
+
+  React.useEffect(() => {
+    screenRef.current = screen;
+  }, [screen]);
+
+  React.useEffect(() => {
+    selectedPlanRef.current = selectedPlan;
+  }, [selectedPlan]);
+
+  React.useEffect(() => {
+    selectedLessonRef.current = selectedLesson;
+  }, [selectedLesson]);
+
+  React.useEffect(() => {
+    selectedExerciseRef.current = selectedExercise;
+  }, [selectedExercise]);
+
+  React.useEffect(() => {
+    targetLanguageRef.current = targetLanguage;
+  }, [targetLanguage]);
+
+  const navigateToScreen = React.useCallback((nextScreen) => {
+    screenRef.current = nextScreen;
+    setScreen(nextScreen);
+  }, []);
+
+  const selectPlan = React.useCallback((planIndex) => {
+    selectedPlanRef.current = planIndex;
+    setSelectedPlan(planIndex);
+  }, []);
+
+  const selectLesson = React.useCallback((lessonIndex) => {
+    selectedLessonRef.current = lessonIndex;
+    setSelectedLesson(lessonIndex);
+  }, []);
+
+  const selectExercise = React.useCallback((exerciseIndex) => {
+    selectedExerciseRef.current = exerciseIndex;
+    setSelectedExercise(exerciseIndex);
+  }, []);
+
+  const setTargetLanguageValue = React.useCallback((nextTargetLanguage) => {
+    targetLanguageRef.current = nextTargetLanguage;
+    setTargetLanguage(nextTargetLanguage);
+  }, []);
+
+  const resetLearningSelection = React.useCallback(() => {
+    selectedPlanRef.current = 0;
+    selectedLessonRef.current = 0;
+    selectedExerciseRef.current = 0;
+    setSelectedPlan(0);
+    setSelectedLesson(0);
+    setSelectedExercise(0);
+  }, []);
 
   const activePlan = learningPlans[selectedPlan] ?? {
     accent: 'blue',
@@ -296,7 +357,7 @@ export function App() {
     const nextProfile = profileResult.status === 'fulfilled'
       ? toProfile(profileResult.value, currentSession.user)
       : toProfile(null, currentSession.user);
-    const contentLanguage = nextProfile.targetLanguage || targetLanguage;
+    const contentLanguage = nextProfile.targetLanguage || targetLanguageRef.current;
     let learningPlansError = null;
     let nextLearningPlans = [];
 
@@ -350,7 +411,9 @@ export function App() {
       }
     }
 
-    const progressPlanId = options.progressPlanId ?? nextLearningPlans[selectedPlan]?.id ?? nextLearningPlans[0]?.id;
+    const progressPlanId = options.progressPlanId
+      ?? nextLearningPlans[selectedPlanRef.current]?.id
+      ?? nextLearningPlans[0]?.id;
     const progressResult = await getProgress(userId, token, {
       planId: progressPlanId,
       targetLanguage: contentLanguage,
@@ -363,14 +426,12 @@ export function App() {
       : createEmptyProgress(userId);
 
     setProfile(nextProfile);
-    setTargetLanguage(nextProfile.targetLanguage || targetLanguage);
+    setTargetLanguageValue(nextProfile.targetLanguage || targetLanguageRef.current);
     setLearningPlans(nextLearningPlans);
     setProgress(nextProgress);
 
     if (!options.skipSelectionReset) {
-      setSelectedPlan(0);
-      setSelectedLesson(0);
-      setSelectedExercise(0);
+      resetLearningSelection();
     }
 
     if (profileResult.status === 'rejected' && profileResult.reason?.status !== 404) {
@@ -386,7 +447,7 @@ export function App() {
     }
 
     return { nextLearningPlans, nextProgress };
-  }, [selectedPlan, targetLanguage]);
+  }, [resetLearningSelection, setTargetLanguageValue]);
 
   React.useEffect(() => {
     if (!authEnabled) {
@@ -425,8 +486,11 @@ export function App() {
 
         setSession(nextSession);
         await syncLearningData(nextSession);
-        if (!cancelled) {
-          goToMain();
+        if (!cancelled && !initialAuthRedirectDoneRef.current && screenRef.current === 'auth') {
+          initialAuthRedirectDoneRef.current = true;
+          navigateToScreen('main');
+          setSettingsOpen(false);
+          setSettingsClosing(false);
           if (window.localStorage.getItem(introPendingKey) === 'true') {
             window.localStorage.removeItem(introPendingKey);
             introTimeoutId = window.setTimeout(() => {
@@ -454,7 +518,7 @@ export function App() {
       cancelled = true;
       window.clearTimeout(introTimeoutId);
     };
-  }, [syncLearningData]);
+  }, [navigateToScreen, syncLearningData]);
 
   const loadLessonDetail = React.useCallback(async (planIndex, lessonIndex, currentSession) => {
     const selectedPlanSummary = learningPlans[planIndex];
@@ -513,13 +577,13 @@ export function App() {
       setSettingsClosing(false);
 
       if (nextScreen) {
-        setScreen(nextScreen);
+        navigateToScreen(nextScreen);
       }
     }, 220);
   };
 
   const goToMain = () => {
-    setScreen('main');
+    navigateToScreen('main');
     setSettingsOpen(false);
     setSettingsClosing(false);
     setIntroOpen(false);
@@ -542,7 +606,8 @@ export function App() {
 
       setSession(nextSession);
       await syncLearningData(nextSession);
-      setScreen('main');
+      initialAuthRedirectDoneRef.current = true;
+      navigateToScreen('main');
     } catch (error) {
       setAuthError(error.message || 'Unable to continue without authentication.');
     } finally {
@@ -558,10 +623,12 @@ export function App() {
     setAnswerError('');
     setLearningError('');
     setProfile(defaultProfile);
-    setTargetLanguage(defaultProfile.targetLanguage);
+    setTargetLanguageValue(defaultProfile.targetLanguage);
     setLearningPlans([]);
     setProgress(createEmptyProgress());
-    setScreen('auth');
+    resetLearningSelection();
+    initialAuthRedirectDoneRef.current = false;
+    navigateToScreen('auth');
     setSettingsOpen(false);
     setSettingsClosing(false);
   };
@@ -577,8 +644,8 @@ export function App() {
 
   const applyProfileState = React.useCallback((nextProfile) => {
     setProfile(nextProfile);
-    setTargetLanguage(nextProfile.targetLanguage);
-  }, []);
+    setTargetLanguageValue(nextProfile.targetLanguage);
+  }, [setTargetLanguageValue]);
 
   const handleLogin = () => {
     setAuthError('');
@@ -607,12 +674,12 @@ export function App() {
 
   const openLessonFromDashboard = (planIndex, lessonIndex) => {
     setLearningError('');
-    setSelectedPlan(planIndex);
-    setSelectedLesson(lessonIndex);
-    setSelectedExercise(0);
+    selectPlan(planIndex);
+    selectLesson(lessonIndex);
+    selectExercise(0);
     setLearningMode('training');
     setLearningStep('lesson');
-    setScreen('learn');
+    navigateToScreen('learn');
 
     if (session) {
       loadLessonDetail(planIndex, lessonIndex, session).catch((error) => {
@@ -625,31 +692,32 @@ export function App() {
     if (learningPlans.length === 0) {
       setLearningMode('training');
       setLearningStep('plans');
-      setScreen('learn');
+      navigateToScreen('learn');
       return;
     }
 
-    setSelectedLesson(0);
+    selectLesson(0);
+    selectExercise(0);
     setLearningMode('training');
     setLearningStep('lessons');
-    setScreen('learn');
+    navigateToScreen('learn');
   };
 
   const openPlan = (planIndex) => {
-    setSelectedPlan(planIndex);
-    setSelectedLesson(0);
-    setSelectedExercise(0);
+    selectPlan(planIndex);
+    selectLesson(0);
+    selectExercise(0);
     setLearningStep('lessons');
   };
 
   const openLesson = (lessonIndex) => {
     setLearningError('');
-    setSelectedLesson(lessonIndex);
-    setSelectedExercise(0);
+    selectLesson(lessonIndex);
+    selectExercise(0);
     setLearningStep('lesson');
 
     if (session) {
-      loadLessonDetail(selectedPlan, lessonIndex, session).catch((error) => {
+      loadLessonDetail(selectedPlanRef.current, lessonIndex, session).catch((error) => {
         setLearningError(error.message || 'Unable to load lesson.');
       });
     }
@@ -657,7 +725,7 @@ export function App() {
 
   const openExercise = (exerciseIndex) => {
     setAnswerError('');
-    setSelectedExercise(exerciseIndex);
+    selectExercise(exerciseIndex);
     setLearningStep('exercise');
 
     const exercise = activeLesson.exercises[exerciseIndex];
@@ -775,7 +843,7 @@ export function App() {
   };
 
   const handleTargetLanguageChange = (nextTargetLanguage) => {
-    setTargetLanguage(nextTargetLanguage);
+    setTargetLanguageValue(nextTargetLanguage);
     setProfile((currentProfile) => {
       return {
         ...currentProfile,
@@ -893,13 +961,39 @@ export function App() {
         toLessonDetail(lessonResponse, activeLesson),
         submission,
       );
-      const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+      const syncResult = await syncLearningData(session, {
+        skipSelectionReset: true,
+        progressPlanId: activePlan.id,
+      });
       setLearningPlans(mergeLessonIntoPlans(syncResult.nextLearningPlans, normalizedLesson));
     } catch (error) {
       setAnswerError(error.message || 'Unable to submit speaking answer.');
     } finally {
       setAnswerPending(false);
     }
+  };
+
+  const handleCreateAiLearningPlan = async (payload) => {
+    if (!session) {
+      throw new Error('Please sign in before generating a learning plan.');
+    }
+
+    const createdPlan = await createAiLearningPlan({
+      ...payload,
+      user_id: session.user.id,
+      target_language: profile.targetLanguage,
+      current_level: profile.currentLevel,
+    }, session.accessToken);
+
+    const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+    const createdPlanIndex = syncResult.nextLearningPlans.findIndex((plan) => plan.id === createdPlan.id);
+    setSelectedPlan(createdPlanIndex >= 0 ? createdPlanIndex : 0);
+    setSelectedLesson(0);
+    setSelectedExercise(0);
+    setLearningMode('training');
+    setLearningStep('lessons');
+
+    return createdPlan;
   };
 
   const goBackInLearning = () => {
@@ -944,11 +1038,11 @@ export function App() {
               recentLessons={recentLessons}
               profile={profile}
               t={t}
-              onNavigate={setScreen}
+              onNavigate={navigateToScreen}
               onOpenLearningHub={() => {
                 setLearningMode('training');
                 setLearningStep('plans');
-                setScreen('learn');
+                navigateToScreen('learn');
               }}
               onOpenLesson={openLessonFromDashboard}
               onOpenPlan={openPlanFromDashboard}
@@ -971,10 +1065,11 @@ export function App() {
               listeningError={listeningError}
               listeningLoading={listeningLoading}
               listeningSelections={listeningSelections}
+              profile={profile}
               t={t}
               onBack={goBackInLearning}
               onLearningMode={changeLearningMode}
-              onNavigate={setScreen}
+              onNavigate={navigateToScreen}
               onOpenExercise={openExercise}
               onOpenLesson={openLesson}
               onOpenPlan={openPlan}
@@ -985,6 +1080,7 @@ export function App() {
               }
               onRetryListeningExercise={handleRetryListeningExercise}
               onSubmitAnswer={handleSubmitAnswer}
+              onCreateAiLearningPlan={handleCreateAiLearningPlan}
               onSubmitSpeakingAnswer={handleSubmitSpeakingAnswer}
             />
           )}

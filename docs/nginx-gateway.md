@@ -118,18 +118,23 @@ auth:
   enabled: true
 
 oauth2Proxy:
-  enabled: true
+  enabled: false
 
 keycloak:
   enabled: true
 ```
 
-Use [`helm/team-drops/values-production.yaml`](../helm/team-drops/values-production.yaml)
-as the production template. Replace all `CHANGE_ME` placeholders and provide
-real secrets through CI/CD variables, a secret manager, or Helm `--set` flags.
+Use [`helm/team-drops/values-rancher.yaml`](../helm/team-drops/values-rancher.yaml)
+for the deployed host, TLS, Keycloak redirect, and service resource overrides.
+Provide secrets through GitHub repository secrets and namespaced Kubernetes
+Secrets; do not commit them to a values file.
 
 If Keycloak is managed outside this chart, keep `keycloak.enabled=false` and
 set the external issuer/client settings in the auth and oauth2-proxy values.
+
+The current Rancher profile uses service-level JWT validation. Enable
+`oauth2Proxy.enabled` only when the cluster is configured for the optional
+gateway-level flow described below.
 
 ## Authentication
 

@@ -11,7 +11,11 @@ genai:
       memory: 512Mi
     limits:
       cpu: 500m
-      memory: 1Gi
+      memory: 768Mi
+
+monitoring:
+  rancherServiceMonitors:
+    enabled: false
 
 auth:
   issuerUri: https://team-drops.stud.k8s.aet.cit.tum.de/realms/team-drops
@@ -48,7 +52,7 @@ services:
         memory: 160Mi
       limits:
         cpu: 150m
-        memory: 256Mi
+        memory: 320Mi
   learning:
     resources:
       requests:
@@ -56,7 +60,7 @@ services:
         memory: 160Mi
       limits:
         cpu: 150m
-        memory: 256Mi
+        memory: 320Mi
   progress:
     resources:
       requests:
@@ -64,7 +68,7 @@ services:
         memory: 160Mi
       limits:
         cpu: 150m
-        memory: 256Mi
+        memory: 320Mi
 
 postgres:
   resources:
@@ -73,7 +77,7 @@ postgres:
       memory: 128Mi
     limits:
       cpu: 200m
-      memory: 256Mi
+      memory: 192Mi
 
 mongo:
   resources:
@@ -82,7 +86,7 @@ mongo:
       memory: 128Mi
     limits:
       cpu: 200m
-      memory: 256Mi
+      memory: 192Mi
 
 ingress:
   host: team-drops.stud.k8s.aet.cit.tum.de

@@ -28,10 +28,10 @@ public class Lesson {
     @Column(name = "plan_id", nullable = false)
     private Long planId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String topic;
 
     @Column(name = "order_number", nullable = false)

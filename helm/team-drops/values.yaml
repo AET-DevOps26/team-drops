@@ -10,6 +10,17 @@ rollout:
   maxSurge: 0
   maxUnavailable: 1
 
+monitoring:
+  applicationVersionFallback: unknown
+  alerts:
+    enabled: true
+  rancherServiceMonitors:
+    enabled: true
+    labels:
+      release: rancher-monitoring
+    interval: 30s
+    scrapeTimeout: 10s
+
 auth:
   enabled: true
   # Public issuer URL expected in browser-issued tokens.

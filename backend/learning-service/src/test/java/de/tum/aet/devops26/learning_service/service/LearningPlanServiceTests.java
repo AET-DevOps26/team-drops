@@ -1,30 +1,42 @@
 package de.tum.aet.devops26.learning_service.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.tum.aet.devops26.learning_service.dto.CreateAiLearningPlanRequest;
 import de.tum.aet.devops26.learning_service.dto.CreateDefaultLearningPlanRequest;
+import de.tum.aet.devops26.learning_service.dto.ExerciseType;
 import de.tum.aet.devops26.learning_service.dto.LearningPlanResponse;
 import de.tum.aet.devops26.learning_service.dto.LearningStatus;
+import de.tum.aet.devops26.learning_service.dto.LessonSummaryResponse;
+import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient;
+import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagExercise;
+import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagLearningPlanResponse;
+import de.tum.aet.devops26.learning_service.integration.GenAiRagLearningPlanClient.RagLesson;
+import de.tum.aet.devops26.learning_service.integration.UserServiceClient;
 import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
-import de.tum.aet.devops26.learning_service.service.catalog.DefaultExerciseTemplate;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
-import de.tum.aet.devops26.learning_service.service.catalog.DefaultLessonTemplate;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class LearningPlanServiceTests {
@@ -44,267 +56,498 @@ class LearningPlanServiceTests {
     @Mock
     private LearningPlanSeeder learningPlanSeeder;
 
-    private DefaultLearningPlanContent defaultTemplate;
-    private DefaultLearningPlanContent germanTemplate;
+    @Mock
+    private GenAiRagLearningPlanClient genAiRagLearningPlanClient;
+
+    @Mock
+    private UserServiceClient userServiceClient;
 
     @BeforeEach
     void setUp() {
-        defaultTemplate = new DefaultLearningPlanContent(
-            "Job Interview Preparation",
+        DefaultLearningPlanContent defaultTemplate = new DefaultLearningPlanContent(
+            LearningPlanSeeder.DEFAULT_TITLE,
             "Fixed lessons for practicing professional job interview answers.",
             "2 weeks",
             "Prepare for a professional job interview",
             "English",
             "A2",
             "Write a clear, professional answer using specific details and formal vocabulary.",
-            List.of(lesson(
-                "Self Introduction",
-                "Introduce yourself professionally in an interview.",
-                "Tell me about yourself.",
-                "Write a short professional introduction.",
-                "Improve your introduction using more formal vocabulary."
-            ))
-        );
-
-        germanTemplate = new DefaultLearningPlanContent(
-            "Vorbereitung auf Vorstellungsgespräche",
-            "Feste Lektionen zum Üben professioneller Antworten in Vorstellungsgesprächen.",
-            "2 weeks",
-            "Sich auf ein professionelles Vorstellungsgespräch vorbereiten",
-            "German",
-            "A2",
-            "Verfasse eine klare, professionelle Antwort mit konkreten Details und formellem Wortschatz.",
-            List.of(lesson(
-                "Selbstvorstellung",
-                "Stelle dich in einem Vorstellungsgespräch professionell vor.",
-                "Erzählen Sie mir etwas über sich.",
-                "Schreibe eine kurze professionelle Selbstvorstellung.",
-                "Verbessere deine Vorstellung mit formellerem Wortschatz."
-            ))
+            List.of()
         );
 
         lenient().when(defaultLearningPlanCatalog.findFallbackByKey("job-interview")).thenReturn(defaultTemplate);
         lenient().when(defaultLearningPlanCatalog.templateKeys()).thenReturn(List.of("job-interview"));
-        lenient().when(defaultLearningPlanCatalog.findKeyByLocalizedTitle("Job Interview Preparation"))
-            .thenReturn(Optional.of("job-interview"));
-        lenient().when(defaultLearningPlanCatalog.findLocalizedByKey(any(), any())).thenAnswer(invocation -> {
-            String language = invocation.getArgument(1);
-            return "German".equalsIgnoreCase(language) ? germanTemplate : defaultTemplate;
-        });
+        lenient().when(defaultLearningPlanCatalog.findKeyByLocalizedTitle(any())).thenReturn(Optional.empty());
     }
 
     @Test
     void createDefaultLearningPlanReturnsExistingDefaultPlan() {
-        LearningPlanService service = new LearningPlanService(
-            learningPlanRepository,
-            lessonService,
-            exerciseService,
-            defaultLearningPlanCatalog,
-            learningPlanSeeder
-        );
-        CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest()
-            .userId(42L)
-            .targetLanguage("German")
-            .currentLevel("A2")
-            .learningGoal("Prepare for a software engineering job interview");
-        LearningPlan existingPlan = jobInterviewPlan(7L, 42L, "German");
+        LearningPlanService service = newService();
+        CreateDefaultLearningPlanRequest request = request();
+        LearningPlan existingPlan = fixedPlan(7L, LearningPlanSeeder.DEFAULT_TITLE);
+        LearningPlan listeningPlan = fixedPlan(8L, LearningPlanSeeder.LISTENING_TITLE);
+        LearningPlan speakingPlan = fixedPlan(9L, LearningPlanSeeder.SPEAKING_TITLE);
 
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.DEFAULT_TITLE))
             .thenReturn(Optional.of(existingPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
-            .thenReturn(Optional.of(existingPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
-            .thenReturn(Optional.of(existingPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
+            .thenReturn(Optional.of(listeningPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.of(speakingPlan));
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
 
         LearningPlanResponse response = service.createDefaultLearningPlan(request);
 
         assertThat(response.getId()).isEqualTo(7L);
-        assertThat(response.getTitle()).isEqualTo("Vorbereitung auf Vorstellungsgespräche");
+        assertThat(response.getTitle()).isEqualTo(LearningPlanSeeder.DEFAULT_TITLE);
+        verify(learningPlanSeeder, never()).createDefaultPlan(any(CreateDefaultLearningPlanRequest.class), any());
+        verify(learningPlanSeeder, never()).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanSeeder, never()).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
         verify(learningPlanRepository, never()).save(any(LearningPlan.class));
         verify(lessonService, never()).save(any(Lesson.class));
         verify(exerciseService, never()).save(any(Exercise.class));
     }
 
     @Test
-    void createDefaultLearningPlanCopiesCatalogLessonsAndExercises() {
-        LearningPlanService service = new LearningPlanService(
-            learningPlanRepository,
-            lessonService,
-            exerciseService,
-            defaultLearningPlanCatalog,
-            learningPlanSeeder
-        );
-        CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest().userId(42L);
-        LearningPlan savedPlan = jobInterviewPlan(100L, 42L, "English");
+    void createAiLearningPlanPersistsGeneratedRagPlanLessonsAndExercises() {
+        LearningPlanService service = newService();
+        configureGeneratedPlanSaves();
+        CreateAiLearningPlanRequest request = aiRequest();
+        when(userServiceClient.resolveSubmittedUserId(42L)).thenReturn(42L);
+        when(genAiRagLearningPlanClient.generate(request)).thenReturn(generatedPlan());
+        when(lessonService.findByPlanId(100L)).thenReturn(List.of(
+            Lesson.builder()
+                .id(201L)
+                .planId(100L)
+                .title("Interview Answers")
+                .topic("STAR answers")
+                .orderNumber(1)
+                .build()
+        ));
+        when(lessonService.toSummaryResponse(any(Lesson.class), any())).thenReturn(new LessonSummaryResponse(
+            201L,
+            100L,
+            "Interview Answers",
+            "STAR answers",
+            1,
+            LearningStatus.NOT_STARTED,
+            0,
+            10,
+            1
+        ));
 
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
-            .thenReturn(Optional.empty());
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
-            .thenReturn(Optional.empty());
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
-            .thenReturn(Optional.empty());
-        when(learningPlanSeeder.createDefaultPlan(request, "job-interview")).thenReturn(savedPlan);
-        when(lessonService.findByPlanId(100L)).thenReturn(List.of());
+        LearningPlanResponse response = service.createAiLearningPlan(request);
 
-        LearningPlanResponse response = service.createDefaultLearningPlan(request);
+        assertThat(response.getTitle()).isEqualTo("Generated German Interview Plan");
+        assertThat(response.getLessons()).hasSize(1);
 
-        assertThat(response.getId()).isEqualTo(100L);
-        verify(learningPlanSeeder).createListeningPlan(request);
-        verify(learningPlanSeeder).createSpeakingPlan(request);
-        verify(learningPlanSeeder).createDefaultPlan(request, "job-interview");
+        ArgumentCaptor<LearningPlan> planCaptor = ArgumentCaptor.forClass(LearningPlan.class);
+        verify(learningPlanRepository).save(planCaptor.capture());
+        assertThat(planCaptor.getValue().getTitle()).isEqualTo("Generated German Interview Plan");
+        assertThat(planCaptor.getValue().getUserId()).isEqualTo(42L);
+        assertThat(planCaptor.getValue().getDescription()).isEqualTo("Grounded RAG plan");
+        assertThat(planCaptor.getValue().getGoal()).isEqualTo("Prepare for an interview");
+        assertThat(planCaptor.getValue().getLanguage()).isEqualTo("German");
+        assertThat(planCaptor.getValue().getLevel()).isEqualTo("B1");
+        assertThat(planCaptor.getValue().getDuration()).isEqualTo("3 weeks");
+
+        ArgumentCaptor<Lesson> lessonCaptor = ArgumentCaptor.forClass(Lesson.class);
+        verify(lessonService).save(lessonCaptor.capture());
+        assertThat(lessonCaptor.getValue().getTitle()).isEqualTo("Interview Answers");
+        assertThat(lessonCaptor.getValue().getTopic()).isEqualTo("STAR answers");
+        assertThat(lessonCaptor.getValue().getOrderNumber()).isEqualTo(1);
+        verify(lessonService).saveContentBlocks(201L, List.of(
+            "Structure answers with examples.",
+            "Use situation, task, action, result."
+        ));
+
+        ArgumentCaptor<Exercise> exerciseCaptor = ArgumentCaptor.forClass(Exercise.class);
+        verify(exerciseService).save(exerciseCaptor.capture());
+        assertThat(exerciseCaptor.getValue().getType()).isEqualTo("free_text");
+        assertThat(exerciseCaptor.getValue().getQuestion()).isEqualTo("Write a STAR answer.");
+        assertThat(exerciseCaptor.getValue().getExpectedAnswer()).isEqualTo("A structured answer.");
     }
 
     @Test
-    void createDefaultLearningPlanAlsoSeedsAdditionalCatalogPlans() {
-        LearningPlanService service = new LearningPlanService(
-            learningPlanRepository,
-            lessonService,
-            exerciseService,
-            defaultLearningPlanCatalog,
-            learningPlanSeeder
+    void createAiLearningPlanRejectsInvalidLessonBoundsBeforeCallingGenAi() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(5).maximumLessons(2);
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("minimum_lessons must be less than or equal to maximum_lessons");
+
+        verify(genAiRagLearningPlanClient, never()).generate(any(CreateAiLearningPlanRequest.class));
+        verify(userServiceClient, never()).resolveSubmittedUserId(any());
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+    }
+
+    @Test
+    void createAiLearningPlanRejectsOutOfRangeRequestsBeforeCallingGenAi() {
+        LearningPlanService service = newService();
+
+        assertBadRequestBeforeGenAi(service, aiRequest().durationWeeks(53), "duration_weeks must be between 1 and 52");
+        assertBadRequestBeforeGenAi(service, aiRequest().studyHoursPerWeek(81), "study_hours_per_week must be between 1 and 80");
+        assertBadRequestBeforeGenAi(service, aiRequest().minimumLessons(0), "minimum_lessons must be between 1 and 24");
+        assertBadRequestBeforeGenAi(service, aiRequest().maximumLessons(25), "maximum_lessons must be between 1 and 24");
+    }
+
+    @Test
+    void createAiLearningPlanRejectsMissingRequiredRequestFieldsBeforeCallingGenAi() {
+        LearningPlanService service = newService();
+
+        assertBadRequestBeforeGenAi(service, aiRequest().ragTopic(" "), "rag_topic is required");
+        assertBadRequestBeforeGenAi(service, aiRequest().learningGoal(null), "learning_goal is required");
+        assertBadRequestBeforeGenAi(service, aiRequest().targetLanguage(""), "target_language is required");
+        assertBadRequestBeforeGenAi(service, aiRequest().currentLevel(null), "current_level is required");
+        assertBadRequestBeforeGenAi(service, aiRequest().exerciseTypes(List.of()), "exercise_types must contain at least one value");
+    }
+
+    @Test
+    void createAiLearningPlanRejectsMismatchedAuthenticatedUserBeforeCallingGenAi() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().userId(99L);
+        when(userServiceClient.resolveSubmittedUserId(99L)).thenThrow(new ResponseStatusException(
+            HttpStatus.FORBIDDEN,
+            "Submitted user_id does not match the authenticated user."
+        ));
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("Submitted user_id does not match");
+
+        verify(genAiRagLearningPlanClient, never()).generate(any(CreateAiLearningPlanRequest.class));
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+        verify(lessonService, never()).save(any(Lesson.class));
+        verify(exerciseService, never()).save(any(Exercise.class));
+    }
+
+    @Test
+    void createAiLearningPlanDoesNotPersistWhenGenAiFails() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest();
+        when(userServiceClient.resolveSubmittedUserId(42L)).thenReturn(42L);
+        when(genAiRagLearningPlanClient.generate(request)).thenThrow(new ResponseStatusException(
+            HttpStatus.BAD_GATEWAY,
+            "GenAI unavailable"
+        ));
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("GenAI unavailable");
+
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+        verify(lessonService, never()).save(any(Lesson.class));
+        verify(exerciseService, never()).save(any(Exercise.class));
+    }
+
+    @Test
+    void createAiLearningPlanRejectsUnsupportedGenAiExerciseTypeBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest();
+        RagLearningPlanResponse plan = new RagLearningPlanResponse(
+            "Generated German Interview Plan",
+            "Grounded RAG plan",
+            "Prepare for an interview",
+            "German",
+            "B1",
+            "3 weeks",
+            List.of(new RagLesson(
+                "Interview Answers",
+                "STAR answers",
+                "Structure answers with examples.",
+                1,
+                List.of(),
+                List.of(new RagExercise(
+                    "grammar",
+                    "free_text",
+                    "Write a STAR answer.",
+                    "A structured answer.",
+                    "B1"
+                ))
+            )),
+            List.of()
         );
-        CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest().userId(42L);
-        LearningPlan existingPlan = jobInterviewPlan(7L, 42L, "English");
-        DefaultLearningPlanContent mlTemplate = new DefaultLearningPlanContent(
-            "Machine Learning Interview Track",
-            "Fixed lessons for practicing machine learning interview answers in English.",
-            "4 weeks",
-            "Prepare for machine learning interviews in English",
-            "English",
-            "Intermediate",
-            "Clear technical reasoning, concrete examples, and structured explanations.",
-            List.of(lesson(
-                "Presenting an ML Project",
-                "Practice explaining an ML project.",
-                "Describe a machine learning project you worked on."
-            ))
+        when(userServiceClient.resolveSubmittedUserId(42L)).thenReturn(42L);
+        when(genAiRagLearningPlanClient.generate(request)).thenReturn(plan);
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("unsupported exercise type");
+
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+        verify(lessonService, never()).save(any(Lesson.class));
+        verify(exerciseService, never()).save(any(Exercise.class));
+    }
+
+    @Test
+    void createAiLearningPlanRejectsGeneratedLessonCountBelowRequestedMinimumBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(2).maximumLessons(4);
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            generatedPlan(),
+            "lesson count outside requested bounds"
+        );
+    }
+
+    @Test
+    void createAiLearningPlanRejectsGeneratedLessonCountAboveRequestedMaximumBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(1).maximumLessons(1);
+        RagLearningPlanResponse plan = generatedPlanWithLessons(
+            generatedLesson(1, "Interview Answers"),
+            generatedLesson(2, "Interview Follow-up")
         );
 
-        when(defaultLearningPlanCatalog.templateKeys())
-            .thenReturn(List.of("job-interview", "machine-learning-interview"));
-        when(defaultLearningPlanCatalog.findFallbackByKey("machine-learning-interview")).thenReturn(mlTemplate);
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
-            .thenReturn(Optional.of(existingPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
-            .thenReturn(Optional.of(existingPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
-            .thenReturn(Optional.of(existingPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Machine Learning Interview Track"))
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            plan,
+            "lesson count outside requested bounds"
+        );
+    }
+
+    @Test
+    void createAiLearningPlanRejectsDuplicateGeneratedLessonOrderBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(2).maximumLessons(4);
+        RagLearningPlanResponse plan = generatedPlanWithLessons(
+            generatedLesson(1, "Interview Answers"),
+            generatedLesson(1, "Interview Follow-up")
+        );
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            plan,
+            "duplicate, missing, or non-contiguous lesson order numbers"
+        );
+    }
+
+    @Test
+    void createAiLearningPlanRejectsGeneratedLessonOrderGapBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().minimumLessons(2).maximumLessons(4);
+        RagLearningPlanResponse plan = generatedPlanWithLessons(
+            generatedLesson(1, "Interview Answers"),
+            generatedLesson(3, "Interview Follow-up")
+        );
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            plan,
+            "duplicate, missing, or non-contiguous lesson order numbers"
+        );
+    }
+
+    @Test
+    void createAiLearningPlanRejectsUnrequestedGeneratedExerciseTypeBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().exerciseTypes(List.of(ExerciseType.WRITING));
+        RagLearningPlanResponse plan = generatedPlanWithLessons(new RagLesson(
+            "Speaking Practice",
+            "Interview speaking",
+            "Answer out loud.",
+            1,
+            List.of(),
+            List.of(new RagExercise(
+                "speaking",
+                "speaking_prompt",
+                "Answer this out loud.",
+                "A spoken answer.",
+                "B1"
+            ))
+        ));
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            plan,
+            "exercise type that was not requested"
+        );
+    }
+
+    @Test
+    void createDefaultLearningPlanReturnsDefaultPlanAndSeedsMissingListeningAndSpeakingPlans() {
+        LearningPlanService service = newService();
+        CreateDefaultLearningPlanRequest request = request();
+        LearningPlan defaultPlan = fixedPlan(7L, LearningPlanSeeder.DEFAULT_TITLE);
+
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.DEFAULT_TITLE))
             .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanSeeder.createDefaultPlan(request, "job-interview")).thenReturn(defaultPlan);
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
 
         LearningPlanResponse response = service.createDefaultLearningPlan(request);
 
         assertThat(response.getId()).isEqualTo(7L);
-        verify(learningPlanSeeder).createDefaultPlan(request, "machine-learning-interview");
+        assertThat(response.getTitle()).isEqualTo(LearningPlanSeeder.DEFAULT_TITLE);
+        verify(learningPlanSeeder).createDefaultPlan(request, "job-interview");
+        verify(learningPlanSeeder).createListeningPlan(request);
+        verify(learningPlanSeeder).createSpeakingPlan(request);
     }
 
     @Test
-    void findResponsesByUserIdReturnsLocalizedDefaultPlan() {
-        LearningPlanService service = new LearningPlanService(
-            learningPlanRepository,
-            lessonService,
-            exerciseService,
-            defaultLearningPlanCatalog,
-            learningPlanSeeder
-        );
-        LearningPlan existingPlan = jobInterviewPlan(7L, 42L, "English");
+    void findResponsesByUserIdCreatesMissingFixedPlansForExistingUserBeforeReadingPlans() {
+        LearningPlanService service = newService();
+        LearningPlan existingPlan = fixedPlan(7L, "Custom Plan");
 
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.DEFAULT_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.empty());
         when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(existingPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
-            .thenReturn(Optional.of(existingPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
-            .thenReturn(Optional.of(existingPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
-            .thenReturn(Optional.of(existingPlan));
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
 
-        List<LearningPlanResponse> responses = service.findResponsesByUserId(42L, "German");
+        List<LearningPlanResponse> responses = service.findResponsesByUserId(42L);
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).getTitle()).isEqualTo("Vorbereitung auf Vorstellungsgespräche");
-        assertThat(responses.get(0).getLanguage()).isEqualTo("German");
+        assertThat(responses).extracting(LearningPlanResponse::getTitle).containsExactly("Custom Plan");
+        verify(learningPlanSeeder, atLeastOnce())
+            .createDefaultPlan(any(CreateDefaultLearningPlanRequest.class), eq("job-interview"));
+        verify(learningPlanSeeder).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanSeeder).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
     }
 
-    @Test
-    void findResponsesByUserIdReturnsLocalizedMachineLearningPlanTitle() {
-        LearningPlanService service = new LearningPlanService(
+    private LearningPlanService newService() {
+        return new LearningPlanService(
             learningPlanRepository,
             lessonService,
             exerciseService,
             defaultLearningPlanCatalog,
-            learningPlanSeeder
+            learningPlanSeeder,
+            genAiRagLearningPlanClient,
+            userServiceClient
         );
-        LearningPlan mlPlan = LearningPlan.builder()
-            .id(8L)
-            .userId(42L)
-            .title("Machine Learning Interview Track")
-            .description("Fixed lessons for practicing machine learning interview answers in English.")
-            .goal("Prepare for machine learning interviews in English")
-            .language("English")
-            .level("Intermediate")
-            .duration("4 weeks")
-            .status(LearningStatus.NOT_STARTED.getValue())
-            .progress(0)
-            .build();
-        DefaultLearningPlanContent germanMlTemplate = new DefaultLearningPlanContent(
-            "Vorbereitung auf Machine-Learning-Interviews",
-            "Feste Lektionen zum Üben von Antworten für Machine-Learning-Interviews auf Deutsch.",
-            "4 weeks",
-            "Sich gezielt auf Machine-Learning-Interviews auf Deutsch vorbereiten",
-            "German",
-            "Intermediate",
-            "Klare technische Argumentation, konkrete Beispiele und strukturierte Erklärungen.",
-            List.of(lesson(
-                "Ein ML-Projekt vorstellen",
-                "Übe, ein ML-Projekt klar und überzeugend zu erklären.",
-                "Beschreibe ein Machine-Learning-Projekt, an dem du gearbeitet hast."
-            ))
-        );
-
-        when(defaultLearningPlanCatalog.findKeyByLocalizedTitle("Machine Learning Interview Track"))
-            .thenReturn(Optional.of("machine-learning-interview"));
-        when(defaultLearningPlanCatalog.findLocalizedByKey("machine-learning-interview", "German"))
-            .thenReturn(germanMlTemplate);
-        when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(mlPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Listening Practice"))
-            .thenReturn(Optional.of(mlPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Everyday Speaking Practice"))
-            .thenReturn(Optional.of(mlPlan));
-        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, "Job Interview Preparation"))
-            .thenReturn(Optional.of(mlPlan));
-        when(lessonService.findByPlanId(8L)).thenReturn(List.of());
-
-        List<LearningPlanResponse> responses = service.findResponsesByUserId(42L, "German");
-
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).getTitle()).isEqualTo("Vorbereitung auf Machine-Learning-Interviews");
-        assertThat(responses.get(0).getLanguage()).isEqualTo("German");
     }
 
-    private LearningPlan jobInterviewPlan(Long id, Long userId, String language) {
+    private CreateDefaultLearningPlanRequest request() {
+        return new CreateDefaultLearningPlanRequest()
+            .userId(42L)
+            .targetLanguage("German")
+            .currentLevel("A2")
+            .learningGoal("Prepare for a software engineering job interview");
+    }
+
+    private void assertBadRequestBeforeGenAi(
+        LearningPlanService service,
+        CreateAiLearningPlanRequest request,
+        String expectedMessage
+    ) {
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining(expectedMessage);
+
+        verify(userServiceClient, never()).resolveSubmittedUserId(any());
+        verify(genAiRagLearningPlanClient, never()).generate(any(CreateAiLearningPlanRequest.class));
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+    }
+
+    private void assertGeneratedPlanRejectedBeforePersisting(
+        LearningPlanService service,
+        CreateAiLearningPlanRequest request,
+        RagLearningPlanResponse generatedPlan,
+        String expectedMessage
+    ) {
+        when(userServiceClient.resolveSubmittedUserId(42L)).thenReturn(42L);
+        when(genAiRagLearningPlanClient.generate(request)).thenReturn(generatedPlan);
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining(expectedMessage);
+
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
+        verify(lessonService, never()).save(any(Lesson.class));
+        verify(exerciseService, never()).save(any(Exercise.class));
+    }
+
+    private LearningPlan fixedPlan(Long id, String title) {
         return LearningPlan.builder()
             .id(id)
-            .userId(userId)
-            .title("Job Interview Preparation")
-            .description("Fixed lessons for practicing professional job interview answers.")
-            .goal("Prepare for a professional job interview")
-            .language(language)
+            .userId(42L)
+            .title(title)
+            .description("Fixed plan")
+            .goal("Practice")
+            .language("German")
             .level("A2")
-            .duration("2 weeks")
+            .duration("1 week")
             .status(LearningStatus.NOT_STARTED.getValue())
             .progress(0)
             .build();
     }
 
-    private DefaultLessonTemplate lesson(String title, String topic, String... questions) {
-        return new DefaultLessonTemplate(
+    private void configureGeneratedPlanSaves() {
+        when(learningPlanRepository.save(any(LearningPlan.class))).thenAnswer(invocation -> {
+            LearningPlan plan = invocation.getArgument(0);
+            plan.setId(100L);
+            return plan;
+        });
+        when(lessonService.save(any(Lesson.class))).thenAnswer(invocation -> {
+            Lesson lesson = invocation.getArgument(0);
+            lesson.setId(200L + lesson.getOrderNumber());
+            return lesson;
+        });
+        when(exerciseService.save(any(Exercise.class))).thenAnswer(invocation -> {
+            Exercise exercise = invocation.getArgument(0);
+            exercise.setId(300L);
+            return exercise;
+        });
+    }
+
+    private CreateAiLearningPlanRequest aiRequest() {
+        return new CreateAiLearningPlanRequest()
+            .userId(42L)
+            .ragTopic("job interview")
+            .targetLanguage("German")
+            .currentLevel("B1")
+            .learningGoal("Prepare for an interview")
+            .durationWeeks(3)
+            .studyHoursPerWeek(4)
+            .minimumLessons(1)
+            .maximumLessons(2)
+            .exerciseTypes(List.of(ExerciseType.WRITING));
+    }
+
+    private RagLearningPlanResponse generatedPlan() {
+        return generatedPlanWithLessons(generatedLesson(1, "Interview Answers"));
+    }
+
+    private RagLearningPlanResponse generatedPlanWithLessons(RagLesson... lessons) {
+        return new RagLearningPlanResponse(
+            "Generated German Interview Plan",
+            "Grounded RAG plan",
+            "Prepare for an interview",
+            "German",
+            "B1",
+            "3 weeks",
+            List.of(lessons),
+            List.of()
+        );
+    }
+
+    private RagLesson generatedLesson(Integer orderNumber, String title) {
+        return new RagLesson(
             title,
-            topic,
-            List.of(questions).stream()
-                .map(question -> new DefaultExerciseTemplate(question, List.of()))
-                .toList()
+            "STAR answers",
+            "Structure answers with examples.",
+            orderNumber,
+            List.of("Use situation, task, action, result."),
+            List.of(new RagExercise(
+                "writing",
+                "free_text",
+                "Write a STAR answer.",
+                "A structured answer.",
+                "B1"
+            ))
         );
     }
 }

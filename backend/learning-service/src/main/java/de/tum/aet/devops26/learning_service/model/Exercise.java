@@ -31,12 +31,12 @@ public class Exercise {
     @Column(nullable = false)
     private String type;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String question;
 
     @Column(nullable = false)
     private String difficulty;
 
-    @Column(name = "expected_answer")
+    @Column(name = "expected_answer", columnDefinition = "TEXT")
     private String expectedAnswer;
 }

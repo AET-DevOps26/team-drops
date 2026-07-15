@@ -173,9 +173,11 @@ http://localhost:3000
 
 ## Production Configuration
 
-Production auth should use Helm values. Start from
-[`helm/team-drops/values-production.yaml`](../helm/team-drops/values-production.yaml)
-and replace all `CHANGE_ME` placeholders.
+The Rancher deployment uses
+[`helm/team-drops/values-rancher.yaml`](../helm/team-drops/values-rancher.yaml)
+for public issuer, internal JWKS, redirect URI, web origin, and frontend
+Keycloak URL overrides. Secrets are supplied by GitHub Actions rather than
+committed to this file.
 
 Recommended production settings:
 
@@ -184,7 +186,7 @@ auth:
   enabled: true
 
 oauth2Proxy:
-  enabled: true
+  enabled: false
 
 keycloak:
   enabled: true
@@ -193,14 +195,15 @@ keycloak:
 Important Helm implementation files:
 
 - [`helm/team-drops/values.yaml`](../helm/team-drops/values.yaml)
-- [`helm/team-drops/values-production.yaml`](../helm/team-drops/values-production.yaml)
+- [`helm/team-drops/values-rancher.yaml`](../helm/team-drops/values-rancher.yaml)
 - [`helm/team-drops/templates/keycloak.yaml`](../helm/team-drops/templates/keycloak.yaml)
 - [`helm/team-drops/templates/oauth2-proxy.yaml`](../helm/team-drops/templates/oauth2-proxy.yaml)
 - [`helm/team-drops/templates/ingress.yaml`](../helm/team-drops/templates/ingress.yaml)
 - [`helm/team-drops/templates/configmap.yaml`](../helm/team-drops/templates/configmap.yaml)
 
-In production, NGINX Ingress can validate requests before forwarding them to
-services by using `oauth2-proxy`.
+The current Rancher profile lets backend services validate bearer tokens and
+keeps `oauth2-proxy` disabled. The chart can optionally add gateway-level
+validation by enabling `oauth2-proxy`:
 
 ```text
 Browser

@@ -1,0 +1,59 @@
+monitoring:
+  alertmanager:
+    slack:
+      enabled: true
+      channel: "#team-drops-alerts"
+    email:
+      enabled: false
+    pagerduty:
+      enabled: false
+
+# Keep the complete application and monitoring stack comfortably below the
+# namespace's 6Gi limits.memory quota.
+prometheus:
+  alertmanager:
+    resources:
+      limits:
+        cpu: 100m
+        memory: 80Mi
+  kube-state-metrics:
+    resources:
+      limits:
+        cpu: 50m
+        memory: 48Mi
+  configmapReload:
+    prometheus:
+      resources:
+        limits:
+          cpu: 50m
+          memory: 48Mi
+  server:
+    resources:
+      limits:
+        cpu: 300m
+        memory: 320Mi
+
+grafana:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 160Mi
+
+loki:
+  singleBinary:
+    resources:
+      limits:
+        cpu: 300m
+        memory: 320Mi
+
+alloy:
+  alloy:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 160Mi
+  configReloader:
+    resources:
+      limits:
+        cpu: 25m
+        memory: 24Mi

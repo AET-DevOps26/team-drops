@@ -8,7 +8,9 @@ import de.tum.aet.devops26.learning_service.dto.LessonResponse;
 import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
+import de.tum.aet.devops26.learning_service.model.LessonContentBlock;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
+import de.tum.aet.devops26.learning_service.repository.LessonContentBlockRepository;
 import de.tum.aet.devops26.learning_service.repository.LessonRepository;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultExerciseTemplate;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
@@ -33,6 +35,9 @@ class LessonServiceTests {
     private ExerciseService exerciseService;
 
     @Mock
+    private LessonContentBlockRepository lessonContentBlockRepository;
+
+    @Mock
     private LearningPlanRepository learningPlanRepository;
 
     @Mock
@@ -45,9 +50,67 @@ class LessonServiceTests {
         service = new LessonService(
             lessonRepository,
             exerciseService,
+            lessonContentBlockRepository,
             learningPlanRepository,
             defaultLearningPlanCatalog
         );
+    }
+
+    @Test
+    void saveContentBlocksNormalizesGeneratedStrings() {
+        when(lessonContentBlockRepository.findByLessonIdOrderByOrderNumberAsc(7L)).thenReturn(List.of());
+        when(lessonContentBlockRepository.save(any(LessonContentBlock.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<LessonContentBlock> blocks = service.saveContentBlocks(7L, List.of(
+            " Use situation, task, action, result. ",
+            " ",
+            "Keep answers concrete."
+        ));
+
+        assertThat(blocks).hasSize(2);
+        assertThat(blocks).extracting(LessonContentBlock::getLessonId).containsOnly(7L);
+        assertThat(blocks).extracting(LessonContentBlock::getOrderNumber).containsExactly(1, 2);
+        assertThat(blocks).extracting(LessonContentBlock::getType).containsOnly("content");
+        assertThat(blocks).extracting(LessonContentBlock::getText)
+            .containsExactly("Use situation, task, action, result.", "Keep answers concrete.");
+    }
+
+    @Test
+    void toResponseIncludesStoredContentBlocks() {
+        Lesson lesson = Lesson.builder()
+            .id(7L)
+            .planId(3L)
+            .title("Interview Answers")
+            .topic("STAR answers")
+            .orderNumber(1)
+            .build();
+        when(exerciseService.findByLessonId(7L)).thenReturn(List.of(Exercise.builder()
+            .id(9L)
+            .lessonId(7L)
+            .type("free_text")
+            .question("Write a STAR answer.")
+            .difficulty("B1")
+            .expectedAnswer("A structured answer.")
+            .build()));
+        when(lessonContentBlockRepository.findByLessonIdOrderByOrderNumberAsc(7L)).thenReturn(List.of(
+            LessonContentBlock.builder()
+                .id(10L)
+                .lessonId(7L)
+                .orderNumber(1)
+                .type("content")
+                .title("Lesson content")
+                .text("Use situation, task, action, result.")
+                .build()
+        ));
+        when(exerciseService.toResponse(any(Exercise.class), any())).thenCallRealMethod();
+
+        LessonResponse response = service.toResponse(lesson);
+
+        assertThat(response.getContentBlocks()).hasSize(1);
+        assertThat(response.getContentBlocks().getFirst().getType().getValue()).isEqualTo("content");
+        assertThat(response.getContentBlocks().getFirst().getTitle()).isEqualTo("Lesson content");
+        assertThat(response.getContentBlocks().getFirst().getText()).isEqualTo("Use situation, task, action, result.");
     }
 
     @Test
@@ -112,6 +175,7 @@ class LessonServiceTests {
         when(defaultLearningPlanCatalog.findLocalizedByKey(any(), any())).thenReturn(germanTemplate);
         when(exerciseService.findByLessonId(3L)).thenReturn(exercises);
         when(exerciseService.toResponse(any(Exercise.class), any(LocalizedExercise.class))).thenCallRealMethod();
+        when(lessonContentBlockRepository.findByLessonIdOrderByOrderNumberAsc(3L)).thenReturn(List.of());
 
         LessonResponse response = service.findResponseById(3L, "German").orElseThrow();
 
@@ -143,16 +207,14 @@ class LessonServiceTests {
             .id(8L)
             .title("Machine Learning Interview Track")
             .build();
-        List<Exercise> exercises = List.of(
-            Exercise.builder()
-                .id(21L)
-                .lessonId(4L)
-                .type("free_text")
-                .question("Describe a machine learning project you worked on.")
-                .difficulty("Intermediate")
-                .expectedAnswer("Clear technical reasoning, concrete examples, and structured explanations.")
-                .build()
-        );
+        List<Exercise> exercises = List.of(Exercise.builder()
+            .id(21L)
+            .lessonId(4L)
+            .type("free_text")
+            .question("Describe a machine learning project you worked on.")
+            .difficulty("Intermediate")
+            .expectedAnswer("Clear technical reasoning, concrete examples, and structured explanations.")
+            .build());
         DefaultLearningPlanContent germanTemplate = new DefaultLearningPlanContent(
             "Vorbereitung auf Machine-Learning-Interviews",
             "Feste Lektionen zum Üben von Antworten für Machine-Learning-Interviews auf Deutsch.",
@@ -178,6 +240,7 @@ class LessonServiceTests {
         when(defaultLearningPlanCatalog.findLocalizedByKey(any(), any())).thenReturn(germanTemplate);
         when(exerciseService.findByLessonId(4L)).thenReturn(exercises);
         when(exerciseService.toResponse(any(Exercise.class), any(LocalizedExercise.class))).thenCallRealMethod();
+        when(lessonContentBlockRepository.findByLessonIdOrderByOrderNumberAsc(4L)).thenReturn(List.of());
 
         LessonResponse response = service.findResponseById(4L, "German").orElseThrow();
 

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: team-drops-monitoring-grafana-dashboards
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+data:
+  team-drops-overview.json: |
+{{ .Files.Get "dashboards/team-drops-overview.json" | nindent 4 }}
+  team-drops-logs.json: |
+{{ .Files.Get "dashboards/team-drops-logs.json" | nindent 4 }}

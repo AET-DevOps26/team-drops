@@ -1,0 +1,6 @@
+{{- if ne .Release.Namespace .Values.application.namespace }}
+{{- fail "the monitoring release must be installed in application.namespace" }}
+{{- end }}
+{{- if ne .Values.application.namespace "team-drops" }}
+{{- fail "application.namespace must remain team-drops because the bundled rules and dashboard target that namespace" }}
+{{- end }}

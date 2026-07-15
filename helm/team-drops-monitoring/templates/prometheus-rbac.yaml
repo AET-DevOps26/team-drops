@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: team-drops-monitoring-prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: team-drops-monitoring-prometheus-reader
+  namespace: {{ .Values.application.namespace }}
+  labels:
+    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus
+rules:
+  - apiGroups: [""]
+    resources: ["services", "endpoints", "pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: team-drops-monitoring-prometheus-reader
+  namespace: {{ .Values.application.namespace }}
+  labels:
+    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: team-drops-monitoring-prometheus
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: team-drops-monitoring-prometheus-reader
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: team-drops-monitoring-alloy-log-reader
+  namespace: {{ .Values.application.namespace }}
+  labels:
+    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
+    app.kubernetes.io/component: logging
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: team-drops-monitoring-alloy-log-reader
+  namespace: {{ .Values.application.namespace }}
+  labels:
+    {{- include "team-drops-monitoring.labels" . | nindent 4 }}
+    app.kubernetes.io/component: logging
+subjects:
+  - kind: ServiceAccount
+    name: team-drops-monitoring-alloy
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: team-drops-monitoring-alloy-log-reader

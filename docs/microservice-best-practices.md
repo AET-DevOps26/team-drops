@@ -22,11 +22,12 @@ Teams must define and review the OpenAPI spec collaboratively before writing any
 
 ```
 repo/
-└── api/
-    ├── openapi.yaml          # The spec — edit this, not generated files
-    ├── .redocly.yaml         # Linting config
-    └── scripts/
-        └── export_openapi.sh # Re-export from FastAPI after schema changes
+`-- api/
+    |-- openapi.yaml          # Central contract; edit this first
+    |-- redocly.yaml          # Linting configuration
+    |-- services/             # Service-specific contracts
+    `-- scripts/
+        `-- export_openapi.sh # Export and rebuild synchronized contracts
 ```
 
 ### Always version your APIs
@@ -34,8 +35,8 @@ repo/
 All routes must use a version prefix from day one:
 
 ```
-/api/v1/exercises/generate
-/api/v1/writing/evaluate
+/api/v1/users/me
+/api/v1/genai/writing/evaluate
 ```
 
 Never expose unversioned routes. This prevents breaking clients during iteration.
@@ -44,11 +45,10 @@ Never expose unversioned routes. This prevents breaking clients during iteration
 
 | Task | Command |
 |------|---------|
-| Lint spec | `npx @redocly/cli lint api/openapi.yaml` |
+| Lint spec | `npx --yes @redocly/cli lint --config api/redocly.yaml api/openapi.yaml` |
 | Export from FastAPI | `bash api/scripts/export_openapi.sh` |
-| Generate Java stubs | `openapi-generator-cli generate -i api/openapi.yaml -g spring -o services/spring-order/generated` |
-| Generate Python client | `openapi-python-client --path api/openapi.yaml --output services/py-recommender/client` |
-| Generate TypeScript SDK | `npx openapi-typescript api/openapi.yaml -o web-client/src/api.ts` |
+| Generate backend interfaces | Run `./gradlew openApiGenerate` inside the affected `backend/<service>` directory |
+| Update frontend integration | Align `frontend/src/api/client.js` and `mappers.js`; no generated frontend client is currently committed |
 | Mock server for client dev | `npx prism mock api/openapi.yaml` (runs on port 4010) |
 
 ### Never merge without linting the spec
@@ -62,16 +62,19 @@ Add to `.pre-commit-config.yaml` (already configured in this repo):
       name: Redocly OpenAPI lint
       language: node
       entry: npx --yes @redocly/cli lint
-      args: [api/openapi.yaml]
+      args: [--config, api/redocly.yaml, api/openapi.yaml]
+      pass_filenames: false
 ```
 
 ---
 
 ## 3. Security
 
-- Use OAuth2 / OIDC via an API gateway (e.g. Keycloak, Auth0). Pass JWTs in HTTP headers.
-- Each service must verify the JWT using a shared public key — never trust caller identity without verification.
-- Place the gateway as the single ingress point to centralise token validation before forwarding to services.
+- Use OAuth2/OIDC through the deployed Keycloak realm. Pass JWTs in HTTP headers.
+- Each protected service verifies the JWT against the configured issuer and
+  JWKS endpoint; never trust caller identity without verification.
+- Nginx Ingress is the public entry point. In the current Rancher profile,
+  services validate tokens and `oauth2-proxy` is disabled.
 
 ---
 
@@ -79,11 +82,16 @@ Add to `.pre-commit-config.yaml` (already configured in this repo):
 
 ### Contract testing
 
-Use [Pact](https://docs.pact.io) to verify API contract fidelity between producer (Spring Boot) and consumer (Python/TypeScript). A passing unit test suite does not prove the contract is correct.
+CI lints the central OpenAPI file and checks exported contracts for drift. Pair
+those checks with service and frontend tests whenever request or response
+behavior changes; a passing unit test suite alone does not prove contract
+compatibility.
 
 ### Service discovery
 
-Route all traffic through an API gateway (Traefik, NGINX). Avoid direct service-to-service calls across language boundaries unless they go through a generated client.
+Browser traffic uses Nginx gateway prefixes. Internal orchestration uses stable
+Kubernetes Service DNS names and contract-aligned HTTP clients. Do not expose
+Docker-only hostnames to browser code.
 
 ### Consistent error schema
 
@@ -103,7 +111,7 @@ Define this schema once in `api/openapi.yaml` and enforce it everywhere.
 
 Every PR must pass:
 
-1. OpenAPI spec lint (`npx @redocly/cli lint api/openapi.yaml`)
+1. OpenAPI spec lint using `api/redocly.yaml`
 2. Unit + integration tests
 3. Docker image build
 
@@ -123,10 +131,12 @@ Push to `ghcr.io/<org>/<service>:<tag>` with both:
 
 ## 5. Client Integration
 
-- Import the generated `api.ts` SDK in React/TypeScript — never hand-write HTTP calls.
-- Set the base URL from an environment variable: `VITE_API_URL=http://localhost:8080`
-- Use [SWR](https://swr.vercel.app) or [React Query](https://tanstack.com/query) for caching and retries.
-- Configure CORS at the gateway level, not per-service.
+- Keep browser requests in `frontend/src/api/client.js` and response adaptation
+  in `frontend/src/api/mappers.js` aligned with OpenAPI.
+- Use relative `/user-service`, `/learning-service`, and `/progress-service`
+  prefixes so Vite and Nginx can route the same client build.
+- Forward the refreshed Keycloak bearer token for protected operations.
+- Keep provider credentials and direct GenAI-provider calls out of the browser.
 
 ---
 
@@ -155,7 +165,7 @@ Push to `ghcr.io/<org>/<service>:<tag>` with both:
 
 | Rule | Why |
 |------|-----|
-| No direct HTTP calls without a generated client | Hidden formats drift and break silently |
+| No HTTP integration that contradicts OpenAPI | Hidden formats drift and break silently |
 | No shared DTOs or utilities outside the OpenAPI spec | Creates coupling between services |
 | No long-running branches (> 2 days) | Merge conflicts compound; rebase regularly |
 | No manual production deploys | Untraceable, unreproducible, risky |

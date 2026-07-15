@@ -1,0 +1,52 @@
+{{- if and .Values.monitoring.rancherServiceMonitors.enabled .Values.monitoring.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: team-drops-runtime
+  labels:
+    {{- include "team-drops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: monitoring
+    {{- with .Values.monitoring.rancherServiceMonitors.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: team-drops-runtime
+      rules:
+        - alert: TeamDropsServiceDown
+          expr: up{namespace={{ .Release.Namespace | quote }}, service=~"user-service|learning-service|progress-feedback-service|genai-service"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: team-drops
+          annotations:
+            summary: Team Drops API service is unavailable
+            description: Prometheus has been unable to scrape a Team Drops API service for two minutes.
+        - alert: TeamDropsHighErrorRate
+          expr: (sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace={{ .Release.Namespace | quote }}, status=~"5.."}[5m])) / clamp_min(sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace={{ .Release.Namespace | quote }}}[5m])), 0.001) > 0.05) and (sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace={{ .Release.Namespace | quote }}}[5m])) > 0.1)
+          for: 5m
+          labels:
+            severity: warning
+            team: team-drops
+          annotations:
+            summary: Team Drops API error rate is above 5 percent
+            description: More than 5 percent of requests have returned HTTP 5xx responses for five minutes.
+        - alert: TeamDropsSlowResponses
+          expr: (sum by (service) (rate({__name__=~"http_server_requests_seconds_sum|http_request_duration_seconds_sum", namespace={{ .Release.Namespace | quote }}}[5m])) / clamp_min(sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_request_duration_seconds_count", namespace={{ .Release.Namespace | quote }}}[5m])), 0.001) > 1.5) and (sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace={{ .Release.Namespace | quote }}}[5m])) > 0.1)
+          for: 5m
+          labels:
+            severity: warning
+            team: team-drops
+          annotations:
+            summary: Team Drops API responses are slow
+            description: Mean response latency has exceeded 1.5 seconds for five minutes while the service is receiving traffic.
+        - alert: TeamDropsPodRestartBurst
+          expr: sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total{namespace={{ .Release.Namespace | quote }}, container!="", container!="POD"}[15m])) > 5
+          for: 1m
+          labels:
+            severity: critical
+            team: team-drops
+          annotations:
+            summary: Team Drops container is restarting repeatedly
+            description: A container restarted more than five times during the last 15 minutes.
+{{- end }}

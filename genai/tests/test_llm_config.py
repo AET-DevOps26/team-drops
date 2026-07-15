@@ -1,4 +1,6 @@
-from app.llm.client import get_llm
+from unittest.mock import MagicMock
+
+from app.llm.client import get_llm, get_structured_llm
 
 
 def test_health_reports_degraded_when_openai_key_missing(client, monkeypatch):
@@ -42,3 +44,31 @@ def test_llm_endpoint_returns_503_when_openai_key_missing(client, monkeypatch):
         "code": "LLM_NOT_CONFIGURED",
         "message": "LLM provider openai requires LLM_API_KEY.",
     }
+
+
+def test_get_structured_llm_uses_strict_json_schema_for_openai(monkeypatch):
+    monkeypatch.setattr("app.config.settings.llm_provider", "openai")
+    llm = MagicMock()
+    llm.with_structured_output.return_value = "structured"
+    monkeypatch.setattr("app.llm.client.get_llm", lambda: llm)
+
+    result = get_structured_llm(dict)
+
+    assert result == "structured"
+    llm.with_structured_output.assert_called_once_with(
+        dict,
+        method="json_schema",
+        strict=True,
+    )
+
+
+def test_get_structured_llm_uses_json_schema_without_strict_for_ollama(monkeypatch):
+    monkeypatch.setattr("app.config.settings.llm_provider", "ollama")
+    llm = MagicMock()
+    llm.with_structured_output.return_value = "structured"
+    monkeypatch.setattr("app.llm.client.get_llm", lambda: llm)
+
+    result = get_structured_llm(dict)
+
+    assert result == "structured"
+    llm.with_structured_output.assert_called_once_with(dict, method="json_schema")

@@ -1,0 +1,450 @@
+application:
+  namespace: team-drops
+
+monitoring:
+  alertmanager:
+    resolveTimeout: 5m
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 3h
+    slack:
+      enabled: false
+      channel: "#team-drops-alerts"
+    email:
+      enabled: false
+      smarthost: ""
+      from: ""
+      to: ""
+      authUsername: ""
+      requireTLS: true
+    pagerduty:
+      enabled: false
+
+prometheus:
+  rbac:
+    create: false
+  serviceAccounts:
+    server:
+      create: false
+      name: team-drops-monitoring-prometheus
+  alertmanager:
+    enabled: true
+    fullnameOverride: team-drops-monitoring-alertmanager
+    persistence:
+      enabled: true
+      size: 1Gi
+    extraArgs:
+      config.file: /etc/team-drops-monitoring-alertmanager/alertmanager.yml
+    extraSecretMounts:
+      - name: team-drops-monitoring-alertmanager-config
+        mountPath: /etc/team-drops-monitoring-alertmanager
+        subPath: ""
+        secretName: team-drops-monitoring-alertmanager-config
+        readOnly: true
+      - name: team-drops-monitoring-alertmanager-credentials
+        mountPath: /etc/team-drops-monitoring-alertmanager-credentials
+        subPath: ""
+        secretName: team-drops-monitoring-alertmanager-credentials
+        readOnly: true
+        optional: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 48Mi
+      limits:
+        cpu: 100m
+        memory: 96Mi
+  kube-state-metrics:
+    enabled: true
+    fullnameOverride: team-drops-monitoring-state-metrics
+    namespaces: [team-drops]
+    collectors:
+      - deployments
+      - pods
+    rbac:
+      create: true
+      useClusterRole: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+  prometheus-node-exporter:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+  scrapeConfigs:
+    kubernetes-api-servers:
+      enabled: false
+    kubernetes-nodes:
+      enabled: false
+    kubernetes-nodes-cadvisor:
+      enabled: false
+    kubernetes-service-endpoints:
+      enabled: false
+    kubernetes-service-endpoints-slow:
+      enabled: false
+    prometheus-pushgateway:
+      enabled: false
+    kubernetes-services:
+      enabled: false
+    kubernetes-pods:
+      enabled: false
+    kubernetes-pods-slow:
+      enabled: false
+  configmapReload:
+    prometheus:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+  server:
+    fullnameOverride: team-drops-monitoring-prometheus
+    retention: 7d
+    persistentVolume:
+      enabled: true
+      accessModes: [ReadWriteOnce]
+      size: 2Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+  serverFiles:
+    alerting_rules.yml:
+      groups:
+        - name: team-drops-runtime
+          rules:
+            - alert: TeamDropsServiceDown
+              expr: up{namespace="team-drops", service=~"user-service|learning-service|progress-feedback-service|genai-service"} == 0
+              for: 2m
+              labels:
+                severity: critical
+                team: team-drops
+              annotations:
+                summary: Team Drops API service is unavailable
+                description: Prometheus has been unable to scrape a Team Drops API service for two minutes.
+            - alert: TeamDropsHighErrorRate
+              expr: (sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace="team-drops", status=~"5.."}[5m])) / clamp_min(sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace="team-drops"}[5m])), 0.001) > 0.05) and (sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace="team-drops"}[5m])) > 0.1)
+              for: 5m
+              labels:
+                severity: warning
+                team: team-drops
+              annotations:
+                summary: Team Drops API error rate is above 5 percent
+                description: More than 5 percent of requests have returned HTTP 5xx responses for five minutes.
+            - alert: TeamDropsSlowResponses
+              expr: (sum by (service) (rate({__name__=~"http_server_requests_seconds_sum|http_request_duration_seconds_sum", namespace="team-drops"}[5m])) / clamp_min(sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_request_duration_seconds_count", namespace="team-drops"}[5m])), 0.001) > 1.5) and (sum by (service) (rate({__name__=~"http_server_requests_seconds_count|http_requests_total", namespace="team-drops"}[5m])) > 0.1)
+              for: 5m
+              labels:
+                severity: warning
+                team: team-drops
+              annotations:
+                summary: Team Drops API responses are slow
+                description: Mean response latency has exceeded 1.5 seconds for five minutes while the service is receiving traffic.
+            - alert: TeamDropsPodRestartBurst
+              expr: sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total{namespace="team-drops", container!="", container!="POD"}[15m])) > 5
+              for: 1m
+              labels:
+                severity: critical
+                team: team-drops
+              annotations:
+                summary: Team Drops container is restarting repeatedly
+                description: A container restarted more than five times during the last 15 minutes.
+    prometheus.yml:
+      scrape_configs:
+        - job_name: team-drops-services
+          kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names: [team-drops]
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_service_label_monitoring]
+              action: keep
+              regex: "true"
+            - source_labels: [__meta_kubernetes_endpoint_port_name]
+              action: keep
+              regex: http
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+              target_label: __metrics_path__
+              action: replace
+            - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_component]
+              target_label: service
+              action: replace
+            - source_labels: [__meta_kubernetes_namespace]
+              target_label: namespace
+              action: replace
+        - job_name: kube-state-metrics
+          static_configs:
+            - targets: [team-drops-monitoring-state-metrics:8080]
+
+grafana:
+  fullnameOverride: team-drops-monitoring-grafana
+  # The Grafana data PVC is ReadWriteOnce. Recreate prevents a rolling update
+  # from starting a second pod on another node while the old pod owns the PVC.
+  deploymentStrategy:
+    type: Recreate
+  initChownData:
+    resources:
+      requests:
+        cpu: 5m
+        memory: 8Mi
+      limits:
+        cpu: 20m
+        memory: 32Mi
+  rbac:
+    create: true
+    namespaced: true
+  testFramework:
+    enabled: false
+  admin:
+    existingSecret: team-drops-monitoring-grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  persistence:
+    enabled: true
+    type: pvc
+    accessModes: [ReadWriteOnce]
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 200m
+      memory: 192Mi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://team-drops-monitoring-prometheus
+          access: proxy
+          isDefault: true
+        - name: Loki
+          type: loki
+          uid: loki
+          url: http://team-drops-monitoring-loki:3100
+          access: proxy
+          isDefault: false
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: Team Drops
+          type: file
+          disableDeletion: true
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards/default
+  dashboardsConfigMaps:
+    default: team-drops-monitoring-grafana-dashboards
+
+loki:
+  nameOverride: team-drops-monitoring-loki
+  fullnameOverride: team-drops-monitoring-loki
+  deploymentMode: Monolithic
+  rbac:
+    namespaced: true
+  serviceAccount:
+    automountServiceAccountToken: false
+  loki:
+    auth_enabled: false
+    automountServiceAccountToken: false
+    commonConfig:
+      path_prefix: /var/loki
+      replication_factor: 1
+      compactor_grpc_address: ""
+    storage:
+      type: filesystem
+      filesystem:
+        chunks_directory: /var/loki/chunks
+        rules_directory: /var/loki/rules
+    schemaConfig:
+      configs:
+        - from: "2024-04-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    limits_config:
+      retention_period: 72h
+      reject_old_samples: true
+      reject_old_samples_max_age: 72h
+      volume_enabled: true
+    compactor:
+      working_directory: /var/loki/compactor
+      retention_enabled: true
+      delete_request_store: filesystem
+  singleBinary:
+    replicas: 1
+    sidecar: false
+    podDisruptionBudget:
+      enabled: false
+    persistence:
+      enabled: true
+      accessModes: [ReadWriteOnce]
+      size: 2Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 96Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+  gateway:
+    enabled: false
+  lokiCanary:
+    enabled: false
+  test:
+    enabled: false
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
+  minio:
+    enabled: false
+  sidecar:
+    rules:
+      enabled: false
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+
+alloy:
+  fullnameOverride: team-drops-monitoring-alloy
+  crds:
+    create: false
+  rbac:
+    create: false
+  serviceAccount:
+    create: true
+    name: team-drops-monitoring-alloy
+    automountServiceAccountToken: true
+  global:
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 473
+      runAsGroup: 473
+      fsGroup: 473
+  controller:
+    type: deployment
+    replicas: 1
+    volumes:
+      extra:
+        - name: alloy-storage
+          emptyDir:
+            sizeLimit: 100Mi
+  alloy:
+    enableReporting: false
+    listenAddr: 0.0.0.0
+    storagePath: /tmp/alloy
+    mounts:
+      extra:
+        - name: alloy-storage
+          mountPath: /tmp/alloy
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 473
+      runAsGroup: 473
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 192Mi
+    configMap:
+      content: |-
+        logging {
+          level  = "info"
+          format = "logfmt"
+        }
+
+        discovery.kubernetes "team_drops_pods" {
+          role = "pod"
+
+          namespaces {
+            names = ["team-drops"]
+          }
+        }
+
+        discovery.relabel "team_drops_pods" {
+          targets = discovery.kubernetes.team_drops_pods.targets
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+            target_label  = "application"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_component"]
+            target_label  = "component"
+          }
+        }
+
+        loki.source.kubernetes "team_drops" {
+          targets    = discovery.relabel.team_drops_pods.output
+          forward_to = [loki.process.team_drops.receiver]
+        }
+
+        loki.process "team_drops" {
+          forward_to = [loki.write.local.receiver]
+        }
+
+        loki.write "local" {
+          endpoint {
+            url = "http://team-drops-monitoring-loki:3100/loki/api/v1/push"
+          }
+        }
+  configReloader:
+    resources:
+      requests:
+        cpu: 5m
+        memory: 16Mi
+      limits:
+        cpu: 25m
+        memory: 32Mi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
