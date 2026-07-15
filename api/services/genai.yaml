@@ -252,6 +252,37 @@ paths:
       security:
       - HTTPBearer: []
       x-service: genai-service
+  /api/v1/genai/rag/learning-plan:
+    post:
+      tags:
+      - rag
+      summary: Generate a structured learning plan from a RAG topic
+      description: Retrieves topic context from the local RAG corpus and asks the
+        configured LLM for a schema-validated learning plan that learning-service
+        can persist.
+      operationId: generateRagLearningPlan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RagLearningPlanRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagLearningPlanResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+      x-service: genai-service
   /health:
     get:
       tags:
@@ -626,6 +657,195 @@ components:
       - chunk_count
       - corpus_dir
       title: RagCorpusResponse
+    RagLearningPlanExercise:
+      properties:
+        type:
+          type: string
+          title: Type
+          description: Learning-service ExerciseType enum value
+        subtype:
+          type: string
+          title: Subtype
+          description: Learning-service ExerciseSubtype enum value
+        question:
+          type: string
+          title: Question
+        expected_answer:
+          type: string
+          title: Expected Answer
+        difficulty:
+          type: string
+          title: Difficulty
+      type: object
+      required:
+      - type
+      - subtype
+      - question
+      - expected_answer
+      - difficulty
+      title: RagLearningPlanExercise
+    RagLearningPlanLesson:
+      properties:
+        title:
+          type: string
+          title: Title
+        topic:
+          type: string
+          title: Topic
+        summary:
+          type: string
+          title: Summary
+        order_number:
+          type: integer
+          minimum: 1.0
+          title: Order Number
+        content_blocks:
+          items:
+            type: string
+          type: array
+          title: Content Blocks
+        exercises:
+          items:
+            $ref: '#/components/schemas/RagLearningPlanExercise'
+          type: array
+          minItems: 1
+          title: Exercises
+      type: object
+      required:
+      - title
+      - topic
+      - summary
+      - order_number
+      - exercises
+      title: RagLearningPlanLesson
+    RagLearningPlanRequest:
+      properties:
+        topic:
+          type: string
+          title: Topic
+          description: Folder name under RAG doc DB used as the grounding corpus
+          examples:
+          - job interview
+        learning_goal:
+          type: string
+          minLength: 1
+          title: Learning Goal
+          description: Learner's goal for the generated learning plan
+          examples:
+          - Prepare for a German job interview
+        target_language:
+          type: string
+          minLength: 1
+          title: Target Language
+          description: Language the plan should teach and use for learner-facing content
+          examples:
+          - German
+        level:
+          type: string
+          enum:
+          - A1
+          - A2
+          - B1
+          - B2
+          - C1
+          - C2
+          title: Level
+          description: Learner CEFR level
+          examples:
+          - B1
+        duration_weeks:
+          type: integer
+          maximum: 52.0
+          minimum: 1.0
+          title: Duration Weeks
+        study_hours_per_week:
+          type: integer
+          maximum: 80.0
+          minimum: 1.0
+          title: Study Hours Per Week
+        minimum_lessons:
+          type: integer
+          maximum: 24.0
+          minimum: 1.0
+          title: Minimum Lessons
+        maximum_lessons:
+          type: integer
+          maximum: 24.0
+          minimum: 1.0
+          title: Maximum Lessons
+        exercise_types:
+          items:
+            type: string
+          type: array
+          minItems: 1
+          title: Exercise Types
+          description: Learning-service-compatible exercise type names to include
+          examples:
+          - - writing
+            - speaking
+        top_k:
+          type: integer
+          maximum: 12.0
+          minimum: 1.0
+          title: Top K
+          default: 6
+        rebuild_corpus:
+          type: boolean
+          title: Rebuild Corpus
+          default: false
+      type: object
+      required:
+      - topic
+      - learning_goal
+      - target_language
+      - level
+      - duration_weeks
+      - study_hours_per_week
+      - minimum_lessons
+      - maximum_lessons
+      - exercise_types
+      title: RagLearningPlanRequest
+    RagLearningPlanResponse:
+      properties:
+        title:
+          type: string
+          title: Title
+        description:
+          type: string
+          title: Description
+        goal:
+          type: string
+          title: Goal
+        language:
+          type: string
+          title: Language
+        level:
+          type: string
+          title: Level
+        duration:
+          type: string
+          title: Duration
+        lessons:
+          items:
+            $ref: '#/components/schemas/RagLearningPlanLesson'
+          type: array
+          minItems: 1
+          title: Lessons
+        sources:
+          items:
+            $ref: '#/components/schemas/RagSource'
+          type: array
+          title: Sources
+      type: object
+      required:
+      - title
+      - description
+      - goal
+      - language
+      - level
+      - duration
+      - lessons
+      title: RagLearningPlanResponse
     RagQueryRequest:
       properties:
         topic:

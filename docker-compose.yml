@@ -68,12 +68,15 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/teamdrops
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      GENAI_SERVICE_URL: http://genai-service:8084
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-http://localhost:8090/realms/team-drops}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs}
     depends_on:
       postgres:
         condition: service_healthy
+      genai-service:
+        condition: service_started
 
   progress-feedback-service:
     build:

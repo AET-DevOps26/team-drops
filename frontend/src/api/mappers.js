@@ -122,6 +122,117 @@ function fallbackBlocks(lesson) {
   ];
 }
 
+function exerciseBlock(index) {
+  return {
+    type: 'exercise',
+    exerciseIndex: index,
+  };
+}
+
+function contentBlockTitle(block, index) {
+  const title = block.title?.trim();
+  if (title && title.toLowerCase() !== 'lesson content') {
+    return title;
+  }
+
+  return index === 0 ? 'Lesson material' : 'Key point';
+}
+
+function isGenericContentBlock(block) {
+  const title = block.title?.trim().toLowerCase();
+  return !title || title === 'lesson content';
+}
+
+function collapseGenericContentBlocks(blocks) {
+  const collapsed = [];
+  let pendingContentBlocks = [];
+
+  const flushPendingContent = () => {
+    if (pendingContentBlocks.length === 0) {
+      return;
+    }
+
+    const [overviewBlock, ...pointBlocks] = pendingContentBlocks;
+    collapsed.push({
+      ...overviewBlock,
+      title: 'Lesson material',
+      points: [
+        ...(overviewBlock.points ?? []),
+        ...pointBlocks
+          .map((block) => block.text)
+          .filter(Boolean),
+        ...pointBlocks.flatMap((block) => block.points ?? []),
+      ],
+    });
+    pendingContentBlocks = [];
+  };
+
+  blocks.forEach((block) => {
+    if (block.type === 'content' && block.genericContent) {
+      pendingContentBlocks.push(block);
+      return;
+    }
+
+    flushPendingContent();
+    collapsed.push(block);
+  });
+  flushPendingContent();
+
+  return collapsed.map(({ genericContent, ...block }) => block);
+}
+
+function hasBlankMarker(value = '') {
+  return value.includes('___') || value.includes('____') || value.toLowerCase().includes('[blank]');
+}
+
+function hasChoiceMarker(value = '') {
+  return /(^|\s|\n)[a-d][).]/i.test(value);
+}
+
+function formatExercise(subtype, fallbackFormat) {
+  switch (subtype) {
+    case 'translation':
+      return 'Translation';
+    case 'fill_in_blank':
+      return 'Fill in the blank';
+    case 'sentence_building':
+      return 'Sentence building';
+    case 'speaking_prompt':
+      return 'Spoken response';
+    case 'listening_choice':
+      return 'Listening choice';
+    case 'multiple_choice':
+      return 'Multiple choice';
+    case 'free_text':
+      return 'Short written answer';
+    default:
+      return fallbackFormat ?? 'Practice';
+  }
+}
+
+function normalizeExercisePrompt(exercise) {
+  const question = exercise.question || exercise.title || '';
+  const expectedAnswer = exercise.expected_answer ?? '';
+  const malformedFillBlank = exercise.subtype === 'fill_in_blank' && !hasBlankMarker(question);
+  const malformedChoice = ['multiple_choice', 'listening_choice'].includes(exercise.subtype) && !hasChoiceMarker(question);
+  const subtype = malformedFillBlank || malformedChoice
+    ? 'free_text'
+    : exercise.subtype;
+  let normalizedQuestion = question;
+  if (malformedFillBlank && expectedAnswer) {
+    normalizedQuestion = `Write a short German answer using these terms: ${expectedAnswer}.`;
+  } else if (malformedChoice) {
+    normalizedQuestion = `Answer this question in German: ${question}`;
+  }
+
+  return {
+    question: normalizedQuestion,
+    subtype,
+    type: malformedChoice ? 'writing' : exercise.type,
+    format: formatExercise(subtype, exercise.format),
+  };
+}
+
 export function createEmptyProgress(userId = null) {
   return {
     userId,
@@ -183,45 +294,59 @@ export function toLearningPlans(plans = []) {
 }
 
 export function toLessonDetail(lesson, planSummaryLesson) {
-  const exercises = (lesson.exercises ?? []).map((exercise) => ({
-    id: exercise.id,
-    lessonId: exercise.lesson_id,
-    type: exercise.type,
-    subtype: exercise.subtype,
-    title: exercise.question || exercise.title,
-    question: exercise.question,
-    expectedAnswer: exercise.expected_answer,
-    difficulty: exercise.difficulty,
-    status: exercise.status,
-    score: exercise.score,
-    format: exercise.format,
-    source: exercise.source,
-    keywords: exercise.keywords ?? [],
-    language: planSummaryLesson?.language,
-    grade: exercise.score,
-    task: exercise.question,
-    prompt: exercise.question,
-    feedback: null,
-    answerText: '',
-  }));
+  const exercises = (lesson.exercises ?? []).map((exercise) => {
+    const normalizedExercise = normalizeExercisePrompt(exercise);
+
+    return {
+      id: exercise.id,
+      lessonId: exercise.lesson_id,
+      type: normalizedExercise.type,
+      subtype: normalizedExercise.subtype,
+      title: normalizedExercise.question || exercise.title,
+      question: normalizedExercise.question,
+      expectedAnswer: exercise.expected_answer,
+      difficulty: exercise.difficulty,
+      status: exercise.status,
+      score: exercise.score,
+      format: normalizedExercise.format,
+      source: exercise.source,
+      keywords: exercise.keywords ?? [],
+      language: planSummaryLesson?.language,
+      grade: exercise.score,
+      task: normalizedExercise.question,
+      prompt: normalizedExercise.question,
+      feedback: null,
+      answerText: '',
+    };
+  });
 
   const exerciseIndexById = new Map(exercises.map((exercise, index) => [exercise.id, index]));
-  const blocks = (lesson.content_blocks ?? []).map((block) => {
+  const exerciseIndexesInBlocks = new Set();
+  const blocks = (lesson.content_blocks ?? []).map((block, blockIndex) => {
     if (block.type === 'exercise') {
-      return {
-        type: 'exercise',
-        exerciseIndex: exerciseIndexById.get(block.exercise_id) ?? 0,
-      };
+      const exerciseIndex = exerciseIndexById.get(block.exercise_id);
+      if (exerciseIndex === undefined) {
+        return null;
+      }
+
+      exerciseIndexesInBlocks.add(exerciseIndex);
+      return exerciseBlock(exerciseIndex);
     }
 
     return {
       type: block.type,
-      title: block.title ?? 'Lesson content',
+      title: contentBlockTitle(block, blockIndex),
       subtitle: block.subtitle ?? `${lesson.time_estimate_minutes ?? 10} min`,
       text: block.text ?? lesson.topic,
       points: block.points ?? [],
+      genericContent: isGenericContentBlock(block),
     };
-  });
+  }).filter(Boolean);
+  const missingExerciseBlocks = exercises
+    .map((_, index) => index)
+    .filter((index) => !exerciseIndexesInBlocks.has(index))
+    .map(exerciseBlock);
+  const lessonBlocks = [...collapseGenericContentBlocks(blocks), ...missingExerciseBlocks];
 
   const normalizedLesson = {
     id: lesson.id,
@@ -237,7 +362,7 @@ export function toLessonDetail(lesson, planSummaryLesson) {
     accent: planSummaryLesson?.accent ?? pickAccent((lesson.order_number ?? 1) - 1, lessonAccents),
     icon: planSummaryLesson?.icon ?? pickLessonIcon((lesson.order_number ?? 1) - 1),
     exercises,
-    blocks: blocks.length > 0 ? blocks : fallbackBlocks({
+    blocks: lessonBlocks.length > 0 ? lessonBlocks : fallbackBlocks({
       topic: lesson.topic,
       exercises,
       language: planSummaryLesson?.language,

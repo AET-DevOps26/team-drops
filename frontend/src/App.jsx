@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  createAiLearningPlan,
   createDefaultLearningPlan,
   generateListeningContent,
   getCurrentUser,
@@ -914,6 +915,29 @@ export function App() {
     }
   };
 
+  const handleCreateAiLearningPlan = async (payload) => {
+    if (!session) {
+      throw new Error('Please sign in before generating a learning plan.');
+    }
+
+    const createdPlan = await createAiLearningPlan({
+      ...payload,
+      user_id: session.user.id,
+      target_language: profile.targetLanguage,
+      current_level: profile.currentLevel,
+    }, session.accessToken);
+
+    const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+    const createdPlanIndex = syncResult.nextLearningPlans.findIndex((plan) => plan.id === createdPlan.id);
+    setSelectedPlan(createdPlanIndex >= 0 ? createdPlanIndex : 0);
+    setSelectedLesson(0);
+    setSelectedExercise(0);
+    setLearningMode('training');
+    setLearningStep('lessons');
+
+    return createdPlan;
+  };
+
   const goBackInLearning = () => {
     if (learningStep === 'exercise') {
       setLearningStep('lesson');
@@ -983,6 +1007,7 @@ export function App() {
               listeningError={listeningError}
               listeningLoading={listeningLoading}
               listeningSelections={listeningSelections}
+              profile={profile}
               t={t}
               onBack={goBackInLearning}
               onLearningMode={changeLearningMode}
@@ -996,6 +1021,7 @@ export function App() {
                 setListeningSelections((prev) => ({ ...prev, [qIndex]: optionText }))
               }
               onSubmitAnswer={handleSubmitAnswer}
+              onCreateAiLearningPlan={handleCreateAiLearningPlan}
               onSubmitSpeakingAnswer={handleSubmitSpeakingAnswer}
             />
           )}

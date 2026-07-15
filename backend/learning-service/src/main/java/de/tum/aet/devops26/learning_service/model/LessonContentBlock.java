@@ -13,27 +13,34 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "lessons")
+@Table(name = "lesson_content_blocks")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Lesson {
+public class LessonContentBlock {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "plan_id", nullable = false)
-    private Long planId;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String title;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String topic;
+    @Column(name = "lesson_id", nullable = false)
+    private Long lessonId;
 
     @Column(name = "order_number", nullable = false)
     private Integer orderNumber;
+
+    @Column(nullable = false)
+    private String type;
+
+    private String title;
+
+    private String subtitle;
+
+    @Column(columnDefinition = "TEXT")
+    private String text;
+
+    @Column(name = "points_json", columnDefinition = "TEXT")
+    private String pointsJson;
 }

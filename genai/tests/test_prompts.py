@@ -2,7 +2,7 @@ from app.prompts.corrections import corrections_prompt
 from app.prompts.exercises import exercises_prompt
 from app.prompts.listening import listening_questions_prompt, listening_script_prompt
 from app.prompts.practice import practice_prompt
-from app.prompts.rag import rag_prompt
+from app.prompts.rag import rag_learning_plan_prompt, rag_prompt
 from app.prompts.speaking import speaking_prompt
 from app.prompts.writing import writing_prompt
 
@@ -60,6 +60,18 @@ def test_prompt_input_variables_match_router_payloads():
         "target_language",
     }
     assert set(rag_prompt.input_variables) == {"context", "question", "topic"}
+    assert set(rag_learning_plan_prompt.input_variables) == {
+        "context",
+        "duration_weeks",
+        "exercise_types",
+        "learning_goal",
+        "level",
+        "maximum_lessons",
+        "minimum_lessons",
+        "study_hours_per_week",
+        "target_language",
+        "topic",
+    }
 
 
 def test_evaluation_prompts_include_rubrics_and_target_language_feedback():
@@ -99,6 +111,7 @@ def test_conversation_correction_and_rag_prompts_include_guardrails():
     practice_text = _prompt_text(practice_prompt)
     corrections_text = _prompt_text(corrections_prompt)
     rag_text = _prompt_text(rag_prompt)
+    rag_learning_plan_text = _prompt_text(rag_learning_plan_prompt)
 
     assert "Keep the conversation moving with one natural follow-up question" in practice_text
     assert "Do not correct grammar or vocabulary during the conversation turn" in practice_text
@@ -108,3 +121,10 @@ def test_conversation_correction_and_rag_prompts_include_guardrails():
 
     assert "Use only the retrieved context" in rag_text
     assert "Do not invent facts, citations, filenames, or page numbers" in rag_text
+    assert "Use only the retrieved context" in rag_learning_plan_text
+    assert "exactly between {minimum_lessons} and {maximum_lessons} lessons" in rag_learning_plan_text
+    assert "reading, writing, listening, speaking" in rag_learning_plan_text
+    assert "Do not invent unsupported enum spellings or hyphenated values" in rag_learning_plan_text
+    assert "Every exercise question must be self-contained" in rag_learning_plan_text
+    assert "For fill_in_blank, include the full sentence with explicit ___ blanks" in rag_learning_plan_text
+    assert "contains the actual blanks to fill" in rag_learning_plan_text

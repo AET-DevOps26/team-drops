@@ -32,6 +32,7 @@ export function LearningPage({
   listeningError,
   listeningLoading,
   listeningSelections,
+  profile,
   t,
   onBack,
   onLearningMode,
@@ -41,6 +42,7 @@ export function LearningPage({
   onOpenPlanDetail,
   onOpenSettings,
   onListeningSelect,
+  onCreateAiLearningPlan,
   onSubmitAnswer,
   onSubmitSpeakingAnswer,
   onOpenLesson,
@@ -159,7 +161,11 @@ export function LearningPage({
             ) : null}
           </>
         ) : learningMode === 'rag' ? (
-          <RagLearningFlow t={t} />
+          <RagLearningFlow
+            profile={profile}
+            t={t}
+            onCreateAiLearningPlan={onCreateAiLearningPlan}
+          />
         ) : (
           <AiTrainingPlaceholder t={t} />
         )}
@@ -190,6 +196,12 @@ const ragTopics = [
   },
 ];
 
+const ragPlanLimits = {
+  durationWeeks: { min: 1, max: 52 },
+  studyHoursPerWeek: { min: 1, max: 80 },
+  lessons: { min: 1, max: 24 },
+};
+
 function AiTrainingPlaceholder({ t }) {
   return (
     <section className="ai-plan-form" aria-label="AI training">
@@ -207,7 +219,7 @@ function AiTrainingPlaceholder({ t }) {
   );
 }
 
-function RagLearningFlow({ t }) {
+function RagLearningFlow({ profile, t, onCreateAiLearningPlan }) {
   const [selectedTopic, setSelectedTopic] = React.useState(null);
 
   if (!selectedTopic) {
@@ -216,9 +228,11 @@ function RagLearningFlow({ t }) {
 
   return (
     <AiLearningPlanForm
+      profile={profile}
       selectedTopic={selectedTopic}
       t={t}
       onBackToTopics={() => setSelectedTopic(null)}
+      onCreateAiLearningPlan={onCreateAiLearningPlan}
     />
   );
 }
@@ -258,11 +272,27 @@ function RagTopicPicker({ t, onSelectTopic }) {
   );
 }
 
-function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
+function AiLearningPlanForm({ profile, selectedTopic, t, onBackToTopics, onCreateAiLearningPlan }) {
   const [selectedExerciseTypes, setSelectedExerciseTypes] = React.useState(
     exerciseTypeOptions.filter((type) => !isComingSoonType(type.id)).map((type) => type.id),
   );
-  const aiUnavailableMessage = 'RAG plan generation needs the backend learning service and GenAI integration to be available.';
+  const [formValues, setFormValues] = React.useState({
+    learningGoal: profile?.learningGoal || '',
+    durationWeeks: '4',
+    studyHoursPerWeek: '5',
+    minimumLessons: '3',
+    maximumLessons: '6',
+  });
+  const [pending, setPending] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [successMessage, setSuccessMessage] = React.useState('');
+
+  const updateField = (field, value) => {
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      [field]: value,
+    }));
+  };
 
   const toggleExerciseType = (exerciseType) => {
     if (isComingSoonType(exerciseType)) {
@@ -277,8 +307,45 @@ function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
     );
   };
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+    setSuccessMessage('');
+
+    const minimumLessons = Number.parseInt(formValues.minimumLessons, 10);
+    const maximumLessons = Number.parseInt(formValues.maximumLessons, 10);
+
+    if (selectedExerciseTypes.length === 0) {
+      setError('Choose at least one exercise type.');
+      return;
+    }
+
+    if (minimumLessons > maximumLessons) {
+      setError('Minimum lessons cannot exceed maximum lessons.');
+      return;
+    }
+
+    setPending(true);
+    try {
+      const createdPlan = await onCreateAiLearningPlan({
+        rag_topic: selectedTopic.id,
+        learning_goal: formValues.learningGoal.trim() || profile?.learningGoal || selectedTopic.title,
+        duration_weeks: Number.parseInt(formValues.durationWeeks, 10),
+        study_hours_per_week: Number.parseInt(formValues.studyHoursPerWeek, 10),
+        minimum_lessons: minimumLessons,
+        maximum_lessons: maximumLessons,
+        exercise_types: selectedExerciseTypes,
+      });
+      setSuccessMessage(`Created ${createdPlan.title || 'learning plan'}.`);
+    } catch (submitError) {
+      setError(submitError.message || 'Unable to generate a learning plan.');
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
-    <form className="ai-plan-form" aria-label="AI learning plan generator">
+    <form className="ai-plan-form" aria-label="AI learning plan generator" onSubmit={handleSubmit}>
       <section className="ai-form-hero">
         <span className="ai-form-icon">
           <Target size={24} aria-hidden="true" />
@@ -294,14 +361,17 @@ function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
         {selectedTopic.title}
       </button>
 
-      <p className="auth-error ai-plan-notice" role="status">{aiUnavailableMessage}</p>
+      {error && <p className="auth-error ai-plan-notice" role="alert">{error}</p>}
+      {successMessage && <p className="auth-success ai-plan-notice" role="status">{successMessage}</p>}
 
       <label className="ai-form-field ai-form-field-full">
         <span>Main learning plan description / goal</span>
         <textarea
           name="learningGoal"
+          onChange={(event) => updateField('learningGoal', event.target.value)}
           placeholder="Example: Prepare for a German job interview with technical project questions."
           rows={4}
+          value={formValues.learningGoal}
         />
       </label>
 
@@ -311,7 +381,16 @@ function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
             <CalendarRange size={15} aria-hidden="true" />
             Duration
           </span>
-          <input inputMode="numeric" min="1" name="durationWeeks" placeholder="4" type="number" />
+          <input
+            inputMode="numeric"
+            min={ragPlanLimits.durationWeeks.min}
+            max={ragPlanLimits.durationWeeks.max}
+            name="durationWeeks"
+            onChange={(event) => updateField('durationWeeks', event.target.value)}
+            required
+            type="number"
+            value={formValues.durationWeeks}
+          />
           <small>weeks</small>
         </label>
 
@@ -320,7 +399,16 @@ function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
             <Clock3 size={15} aria-hidden="true" />
             Study time
           </span>
-          <input inputMode="numeric" min="1" name="studyHoursPerWeek" placeholder="5" type="number" />
+          <input
+            inputMode="numeric"
+            min={ragPlanLimits.studyHoursPerWeek.min}
+            max={ragPlanLimits.studyHoursPerWeek.max}
+            name="studyHoursPerWeek"
+            onChange={(event) => updateField('studyHoursPerWeek', event.target.value)}
+            required
+            type="number"
+            value={formValues.studyHoursPerWeek}
+          />
           <small>hrs / week</small>
         </label>
 
@@ -329,7 +417,16 @@ function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
             <ListChecks size={15} aria-hidden="true" />
             Maximum lessons
           </span>
-          <input inputMode="numeric" min="1" name="maximumLessons" placeholder="12" type="number" />
+          <input
+            inputMode="numeric"
+            min={ragPlanLimits.lessons.min}
+            max={ragPlanLimits.lessons.max}
+            name="maximumLessons"
+            onChange={(event) => updateField('maximumLessons', event.target.value)}
+            required
+            type="number"
+            value={formValues.maximumLessons}
+          />
         </label>
 
         <label className="ai-form-field">
@@ -337,7 +434,16 @@ function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
             <ListChecks size={15} aria-hidden="true" />
             Minimum lessons
           </span>
-          <input inputMode="numeric" min="1" name="minimumLessons" placeholder="6" type="number" />
+          <input
+            inputMode="numeric"
+            min={ragPlanLimits.lessons.min}
+            max={ragPlanLimits.lessons.max}
+            name="minimumLessons"
+            onChange={(event) => updateField('minimumLessons', event.target.value)}
+            required
+            type="number"
+            value={formValues.minimumLessons}
+          />
         </label>
       </div>
 
@@ -362,9 +468,9 @@ function AiLearningPlanForm({ selectedTopic, t, onBackToTopics }) {
         </div>
       </fieldset>
 
-      <button className="ai-generate-button" disabled type="button">
+      <button className="ai-generate-button" disabled={pending || selectedExerciseTypes.length === 0} type="submit">
         <Sparkles size={18} aria-hidden="true" />
-        Backend required
+        {pending ? 'Generating...' : t.generateLearningPlan}
       </button>
     </form>
   );
@@ -642,6 +748,31 @@ function isComingSoonType() {
 function isSpeakingExercise(exercise) {
   const subtype = exercise?.subtype ?? '';
   return exercise?.type === 'speaking' || subtype.toLowerCase().includes('speaking');
+}
+
+function shouldShowReferenceAnswer(exercise) {
+  return exercise?.status === 'finished'
+    || exercise?.score != null
+    || Boolean(exercise?.answerText)
+    || Boolean(exercise?.feedback);
+}
+
+function ReferenceAnswerCard({ exercise, fallback }) {
+  const revealAnswer = shouldShowReferenceAnswer(exercise);
+
+  return (
+    <section className="summary-card">
+      <div className="section-heading">
+        <h3>Reference answer</h3>
+        <span>{revealAnswer ? formatExerciseLabel(exercise.subtype ?? exercise.type) : 'After submission'}</span>
+      </div>
+      <p>
+        {revealAnswer
+          ? exercise.expectedAnswer ?? fallback
+          : 'Submit your answer to reveal the reference answer.'}
+      </p>
+    </section>
+  );
 }
 
 function ListeningExerciseView({
@@ -922,13 +1053,7 @@ function SpeakingExerciseView({ activeExercise, answerError, answerPending, onSu
         <p>{activeExercise.task}</p>
       </section>
 
-      <section className="summary-card">
-        <div className="section-heading">
-          <h3>Expected answer</h3>
-          <span>{formatExerciseLabel(activeExercise.subtype ?? activeExercise.type)}</span>
-        </div>
-        <p>{activeExercise.expectedAnswer ?? 'Open-ended speaking exercise.'}</p>
-      </section>
+      <ReferenceAnswerCard exercise={activeExercise} fallback="Open-ended speaking exercise." />
 
       <form className="summary-card speaking-recorder" onSubmit={handleSubmit}>
         <div className="section-heading">
@@ -1053,13 +1178,7 @@ function ExerciseDetailView({ activeExercise, answerError, answerPending, onSubm
         )}
       </section>
 
-      <section className="summary-card">
-        <div className="section-heading">
-          <h3>Expected answer</h3>
-          <span>{activeExercise.type}</span>
-        </div>
-        <p>{activeExercise.expectedAnswer ?? 'Open-ended exercise.'}</p>
-      </section>
+      <ReferenceAnswerCard exercise={activeExercise} fallback="Open-ended exercise." />
 
       <form className="summary-card" onSubmit={handleSubmit}>
         <div className="section-heading">
