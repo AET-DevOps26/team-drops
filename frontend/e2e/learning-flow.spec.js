@@ -118,5 +118,6 @@ test('learner can bypass auth and open a lesson exercise end to end', async ({ p
 
   await page.getByRole('button', { name: /Write a concise professional introduction/ }).click();
   await expect(page.getByRole('heading', { name: 'Exercise' })).toBeVisible();
-  await expect(page.getByText('A concise introduction with background, motivation, and target role.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Task' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Submit answer' })).toBeVisible();
 });
