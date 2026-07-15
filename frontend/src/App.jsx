@@ -41,6 +41,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LanguagePage } from './pages/LanguagePage';
 import { LearningPage } from './pages/LearningPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { hasReviewedAnswer } from './utils/exercises';
 import { getRecentFinishedLessons, getRecentLessons } from './utils/learning';
 
 const defaultProfile = {
@@ -50,6 +51,10 @@ const defaultProfile = {
   currentLevel: 'A2',
   learningGoal: 'Prepare for a software engineering job interview',
 };
+
+function isReviewedListeningExercise(exercise) {
+  return exercise?.type === 'listening' && hasReviewedAnswer(exercise);
+}
 
 const introPendingKey = 'teamDropsIntroPending';
 
@@ -729,6 +734,12 @@ export function App() {
       setListeningContent(null);
       setListeningSelections({});
       setListeningError('');
+
+      if (isReviewedListeningExercise(exercise)) {
+        setListeningLoading(false);
+        return;
+      }
+
       setListeningLoading(true);
       generateListeningContent(
         exercise.id,
@@ -744,6 +755,53 @@ export function App() {
       }).finally(() => {
         if (listeningRequestIdRef.current === requestId) setListeningLoading(false);
       });
+    }
+  };
+
+  const handleRetryListeningExercise = async (exercise) => {
+    const currentExercise = activeLesson.exercises[selectedExercise];
+
+    if (
+      !exercise?.id
+      || !activeLesson?.id
+      || currentExercise?.id !== exercise.id
+      || !isReviewedListeningExercise(currentExercise)
+    ) {
+      setListeningError('Open the reviewed listening exercise before retrying.');
+      return;
+    }
+
+    const requestId = ++listeningRequestIdRef.current;
+    setListeningContent(null);
+    setListeningSelections({});
+    setListeningError('');
+    setListeningLoading(true);
+
+    try {
+      const content = await generateListeningContent(
+        exercise.id,
+        activeLesson.id,
+        profile.targetLanguage,
+        profile.currentLevel,
+        session?.accessToken,
+      );
+
+      if (listeningRequestIdRef.current === requestId) {
+        setListeningContent(content);
+        return content;
+      }
+
+      return null;
+    } catch (error) {
+      if (listeningRequestIdRef.current === requestId) {
+        setListeningError(error.message || 'Unable to load listening exercise.');
+      }
+
+      return null;
+    } finally {
+      if (listeningRequestIdRef.current === requestId) {
+        setListeningLoading(false);
+      }
     }
   };
 
@@ -1020,6 +1078,7 @@ export function App() {
               onListeningSelect={(qIndex, optionText) =>
                 setListeningSelections((prev) => ({ ...prev, [qIndex]: optionText }))
               }
+              onRetryListeningExercise={handleRetryListeningExercise}
               onSubmitAnswer={handleSubmitAnswer}
               onCreateAiLearningPlan={handleCreateAiLearningPlan}
               onSubmitSpeakingAnswer={handleSubmitSpeakingAnswer}
