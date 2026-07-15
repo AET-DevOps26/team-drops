@@ -79,7 +79,16 @@ describe('frontend data mapper unit behavior', () => {
             difficulty: 'A2',
           },
         ],
-        content_blocks: [],
+        content_blocks: [
+          {
+            type: 'content',
+            title: 'Kernidee',
+            subtitle: '12 min',
+            text: 'Introduce yourself clearly.',
+          },
+          { type: 'exercise', exercise_id: 100 },
+          { type: 'exercise', exercise_id: 101 },
+        ],
       },
       { language: 'German', accent: 'blue' },
     );
