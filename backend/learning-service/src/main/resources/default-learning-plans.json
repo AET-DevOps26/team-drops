@@ -207,6 +207,795 @@
     }
   },
   {
+    "key": "software-engineering-interview",
+    "languages": {
+      "English": {
+        "title": "Software Engineering Interview Track",
+        "description": "Premade lessons for practicing software engineering interview answers.",
+        "duration": "3 weeks",
+        "defaultGoal": "Prepare for software engineering interviews",
+        "defaultLanguage": "English",
+        "defaultLevel": "Intermediate",
+        "defaultExpectedAnswer": "Answer like a software engineering interview candidate: be structured, concrete, and include tradeoffs or examples where useful.",
+        "lessons": [
+          {
+            "title": "Introduction and Role Fit",
+            "topic": "Practice concise answers about your background, motivation, and fit for a software engineering role.",
+            "exercises": [
+              {
+                "question": "Tell me about yourself as a software engineering candidate.",
+                "keywords": [
+                  "background",
+                  "technical strengths",
+                  "projects",
+                  "motivation",
+                  "role fit"
+                ]
+              },
+              {
+                "question": "Why are you interested in this software engineering role?",
+                "keywords": [
+                  "company",
+                  "product",
+                  "team",
+                  "learning goals",
+                  "impact"
+                ]
+              },
+              {
+                "question": "What kind of engineering problems do you enjoy solving?",
+                "keywords": [
+                  "problem type",
+                  "example",
+                  "technical curiosity",
+                  "user impact",
+                  "collaboration"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Project Deep Dive",
+            "topic": "Explain a project with clear context, your contribution, technical decisions, and measurable outcome.",
+            "exercises": [
+              {
+                "question": "Describe a software project you are proud of.",
+                "keywords": [
+                  "problem",
+                  "users",
+                  "architecture",
+                  "personal contribution",
+                  "result"
+                ]
+              },
+              {
+                "question": "What was the hardest technical decision in that project?",
+                "keywords": [
+                  "options",
+                  "constraints",
+                  "tradeoff",
+                  "decision",
+                  "outcome"
+                ]
+              },
+              {
+                "question": "What would you improve if you rebuilt the project today?",
+                "keywords": [
+                  "reflection",
+                  "maintainability",
+                  "testing",
+                  "scalability",
+                  "lesson learned"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Debugging and Problem Solving",
+            "topic": "Practice explaining how you diagnose bugs, isolate root causes, and verify fixes.",
+            "exercises": [
+              {
+                "question": "Tell me about a difficult bug you fixed.",
+                "keywords": [
+                  "symptom",
+                  "investigation",
+                  "root cause",
+                  "fix",
+                  "verification"
+                ]
+              },
+              {
+                "question": "How do you debug a production issue you cannot reproduce locally?",
+                "keywords": [
+                  "logs",
+                  "metrics",
+                  "reproduction",
+                  "hypothesis",
+                  "rollback"
+                ]
+              },
+              {
+                "question": "How do you decide whether a bug fix needs a regression test?",
+                "keywords": [
+                  "risk",
+                  "coverage",
+                  "regression",
+                  "edge case",
+                  "automation"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Architecture and System Design",
+            "topic": "Practice high-level design answers with requirements, components, data flow, and constraints.",
+            "exercises": [
+              {
+                "question": "How would you design a simple URL shortener?",
+                "keywords": [
+                  "requirements",
+                  "API",
+                  "database",
+                  "short code",
+                  "scalability"
+                ]
+              },
+              {
+                "question": "How would you explain the difference between monoliths and microservices?",
+                "keywords": [
+                  "deployment",
+                  "coupling",
+                  "team ownership",
+                  "complexity",
+                  "tradeoffs"
+                ]
+              },
+              {
+                "question": "What information do you clarify before starting a system design answer?",
+                "keywords": [
+                  "functional requirements",
+                  "non-functional requirements",
+                  "traffic",
+                  "data",
+                  "constraints"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "APIs and Databases",
+            "topic": "Practice explaining API design, persistence choices, and data consistency.",
+            "exercises": [
+              {
+                "question": "What makes a REST API easy for other developers to use?",
+                "keywords": [
+                  "resource naming",
+                  "status codes",
+                  "validation",
+                  "errors",
+                  "documentation"
+                ]
+              },
+              {
+                "question": "When would you choose a relational database instead of a document database?",
+                "keywords": [
+                  "schema",
+                  "relationships",
+                  "transactions",
+                  "queries",
+                  "consistency"
+                ]
+              },
+              {
+                "question": "How would you handle a breaking API change?",
+                "keywords": [
+                  "versioning",
+                  "backward compatibility",
+                  "migration",
+                  "communication",
+                  "deprecation"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Testing and Code Quality",
+            "topic": "Practice talking about tests, maintainability, reviews, and quality tradeoffs.",
+            "exercises": [
+              {
+                "question": "How do you decide what tests to write for a new feature?",
+                "keywords": [
+                  "unit tests",
+                  "integration tests",
+                  "edge cases",
+                  "risk",
+                  "acceptance criteria"
+                ]
+              },
+              {
+                "question": "What do you look for when reviewing another engineer's pull request?",
+                "keywords": [
+                  "correctness",
+                  "readability",
+                  "maintainability",
+                  "tests",
+                  "security"
+                ]
+              },
+              {
+                "question": "How do you balance clean code with delivery deadlines?",
+                "keywords": [
+                  "scope",
+                  "technical debt",
+                  "risk",
+                  "communication",
+                  "follow-up"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Collaboration and Communication",
+            "topic": "Practice behavioral answers for teamwork, feedback, conflict, and explaining technical topics.",
+            "exercises": [
+              {
+                "question": "Tell me about a time you disagreed with a teammate about a technical decision.",
+                "keywords": [
+                  "context",
+                  "disagreement",
+                  "evidence",
+                  "compromise",
+                  "outcome"
+                ]
+              },
+              {
+                "question": "How do you explain a technical problem to a non-technical stakeholder?",
+                "keywords": [
+                  "audience",
+                  "plain language",
+                  "impact",
+                  "options",
+                  "recommendation"
+                ]
+              },
+              {
+                "question": "How do you ask for help when you are stuck?",
+                "keywords": [
+                  "attempts",
+                  "specific question",
+                  "context",
+                  "timebox",
+                  "learning"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Tradeoffs and Ownership",
+            "topic": "Practice mature engineering answers about constraints, prioritization, ownership, and learning from mistakes.",
+            "exercises": [
+              {
+                "question": "Tell me about a tradeoff you made between speed and quality.",
+                "keywords": [
+                  "deadline",
+                  "quality bar",
+                  "risk",
+                  "stakeholders",
+                  "follow-up"
+                ]
+              },
+              {
+                "question": "Describe a mistake you made in a software project and what you learned.",
+                "keywords": [
+                  "mistake",
+                  "impact",
+                  "ownership",
+                  "fix",
+                  "prevention"
+                ]
+              },
+              {
+                "question": "How do you prioritize engineering tasks when everything feels important?",
+                "keywords": [
+                  "user impact",
+                  "urgency",
+                  "dependencies",
+                  "risk",
+                  "communication"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Listening and Speaking Interview Practice",
+            "topic": "Practice listening to software engineering interview answers and recording spoken responses for common interview prompts.",
+            "exercises": [
+              {
+                "question": "AI listening exercise 1: software engineering interview self-introduction",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "background",
+                  "technical strengths",
+                  "motivation",
+                  "role fit"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: software project interview explanation",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "project",
+                  "role",
+                  "technical decision",
+                  "result"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: debugging interview answer",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "symptom",
+                  "root cause",
+                  "fix",
+                  "verification"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: software system design interview",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "requirements",
+                  "API",
+                  "database",
+                  "tradeoffs"
+                ]
+              },
+              {
+                "question": "Record a 45-second answer to: Tell me about yourself as a software engineering candidate.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Mention your background, studies or experience, technical strengths, and one professional goal.",
+                "keywords": [
+                  "background",
+                  "technical strengths",
+                  "professional goal"
+                ]
+              },
+              {
+                "question": "Record how you would answer: Describe a software project you are proud of.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Describe the problem, your role, important technical decisions, and the result.",
+                "keywords": [
+                  "problem",
+                  "role",
+                  "technical decisions",
+                  "result"
+                ]
+              },
+              {
+                "question": "Record how you would answer: What makes a REST API easy for other developers to use?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Mention resource naming, status codes, validation, error responses, and documentation.",
+                "keywords": [
+                  "resource naming",
+                  "status codes",
+                  "validation",
+                  "documentation"
+                ]
+              },
+              {
+                "question": "Record how you would answer: How do you prioritize engineering tasks when everything feels important?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Mention user impact, urgency, dependencies, risk, and communication.",
+                "keywords": [
+                  "user impact",
+                  "urgency",
+                  "dependencies",
+                  "risk"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "German": {
+        "title": "Vorbereitung auf Software-Engineering-Interviews",
+        "description": "Vorgefertigte Lektionen zum Üben von Antworten in Software-Engineering-Interviews.",
+        "duration": "3 weeks",
+        "defaultGoal": "Sich auf Software-Engineering-Interviews vorbereiten",
+        "defaultLanguage": "German",
+        "defaultLevel": "Intermediate",
+        "defaultExpectedAnswer": "Antworte wie in einem Software-Engineering-Interview: strukturiert, konkret und mit sinnvollen Beispielen oder Abwägungen.",
+        "lessons": [
+          {
+            "title": "Vorstellung und Rollenpassung",
+            "topic": "Übe kurze Antworten zu deinem Hintergrund, deiner Motivation und deiner Passung für eine Software-Engineering-Rolle.",
+            "exercises": [
+              {
+                "question": "Erzählen Sie mir etwas über sich als Kandidatin oder Kandidat im Software Engineering.",
+                "keywords": [
+                  "Hintergrund",
+                  "technische Stärken",
+                  "Projekte",
+                  "Motivation",
+                  "Rollenpassung"
+                ]
+              },
+              {
+                "question": "Warum interessieren Sie sich für diese Software-Engineering-Rolle?",
+                "keywords": [
+                  "Unternehmen",
+                  "Produkt",
+                  "Team",
+                  "Lernziele",
+                  "Wirkung"
+                ]
+              },
+              {
+                "question": "Welche technischen Probleme lösen Sie besonders gern?",
+                "keywords": [
+                  "Problemtyp",
+                  "Beispiel",
+                  "technische Neugier",
+                  "Nutzereffekt",
+                  "Zusammenarbeit"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Projekt vertiefen",
+            "topic": "Erkläre ein Projekt mit Kontext, deinem Beitrag, technischen Entscheidungen und messbarem Ergebnis.",
+            "exercises": [
+              {
+                "question": "Beschreiben Sie ein Softwareprojekt, auf das Sie stolz sind.",
+                "keywords": [
+                  "Problem",
+                  "Nutzer",
+                  "Architektur",
+                  "eigener Beitrag",
+                  "Ergebnis"
+                ]
+              },
+              {
+                "question": "Was war die schwierigste technische Entscheidung in diesem Projekt?",
+                "keywords": [
+                  "Optionen",
+                  "Einschränkungen",
+                  "Abwägung",
+                  "Entscheidung",
+                  "Ergebnis"
+                ]
+              },
+              {
+                "question": "Was würden Sie verbessern, wenn Sie das Projekt heute neu bauen würden?",
+                "keywords": [
+                  "Reflexion",
+                  "Wartbarkeit",
+                  "Tests",
+                  "Skalierbarkeit",
+                  "Lernerfahrung"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Debugging und Problemlösung",
+            "topic": "Übe zu erklären, wie du Fehler analysierst, Ursachen findest und Korrekturen überprüfst.",
+            "exercises": [
+              {
+                "question": "Erzählen Sie von einem schwierigen Fehler, den Sie behoben haben.",
+                "keywords": [
+                  "Symptom",
+                  "Analyse",
+                  "Ursache",
+                  "Korrektur",
+                  "Überprüfung"
+                ]
+              },
+              {
+                "question": "Wie debuggen Sie ein Produktionsproblem, das Sie lokal nicht reproduzieren können?",
+                "keywords": [
+                  "Logs",
+                  "Metriken",
+                  "Reproduktion",
+                  "Hypothese",
+                  "Rollback"
+                ]
+              },
+              {
+                "question": "Wie entscheiden Sie, ob eine Fehlerbehebung einen Regressionstest braucht?",
+                "keywords": [
+                  "Risiko",
+                  "Testabdeckung",
+                  "Regression",
+                  "Randfall",
+                  "Automatisierung"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Architektur und Systemdesign",
+            "topic": "Übe Systemdesign-Antworten mit Anforderungen, Komponenten, Datenfluss und Einschränkungen.",
+            "exercises": [
+              {
+                "question": "Wie würden Sie einen einfachen URL-Shortener entwerfen?",
+                "keywords": [
+                  "Anforderungen",
+                  "API",
+                  "Datenbank",
+                  "Kurzcode",
+                  "Skalierbarkeit"
+                ]
+              },
+              {
+                "question": "Wie erklären Sie den Unterschied zwischen Monolithen und Microservices?",
+                "keywords": [
+                  "Deployment",
+                  "Kopplung",
+                  "Teamverantwortung",
+                  "Komplexität",
+                  "Abwägungen"
+                ]
+              },
+              {
+                "question": "Welche Informationen klären Sie, bevor Sie eine Systemdesign-Antwort beginnen?",
+                "keywords": [
+                  "funktionale Anforderungen",
+                  "nicht-funktionale Anforderungen",
+                  "Traffic",
+                  "Daten",
+                  "Einschränkungen"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "APIs und Datenbanken",
+            "topic": "Übe Antworten zu API-Design, Persistenzentscheidungen und Datenkonsistenz.",
+            "exercises": [
+              {
+                "question": "Was macht eine REST-API für andere Entwickler einfach nutzbar?",
+                "keywords": [
+                  "Ressourcennamen",
+                  "Statuscodes",
+                  "Validierung",
+                  "Fehler",
+                  "Dokumentation"
+                ]
+              },
+              {
+                "question": "Wann würden Sie eine relationale Datenbank statt einer Dokumentendatenbank wählen?",
+                "keywords": [
+                  "Schema",
+                  "Beziehungen",
+                  "Transaktionen",
+                  "Abfragen",
+                  "Konsistenz"
+                ]
+              },
+              {
+                "question": "Wie würden Sie mit einer Breaking Change in einer API umgehen?",
+                "keywords": [
+                  "Versionierung",
+                  "Abwärtskompatibilität",
+                  "Migration",
+                  "Kommunikation",
+                  "Deprecation"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Tests und Codequalität",
+            "topic": "Übe Antworten zu Tests, Wartbarkeit, Reviews und Qualitätsabwägungen.",
+            "exercises": [
+              {
+                "question": "Wie entscheiden Sie, welche Tests Sie für ein neues Feature schreiben?",
+                "keywords": [
+                  "Unit-Tests",
+                  "Integrationstests",
+                  "Randfälle",
+                  "Risiko",
+                  "Akzeptanzkriterien"
+                ]
+              },
+              {
+                "question": "Worauf achten Sie beim Review eines Pull Requests?",
+                "keywords": [
+                  "Korrektheit",
+                  "Lesbarkeit",
+                  "Wartbarkeit",
+                  "Tests",
+                  "Sicherheit"
+                ]
+              },
+              {
+                "question": "Wie balancieren Sie sauberen Code mit Lieferfristen?",
+                "keywords": [
+                  "Umfang",
+                  "technische Schulden",
+                  "Risiko",
+                  "Kommunikation",
+                  "Nacharbeit"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Zusammenarbeit und Kommunikation",
+            "topic": "Übe Verhaltensfragen zu Teamarbeit, Feedback, Konflikten und technischen Erklärungen.",
+            "exercises": [
+              {
+                "question": "Erzählen Sie von einer Situation, in der Sie bei einer technischen Entscheidung anderer Meinung waren als ein Teammitglied.",
+                "keywords": [
+                  "Kontext",
+                  "Meinungsverschiedenheit",
+                  "Belege",
+                  "Kompromiss",
+                  "Ergebnis"
+                ]
+              },
+              {
+                "question": "Wie erklären Sie ein technisches Problem einer nicht-technischen Person?",
+                "keywords": [
+                  "Zielgruppe",
+                  "einfache Sprache",
+                  "Auswirkung",
+                  "Optionen",
+                  "Empfehlung"
+                ]
+              },
+              {
+                "question": "Wie bitten Sie um Hilfe, wenn Sie feststecken?",
+                "keywords": [
+                  "eigene Versuche",
+                  "konkrete Frage",
+                  "Kontext",
+                  "Timebox",
+                  "Lernen"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Abwägungen und Ownership",
+            "topic": "Übe reife Engineering-Antworten zu Einschränkungen, Priorisierung, Verantwortung und Lernen aus Fehlern.",
+            "exercises": [
+              {
+                "question": "Erzählen Sie von einer Abwägung zwischen Geschwindigkeit und Qualität.",
+                "keywords": [
+                  "Deadline",
+                  "Qualitätsniveau",
+                  "Risiko",
+                  "Stakeholder",
+                  "Nacharbeit"
+                ]
+              },
+              {
+                "question": "Beschreiben Sie einen Fehler in einem Softwareprojekt und was Sie daraus gelernt haben.",
+                "keywords": [
+                  "Fehler",
+                  "Auswirkung",
+                  "Verantwortung",
+                  "Korrektur",
+                  "Prävention"
+                ]
+              },
+              {
+                "question": "Wie priorisieren Sie Engineering-Aufgaben, wenn alles wichtig wirkt?",
+                "keywords": [
+                  "Nutzereffekt",
+                  "Dringlichkeit",
+                  "Abhängigkeiten",
+                  "Risiko",
+                  "Kommunikation"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Hör- und Sprechtraining für Interviews",
+            "topic": "Üben Sie, Software-Engineering-Interviewantworten zu verstehen und eigene Antworten mündlich aufzunehmen.",
+            "exercises": [
+              {
+                "question": "AI listening exercise 1: software engineering interview self-introduction",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "Hintergrund",
+                  "technische Stärken",
+                  "Motivation",
+                  "Rollenpassung"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: software project interview explanation",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "Projekt",
+                  "Rolle",
+                  "technische Entscheidung",
+                  "Ergebnis"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: debugging interview answer",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "Symptom",
+                  "Ursache",
+                  "Korrektur",
+                  "Überprüfung"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: software system design interview",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "Anforderungen",
+                  "API",
+                  "Datenbank",
+                  "Abwägungen"
+                ]
+              },
+              {
+                "question": "Nehmen Sie eine 45-sekündige Antwort auf: Erzählen Sie mir etwas über sich als Kandidatin oder Kandidat im Software Engineering.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Nennen Sie Ihren Hintergrund, Ihr Studium oder Ihre Erfahrung, technische Stärken und ein berufliches Ziel.",
+                "keywords": [
+                  "Hintergrund",
+                  "technische Stärken",
+                  "berufliches Ziel"
+                ]
+              },
+              {
+                "question": "Nehmen Sie auf, wie Sie antworten würden: Beschreiben Sie ein Softwareprojekt, auf das Sie stolz sind.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Beschreiben Sie das Problem, Ihre Rolle, wichtige technische Entscheidungen und das Ergebnis.",
+                "keywords": [
+                  "Problem",
+                  "Rolle",
+                  "technische Entscheidungen",
+                  "Ergebnis"
+                ]
+              },
+              {
+                "question": "Nehmen Sie auf, wie Sie antworten würden: Was macht eine REST-API für andere Entwickler einfach nutzbar?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Nennen Sie Ressourcennamen, Statuscodes, Validierung, Fehlermeldungen und Dokumentation.",
+                "keywords": [
+                  "Ressourcennamen",
+                  "Statuscodes",
+                  "Validierung",
+                  "Dokumentation"
+                ]
+              },
+              {
+                "question": "Nehmen Sie auf, wie Sie antworten würden: Wie priorisieren Sie Engineering-Aufgaben, wenn alles wichtig wirkt?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Nennen Sie Nutzereffekt, Dringlichkeit, Abhängigkeiten, Risiko und Kommunikation.",
+                "keywords": [
+                  "Nutzereffekt",
+                  "Dringlichkeit",
+                  "Abhängigkeiten",
+                  "Risiko"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
     "key": "machine-learning-interview",
     "languages": {
       "English": {

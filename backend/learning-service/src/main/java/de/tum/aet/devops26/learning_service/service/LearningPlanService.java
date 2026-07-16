@@ -57,8 +57,6 @@ public class LearningPlanService {
         DefaultLearningPlanContent fallbackTemplate = defaultLearningPlanCatalog
                 .findFallbackByKey(PRIMARY_DEFAULT_TEMPLATE_KEY);
 
-        ensureListeningPlan(request);
-        ensureSpeakingPlan(request);
         ensureAdditionalCatalogPlans(request, PRIMARY_DEFAULT_TEMPLATE_KEY);
 
         try {
@@ -134,8 +132,6 @@ public class LearningPlanService {
 
     private void ensureFixedPlans(CreateDefaultLearningPlanRequest request) {
         ensureDefaultPlan(request);
-        ensureListeningPlan(request);
-        ensureSpeakingPlan(request);
         ensureAdditionalCatalogPlans(request, null);
     }
 
@@ -183,30 +179,6 @@ public class LearningPlanService {
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "Default plan creation failed and no existing plan found for user " + request.getUserId()
                 ));
-        }
-    }
-
-    private void ensureListeningPlan(CreateDefaultLearningPlanRequest request) {
-        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.LISTENING_TITLE).isPresent()) {
-            return;
-        }
-
-        try {
-            learningPlanSeeder.createListeningPlan(request);
-        } catch (DataIntegrityViolationException exception) {
-            LOGGER.info("Listening plan already exists for user {} (concurrent creation)", request.getUserId());
-        }
-    }
-
-    private void ensureSpeakingPlan(CreateDefaultLearningPlanRequest request) {
-        if (learningPlanRepository.findFirstByUserIdAndTitle(request.getUserId(), LearningPlanSeeder.SPEAKING_TITLE).isPresent()) {
-            return;
-        }
-
-        try {
-            learningPlanSeeder.createSpeakingPlan(request);
-        } catch (DataIntegrityViolationException exception) {
-            LOGGER.info("Speaking plan already exists for user {} (concurrent creation)", request.getUserId());
         }
     }
 
