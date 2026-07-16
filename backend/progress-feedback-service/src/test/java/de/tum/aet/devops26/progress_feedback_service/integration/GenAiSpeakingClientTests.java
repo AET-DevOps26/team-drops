@@ -118,8 +118,11 @@ class GenAiSpeakingClientTests {
 
         assertThatThrownBy(() -> client.evaluate(request()))
             .isInstanceOf(ResponseStatusException.class)
-            .extracting("statusCode")
-            .isEqualTo(HttpStatus.BAD_GATEWAY);
+            .satisfies(exception -> {
+                ResponseStatusException responseException = (ResponseStatusException) exception;
+                assertThat(responseException.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
+                assertThat(responseException.getReason()).contains("down");
+            });
 
         assertThat(authorizationHeader.get()).isNull();
     }

@@ -59,7 +59,7 @@ public class UserServiceController implements UserServiceApi {
 
     @Override
     public ResponseEntity<UserProfileResponse> getUserProfile(Long userId) {
-        return userProfileService.findResponseByUserId(userId)
+        return userProfileService.findOrCreateResponseByUserId(userId)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }

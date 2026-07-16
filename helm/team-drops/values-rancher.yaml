@@ -3,15 +3,18 @@ genai:
   llmModel: openai/gpt-oss-120b
   llmBaseUrl: https://logos.aet.cit.tum.de/v1
   sttProvider: local
-  whisperModel: tiny
-  ttsEnabled: true
+  whisperModel: /opt/models/faster-whisper-tiny
+  prewarmModels: true
+  # Spoken feedback is optional. Keep it disabled until Kokoro model files are
+  # bundled or mounted; otherwise the first evaluation downloads ~300 MB.
+  ttsEnabled: false
   resources:
     requests:
       cpu: 100m
       memory: 512Mi
     limits:
       cpu: 500m
-      memory: 768Mi
+      memory: 1Gi
 
 monitoring:
   rancherServiceMonitors:

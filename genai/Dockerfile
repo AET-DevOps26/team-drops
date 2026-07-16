@@ -10,6 +10,10 @@ RUN uv sync --frozen --no-dev
 
 ENV PATH="/app/.venv/bin:$PATH"
 
+# Keep speech recognition independent from runtime internet access. The Rancher
+# deployment points WHISPER_MODEL at this image-bundled CTranslate2 model.
+RUN python -c "from huggingface_hub import snapshot_download; snapshot_download('Systran/faster-whisper-tiny', local_dir='/opt/models/faster-whisper-tiny')"
+
 COPY genai/ .
 COPY RAG ./RAG
 COPY ["RAG doc DB", "./RAG doc DB"]

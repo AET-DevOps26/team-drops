@@ -61,4 +61,21 @@ class ProgressRecordServiceTests {
         assertThat(progressRecord.getAverageScore()).isEqualTo(70.0);
         verify(progressRecordRepository).findByUserIdAndPlanIdAndTargetLanguage(42L, 1L, "German");
     }
+
+    @Test
+    void findResponseOrEmptyReturnsInitialProgressForNewLanguage() {
+        ProgressRecordService service = new ProgressRecordService(progressRecordRepository);
+        when(progressRecordRepository.findByUserIdAndPlanIdAndTargetLanguage(42L, 1L, "English"))
+            .thenReturn(Optional.empty());
+
+        var response = service.findResponseOrEmpty(42L, 1L, "English");
+
+        assertThat(response.getUserId()).isEqualTo(42L);
+        assertThat(response.getCompletedExercises()).isZero();
+        assertThat(response.getTotalExercises()).isZero();
+        assertThat(response.getAverageScore()).isZero();
+        assertThat(response.getRecentProgress()).isEmpty();
+        assertThat(response.getRecentFinished()).isEmpty();
+        assertThat(response.getTopLessons()).isEmpty();
+    }
 }
