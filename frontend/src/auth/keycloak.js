@@ -16,6 +16,8 @@ const keycloakConfig = {
 
 let keycloak;
 let initialization;
+let loginRedirectStarted = false;
+const pendingRedirect = new Promise(() => {});
 
 function getKeycloak() {
   if (!keycloak) {
@@ -31,7 +33,14 @@ export async function initializeAuth() {
   }
 
   if (!initialization) {
-    initialization = getKeycloak().init({
+    const instance = getKeycloak();
+    instance.onTokenExpired = () => {
+      instance.updateToken(0).catch(() => {
+        redirectToLoginForExpiredSession();
+      });
+    };
+
+    initialization = instance.init({
       onLoad: 'check-sso',
       pkceMethod: 'S256',
       checkLoginIframe: false,
@@ -43,6 +52,27 @@ export async function initializeAuth() {
 
 export function loginWithKeycloak() {
   return getKeycloak().login();
+}
+
+export function redirectToLoginForExpiredSession() {
+  if (!authEnabled) {
+    return Promise.resolve();
+  }
+
+  if (!loginRedirectStarted) {
+    loginRedirectStarted = true;
+
+    Promise.resolve(getKeycloak().login({
+      redirectUri: window.location.href,
+    })).catch(() => {
+      loginRedirectStarted = false;
+      window.location.assign(window.location.origin);
+    });
+  }
+
+  // Keep the request that detected the expired session pending while the
+  // browser navigates to Keycloak, so the current page cannot show an error.
+  return pendingRedirect;
 }
 
 export function registerWithKeycloak() {
@@ -66,9 +96,14 @@ export async function getValidAccessToken() {
 
   const instance = getKeycloak();
   if (!instance.authenticated) {
-    return null;
+    return redirectToLoginForExpiredSession();
   }
 
-  await instance.updateToken(30);
-  return instance.token ?? null;
+  try {
+    await instance.updateToken(30);
+  } catch {
+    return redirectToLoginForExpiredSession();
+  }
+
+  return instance.token ?? redirectToLoginForExpiredSession();
 }
