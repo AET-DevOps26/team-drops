@@ -88,8 +88,8 @@ public class ProgressFeedbackServiceController implements ProgressFeedbackServic
             Long userId,
             Long exerciseId,
             Long lessonId,
-            Long planId,
             String targetLanguage,
+            Long planId,
             String level) {
         return ResponseEntity.ok(userAnswerService.submitSpeakingAnswer(
             userId,
