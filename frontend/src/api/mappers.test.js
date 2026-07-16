@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   attachSavedAnswersToLesson,
+  attachSubmissionToLesson,
   derivePlanProgress,
   toLearningPlans,
   toLessonDetail,
@@ -41,6 +42,7 @@ describe('frontend data mapper unit behavior', () => {
       title: 'Interview German',
       summary: 'Prepare professional answers.',
       accent: 'blue',
+      origin: 'FIXED',
     });
     expect(plans[0].lessons[0]).toMatchObject({
       id: 20,
@@ -113,6 +115,57 @@ describe('frontend data mapper unit behavior', () => {
       feedback: expect.objectContaining({
         message: 'Good structure.',
         weakArea: 'Detail',
+      }),
+    });
+  });
+
+  it('attaches a German speaking evaluation immediately after submission', () => {
+    const lesson = toLessonDetail(
+      {
+        id: 20,
+        plan_id: 10,
+        title: 'Vorstellung und Motivation',
+        topic: 'Stellen Sie sich professionell vor.',
+        order_number: 1,
+        exercises: [
+          {
+            id: 101,
+            lesson_id: 20,
+            type: 'speaking_prompt',
+            question: 'Stellen Sie sich kurz vor.',
+            expected_answer: 'Eine klare professionelle Vorstellung.',
+            difficulty: 'A2',
+          },
+        ],
+      },
+      { planId: 10, language: 'German', accent: 'blue' },
+    );
+
+    const updatedLesson = attachSubmissionToLesson(lesson, {
+      answer: {
+        id: 500,
+        exercise_id: 101,
+        answer_text: 'Ich bin Softwareentwicklerin.',
+        score: 84,
+      },
+      transcription: 'Ich bin Softwareentwicklerin.',
+      exercise_status: 'finished',
+      lesson_progress: 100,
+      feedback: {
+        message: 'Gute und klare Antwort.',
+        weak_area: 'Detail',
+        corrected_answer: 'Ich bin Softwareentwicklerin mit Erfahrung in Java.',
+      },
+    });
+
+    expect(updatedLesson.exercises[0]).toMatchObject({
+      status: 'finished',
+      score: 84,
+      answerText: 'Ich bin Softwareentwicklerin.',
+      feedback: expect.objectContaining({
+        message: 'Gute und klare Antwort.',
+        transcription: 'Ich bin Softwareentwicklerin.',
+        improvedExample: 'Ich bin Softwareentwicklerin mit Erfahrung in Java.',
       }),
     });
   });

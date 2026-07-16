@@ -13,6 +13,7 @@ data:
       "enabled": true,
       "loginTheme": {{ .Values.keycloak.theme | quote }},
       "registrationAllowed": true,
+      "passwordPolicy": {{ .Values.keycloak.passwordPolicy | quote }},
       "clients": [
         {
           "clientId": {{ .Values.auth.clientId | quote }},
@@ -80,7 +81,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/keycloak-realm: {{ printf "%s-%s-%s-%s-%s" .Values.keycloak.realm .Values.keycloak.theme .Values.auth.clientId (toJson .Values.keycloak.redirectUris) (toJson .Values.keycloak.webOrigins) | sha256sum | quote }}
+        checksum/keycloak-realm: {{ printf "%s-%s-%s-%s-%s-%s" .Values.keycloak.realm .Values.keycloak.theme .Values.keycloak.passwordPolicy .Values.auth.clientId (toJson .Values.keycloak.redirectUris) (toJson .Values.keycloak.webOrigins) | sha256sum | quote }}
         checksum/keycloak-theme: {{ printf "%s%s%s" (.Files.Get "files/keycloak-theme/interviewmate/login/theme.properties") (.Files.Get "files/keycloak-theme/interviewmate/login/resources/css/login.css") (.Files.Get "files/keycloak-theme/interviewmate/login/messages/messages_en.properties") | sha256sum | quote }}
       labels:
         {{- include "team-drops.labels" . | nindent 8 }}
@@ -236,7 +237,8 @@ spec:
               attempts=0
               until /opt/keycloak/bin/kcadm.sh update "realms/${KEYCLOAK_REALM}" \
                 -s "loginTheme=${KEYCLOAK_THEME}" \
-                -s "registrationAllowed=true"; do
+                -s "registrationAllowed=true" \
+                -s "passwordPolicy=${KEYCLOAK_PASSWORD_POLICY}"; do
                 attempts=$((attempts + 1))
                 if [ "$attempts" -ge 60 ]; then
                   echo "Realm ${KEYCLOAK_REALM} did not become available in time"
@@ -261,6 +263,8 @@ spec:
               value: {{ .Values.keycloak.realm | quote }}
             - name: KEYCLOAK_THEME
               value: {{ .Values.keycloak.theme | quote }}
+            - name: KEYCLOAK_PASSWORD_POLICY
+              value: {{ .Values.keycloak.passwordPolicy | quote }}
           resources:
             requests:
               cpu: 25m

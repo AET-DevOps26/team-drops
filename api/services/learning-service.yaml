@@ -55,6 +55,12 @@ paths:
                 $ref: '#/components/schemas/LearningPlanResponse'
         '400':
           $ref: '../base.yaml#/components/responses/BadRequest'
+        '409':
+          description: User has already generated the maximum number of RAG learning plans
+          content:
+            application/json:
+              schema:
+                $ref: '../base.yaml#/components/schemas/ErrorResponse'
       x-service: learning-service
   /api/v1/learning-plans/user/{user_id}:
     get:
@@ -300,6 +306,13 @@ components:
           minimum: 0
           maximum: 100
           example: 45
+        origin:
+          type: string
+          description: Indicates whether the plan is fixed/catalog-backed or generated through RAG.
+          enum:
+            - FIXED
+            - AI_RAG
+          default: FIXED
         lessons:
           type: array
           items:

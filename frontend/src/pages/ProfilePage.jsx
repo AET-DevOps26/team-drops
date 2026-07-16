@@ -16,10 +16,7 @@ export function ProfilePage({ profile, profileError, profilePending, t, onBack, 
   const saveProfile = async () => {
     await onProfileChange({
       name: draft.name.trim() || profile.name,
-      country: draft.country.trim() || profile.country,
       targetLanguage: draft.targetLanguage?.trim() || profile.targetLanguage,
-      currentLevel: draft.currentLevel?.trim() || profile.currentLevel,
-      learningGoal: draft.learningGoal?.trim() || profile.learningGoal,
     });
     setEditing(false);
   };
@@ -49,39 +46,12 @@ export function ProfilePage({ profile, profileError, profilePending, t, onBack, 
               <small>{draft.name.length}/20</small>
             </label>
             <label className="profile-field">
-              <span>{t.country}</span>
-              <input
-                name="country"
-                type="text"
-                value={draft.country}
-                onChange={(event) => updateField('country', event.target.value)}
-              />
-            </label>
-            <label className="profile-field">
               <span>Target language</span>
               <input
                 name="targetLanguage"
                 type="text"
                 value={draft.targetLanguage ?? ''}
                 onChange={(event) => updateField('targetLanguage', event.target.value)}
-              />
-            </label>
-            <label className="profile-field">
-              <span>Current level</span>
-              <input
-                name="currentLevel"
-                type="text"
-                value={draft.currentLevel ?? ''}
-                onChange={(event) => updateField('currentLevel', event.target.value)}
-              />
-            </label>
-            <label className="profile-field">
-              <span>Learning goal</span>
-              <textarea
-                name="learningGoal"
-                rows={4}
-                value={draft.learningGoal ?? ''}
-                onChange={(event) => updateField('learningGoal', event.target.value)}
               />
             </label>
           </div>
@@ -92,20 +62,8 @@ export function ProfilePage({ profile, profileError, profilePending, t, onBack, 
               <strong>{profile.name}</strong>
             </div>
             <div className="profile-field">
-              <span>{t.country}</span>
-              <strong>{profile.country}</strong>
-            </div>
-            <div className="profile-field">
               <span>Target language</span>
               <strong>{profile.targetLanguage}</strong>
-            </div>
-            <div className="profile-field">
-              <span>Current level</span>
-              <strong>{profile.currentLevel}</strong>
-            </div>
-            <div className="profile-field">
-              <span>Learning goal</span>
-              <strong>{profile.learningGoal}</strong>
             </div>
           </div>
         )}

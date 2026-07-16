@@ -1,4 +1,4 @@
-import { getValidAccessToken } from '../auth/keycloak';
+import { getValidAccessToken, redirectToLoginForExpiredSession } from '../auth/keycloak';
 
 // Always use relative service paths from the browser so requests go through
 // the dev server proxy (or the same-origin server in production). Avoid
@@ -59,6 +59,11 @@ async function request(service, path, { method = 'GET', token, body } = {}) {
     error.code = 'BACKEND_UNAVAILABLE';
     error.cause = cause;
     throw error;
+  }
+
+  if (response.status === 401 && token) {
+    await redirectToLoginForExpiredSession();
+    return null;
   }
 
   return parseResponse(response);

@@ -41,7 +41,7 @@ public class UserService {
     }
 
     public Optional<UserResponse> findResponseById(Long id) {
-        return findById(id).map(this::toResponse);
+        return findById(id).map(user -> toResponse(user, false));
     }
 
     public UserResponse getOrCreateOidcUser(Jwt jwt) {
@@ -52,32 +52,40 @@ public class UserService {
             .or(() -> claimAsString(jwt, "preferred_username"))
             .orElse(email);
 
-        return userRepository.findByKeycloakSubject(subject)
-            .or(() -> userRepository.findByEmail(email).map(existingUser -> {
-                existingUser.setKeycloakSubject(subject);
-                existingUser.setName(name);
-                return save(existingUser);
-            }))
-            .map(this::toResponse)
-            .orElseGet(() -> toResponse(save(User.builder()
-                .keycloakSubject(subject)
-                .name(name)
-                .email(email)
-                .passwordHash(OIDC_PASSWORD_HASH_PLACEHOLDER)
-                .build())));
+        Optional<User> existingBySubject = userRepository.findByKeycloakSubject(subject);
+        if (existingBySubject.isPresent()) {
+            return toResponse(existingBySubject.orElseThrow(), false);
+        }
+
+        Optional<User> existingByEmail = userRepository.findByEmail(email);
+        if (existingByEmail.isPresent()) {
+            User existingUser = existingByEmail.orElseThrow();
+            existingUser.setKeycloakSubject(subject);
+            existingUser.setName(name);
+            return toResponse(save(existingUser), false);
+        }
+
+        return toResponse(save(User.builder()
+            .keycloakSubject(subject)
+            .name(name)
+            .email(email)
+            .passwordHash(OIDC_PASSWORD_HASH_PLACEHOLDER)
+            .build()), true);
     }
 
     public UserResponse getOrCreateLocalDevUser() {
         return userRepository.findByEmail(LOCAL_DEV_EMAIL)
-            .map(this::toResponse)
+            .map(user -> toResponse(user, false))
             .orElseGet(() -> toResponse(save(User.builder()
                 .name(LOCAL_DEV_NAME)
                 .email(LOCAL_DEV_EMAIL)
-                .build())));
+                .build()), true));
     }
 
-    private UserResponse toResponse(User user) {
-        return new UserResponse(user.getId(), user.getName(), user.getEmail());
+    private UserResponse toResponse(User user, boolean newUser) {
+        UserResponse response = new UserResponse(user.getId(), user.getName(), user.getEmail());
+        response.setNewUser(newUser);
+        return response;
     }
 
     private Optional<String> claimAsString(Jwt jwt, String claimName) {

@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../auth/keycloak', () => ({
   getValidAccessToken: vi.fn(),
+  redirectToLoginForExpiredSession: vi.fn(),
 }));
 
-import { getValidAccessToken } from '../auth/keycloak';
+import { getValidAccessToken, redirectToLoginForExpiredSession } from '../auth/keycloak';
 import { getLearningPlans, getLesson, submitAnswer, submitSpeakingAnswer } from './client';
 
 function jsonResponse(payload, init = {}) {
@@ -69,6 +70,16 @@ describe('API client integration behavior', () => {
       message: 'Unable to reach the learning service.',
       code: 'BACKEND_UNAVAILABLE',
     });
+  });
+
+  it('redirects to login instead of surfacing an expired-session error', async () => {
+    getValidAccessToken.mockResolvedValue('expired-token');
+    redirectToLoginForExpiredSession.mockResolvedValue();
+    fetch.mockResolvedValue(jsonResponse({ message: 'Unauthorized' }, { status: 401 }));
+
+    await expect(getLearningPlans(42, 'expired-token')).resolves.toBeNull();
+
+    expect(redirectToLoginForExpiredSession).toHaveBeenCalledOnce();
   });
 
   it('submits speaking metadata with the new target_language multipart field', async () => {

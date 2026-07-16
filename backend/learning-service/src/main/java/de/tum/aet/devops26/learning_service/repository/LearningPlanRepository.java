@@ -10,4 +10,6 @@ public interface LearningPlanRepository extends JpaRepository<LearningPlan, Long
     List<LearningPlan> findByUserId(Long userId);
 
     Optional<LearningPlan> findFirstByUserIdAndTitle(Long userId, String title);
+
+    long countByUserIdAndOrigin(Long userId, String origin);
 }

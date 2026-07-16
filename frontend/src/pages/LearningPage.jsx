@@ -34,6 +34,7 @@ export function LearningPage({
   listeningLoading,
   listeningSelections,
   profile,
+  ragPlanCount,
   t,
   onBack,
   onLearningMode,
@@ -166,6 +167,7 @@ export function LearningPage({
         ) : learningMode === 'rag' ? (
           <RagLearningFlow
             profile={profile}
+            ragPlanCount={ragPlanCount}
             t={t}
             onCreateAiLearningPlan={onCreateAiLearningPlan}
           />
@@ -192,11 +194,6 @@ const ragTopics = [
     title: 'Job interview',
     description: 'Practice answers, interview etiquette, follow-up, and preparation.',
   },
-  {
-    id: 'Reisen in der Schweiz',
-    title: 'Reisen in der Schweiz',
-    description: 'Routen, Regionen, Wandern, Unterkünfte und Reiseideen in der Schweiz.',
-  },
 ];
 
 const ragPlanLimits = {
@@ -222,7 +219,7 @@ function AiTrainingPlaceholder({ t }) {
   );
 }
 
-function RagLearningFlow({ profile, t, onCreateAiLearningPlan }) {
+function RagLearningFlow({ profile, ragPlanCount, t, onCreateAiLearningPlan }) {
   const [selectedTopic, setSelectedTopic] = React.useState(null);
 
   if (!selectedTopic) {
@@ -232,6 +229,7 @@ function RagLearningFlow({ profile, t, onCreateAiLearningPlan }) {
   return (
     <AiLearningPlanForm
       profile={profile}
+      ragPlanCount={ragPlanCount}
       selectedTopic={selectedTopic}
       t={t}
       onBackToTopics={() => setSelectedTopic(null)}
@@ -255,27 +253,35 @@ function RagTopicPicker({ t, onSelectTopic }) {
 
       <div className="rag-topic-list">
         {ragTopics.map((topic) => (
-          <button
-            className="rag-topic-card"
-            key={topic.id}
-            type="button"
-            onClick={() => onSelectTopic(topic)}
-          >
-            <span className="rag-topic-icon">
-              <Target size={19} aria-hidden="true" />
-            </span>
-            <span>
-              <strong>{topic.title}</strong>
-              <small>{topic.description}</small>
-            </span>
-          </button>
+            <button
+              className="rag-topic-card"
+              key={topic.id}
+              type="button"
+              onClick={() => onSelectTopic(topic)}
+            >
+              <span className="rag-topic-icon">
+                <Target size={19} aria-hidden="true" />
+              </span>
+              <span>
+                <strong>{topic.title}</strong>
+                <small>{topic.description}</small>
+              </span>
+            </button>
         ))}
       </div>
     </section>
   );
 }
 
-function AiLearningPlanForm({ profile, selectedTopic, t, onBackToTopics, onCreateAiLearningPlan }) {
+function AiLearningPlanForm({
+  profile,
+  ragPlanCount,
+  selectedTopic,
+  t,
+  onBackToTopics,
+  onCreateAiLearningPlan,
+}) {
+  const generationLimitReached = ragPlanCount >= 2;
   const [selectedExerciseTypes, setSelectedExerciseTypes] = React.useState(
     exerciseTypeOptions.filter((type) => !isComingSoonType(type.id)).map((type) => type.id),
   );
@@ -314,6 +320,11 @@ function AiLearningPlanForm({ profile, selectedTopic, t, onBackToTopics, onCreat
     event.preventDefault();
     setError('');
     setSuccessMessage('');
+
+    if (generationLimitReached) {
+      setError(t.ragPlanLimitReached);
+      return;
+    }
 
     const minimumLessons = Number.parseInt(formValues.minimumLessons, 10);
     const maximumLessons = Number.parseInt(formValues.maximumLessons, 10);
@@ -365,6 +376,9 @@ function AiLearningPlanForm({ profile, selectedTopic, t, onBackToTopics, onCreat
       </button>
 
       {error && <p className="auth-error ai-plan-notice" role="alert">{error}</p>}
+      {generationLimitReached && !error && (
+        <p className="auth-error ai-plan-notice" role="status">{t.ragPlanLimitReached}</p>
+      )}
       {successMessage && <p className="auth-success ai-plan-notice" role="status">{successMessage}</p>}
 
       <label className="ai-form-field ai-form-field-full">
@@ -471,9 +485,13 @@ function AiLearningPlanForm({ profile, selectedTopic, t, onBackToTopics, onCreat
         </div>
       </fieldset>
 
-      <button className="ai-generate-button" disabled={pending || selectedExerciseTypes.length === 0} type="submit">
+      <button
+        className="ai-generate-button"
+        disabled={generationLimitReached || pending || selectedExerciseTypes.length === 0}
+        type="submit"
+      >
         <Sparkles size={18} aria-hidden="true" />
-        {pending ? 'Generating...' : t.generateLearningPlan}
+        {generationLimitReached ? 'Generation limit reached' : pending ? 'Generating...' : t.generateLearningPlan}
       </button>
     </form>
   );

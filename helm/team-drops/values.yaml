@@ -38,6 +38,8 @@ keycloak:
   adminPassword: admin
   realm: team-drops
   theme: interviewmate
+  # At least 8 characters, including one uppercase letter and one special character.
+  passwordPolicy: "length(8) and upperCase(1) and specialChars(1)"
   port: 8080
   redirectUris:
     - http://localhost:3000/*
