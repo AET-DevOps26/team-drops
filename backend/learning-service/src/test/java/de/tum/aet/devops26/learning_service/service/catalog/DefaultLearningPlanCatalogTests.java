@@ -60,7 +60,7 @@ class DefaultLearningPlanCatalogTests {
 
         assertThat(template.title()).isEqualTo("Software Engineering Interview Track");
         assertThat(template.defaultGoal()).isEqualTo("Prepare for software engineering interviews");
-        assertThat(template.lessons()).hasSize(8);
+        assertThat(template.lessons()).hasSize(9);
         assertThat(template.lessons().get(0).title()).isEqualTo("Introduction and Role Fit");
         assertThat(template.lessons().get(0).exercises())
             .extracting("question")
@@ -79,6 +79,21 @@ class DefaultLearningPlanCatalogTests {
                 "short code",
                 "scalability"
             );
+        assertThat(template.lessons().get(8).title()).isEqualTo("Listening and Speaking Interview Practice");
+        assertThat(template.lessons().get(8).exercises())
+            .extracting("subtype")
+            .containsExactly(
+                "listening_choice",
+                "listening_choice",
+                "listening_choice",
+                "listening_choice",
+                "speaking_prompt",
+                "speaking_prompt",
+                "speaking_prompt",
+                "speaking_prompt"
+            );
+        assertThat(template.lessons().get(8).exercises().get(4).expectedAnswer())
+            .isEqualTo("Mention your background, studies or experience, technical strengths, and one professional goal.");
     }
 
     @Test
@@ -89,7 +104,7 @@ class DefaultLearningPlanCatalogTests {
 
         assertThat(template.title()).isEqualTo("Vorbereitung auf Software-Engineering-Interviews");
         assertThat(template.defaultLanguage()).isEqualTo("German");
-        assertThat(template.lessons()).hasSize(8);
+        assertThat(template.lessons()).hasSize(9);
         assertThat(template.lessons().get(0).title()).isEqualTo("Vorstellung und Rollenpassung");
         assertThat(template.lessons().get(0).exercises().get(0).question())
             .isEqualTo("Erzählen Sie mir etwas über sich als Kandidatin oder Kandidat im Software Engineering.");
@@ -100,6 +115,19 @@ class DefaultLearningPlanCatalogTests {
                 "Datenbank",
                 "Kurzcode",
                 "Skalierbarkeit"
+            );
+        assertThat(template.lessons().get(8).title()).isEqualTo("Hör- und Sprechtraining für Interviews");
+        assertThat(template.lessons().get(8).exercises())
+            .extracting("subtype")
+            .containsExactly(
+                "listening_choice",
+                "listening_choice",
+                "listening_choice",
+                "listening_choice",
+                "speaking_prompt",
+                "speaking_prompt",
+                "speaking_prompt",
+                "speaking_prompt"
             );
     }
 

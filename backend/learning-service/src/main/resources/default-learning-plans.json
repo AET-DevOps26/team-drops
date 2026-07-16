@@ -505,6 +505,99 @@
                 ]
               }
             ]
+          },
+          {
+            "title": "Listening and Speaking Interview Practice",
+            "topic": "Practice listening to software engineering interview answers and recording spoken responses for common interview prompts.",
+            "exercises": [
+              {
+                "question": "AI listening exercise 1: software engineering interview self-introduction",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "background",
+                  "technical strengths",
+                  "motivation",
+                  "role fit"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: software project interview explanation",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "project",
+                  "role",
+                  "technical decision",
+                  "result"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: debugging interview answer",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "symptom",
+                  "root cause",
+                  "fix",
+                  "verification"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: software system design interview",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "requirements",
+                  "API",
+                  "database",
+                  "tradeoffs"
+                ]
+              },
+              {
+                "question": "Record a 45-second answer to: Tell me about yourself as a software engineering candidate.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Mention your background, studies or experience, technical strengths, and one professional goal.",
+                "keywords": [
+                  "background",
+                  "technical strengths",
+                  "professional goal"
+                ]
+              },
+              {
+                "question": "Record how you would answer: Describe a software project you are proud of.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Describe the problem, your role, important technical decisions, and the result.",
+                "keywords": [
+                  "problem",
+                  "role",
+                  "technical decisions",
+                  "result"
+                ]
+              },
+              {
+                "question": "Record how you would answer: What makes a REST API easy for other developers to use?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Mention resource naming, status codes, validation, error responses, and documentation.",
+                "keywords": [
+                  "resource naming",
+                  "status codes",
+                  "validation",
+                  "documentation"
+                ]
+              },
+              {
+                "question": "Record how you would answer: How do you prioritize engineering tasks when everything feels important?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Mention user impact, urgency, dependencies, risk, and communication.",
+                "keywords": [
+                  "user impact",
+                  "urgency",
+                  "dependencies",
+                  "risk"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -801,6 +894,99 @@
                   "Abhängigkeiten",
                   "Risiko",
                   "Kommunikation"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Hör- und Sprechtraining für Interviews",
+            "topic": "Üben Sie, Software-Engineering-Interviewantworten zu verstehen und eigene Antworten mündlich aufzunehmen.",
+            "exercises": [
+              {
+                "question": "AI listening exercise 1: software engineering interview self-introduction",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "Hintergrund",
+                  "technische Stärken",
+                  "Motivation",
+                  "Rollenpassung"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: software project interview explanation",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "Projekt",
+                  "Rolle",
+                  "technische Entscheidung",
+                  "Ergebnis"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: debugging interview answer",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "Symptom",
+                  "Ursache",
+                  "Korrektur",
+                  "Überprüfung"
+                ]
+              },
+              {
+                "question": "AI listening exercise 1: software system design interview",
+                "subtype": "listening_choice",
+                "expectedAnswer": "Select the most accurate listening response.",
+                "keywords": [
+                  "Anforderungen",
+                  "API",
+                  "Datenbank",
+                  "Abwägungen"
+                ]
+              },
+              {
+                "question": "Nehmen Sie eine 45-sekündige Antwort auf: Erzählen Sie mir etwas über sich als Kandidatin oder Kandidat im Software Engineering.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Nennen Sie Ihren Hintergrund, Ihr Studium oder Ihre Erfahrung, technische Stärken und ein berufliches Ziel.",
+                "keywords": [
+                  "Hintergrund",
+                  "technische Stärken",
+                  "berufliches Ziel"
+                ]
+              },
+              {
+                "question": "Nehmen Sie auf, wie Sie antworten würden: Beschreiben Sie ein Softwareprojekt, auf das Sie stolz sind.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Beschreiben Sie das Problem, Ihre Rolle, wichtige technische Entscheidungen und das Ergebnis.",
+                "keywords": [
+                  "Problem",
+                  "Rolle",
+                  "technische Entscheidungen",
+                  "Ergebnis"
+                ]
+              },
+              {
+                "question": "Nehmen Sie auf, wie Sie antworten würden: Was macht eine REST-API für andere Entwickler einfach nutzbar?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Nennen Sie Ressourcennamen, Statuscodes, Validierung, Fehlermeldungen und Dokumentation.",
+                "keywords": [
+                  "Ressourcennamen",
+                  "Statuscodes",
+                  "Validierung",
+                  "Dokumentation"
+                ]
+              },
+              {
+                "question": "Nehmen Sie auf, wie Sie antworten würden: Wie priorisieren Sie Engineering-Aufgaben, wenn alles wichtig wirkt?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Nennen Sie Nutzereffekt, Dringlichkeit, Abhängigkeiten, Risiko und Kommunikation.",
+                "keywords": [
+                  "Nutzereffekt",
+                  "Dringlichkeit",
+                  "Abhängigkeiten",
+                  "Risiko"
                 ]
               }
             ]

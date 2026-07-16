@@ -221,10 +221,10 @@ public class LearningPlanSeeder {
             for (var exerciseTemplate : lessonTemplate.exercises()) {
                 exerciseService.save(Exercise.builder()
                     .lessonId(lesson.getId())
-                    .type("free_text")
+                    .type(valueOrDefault(exerciseTemplate.subtype(), ExerciseSubtype.FREE_TEXT.getValue()))
                     .question(exerciseTemplate.question())
                     .difficulty(plan.getLevel())
-                    .expectedAnswer(template.defaultExpectedAnswer())
+                    .expectedAnswer(valueOrDefault(exerciseTemplate.expectedAnswer(), template.defaultExpectedAnswer()))
                     .build());
             }
         }

@@ -4,6 +4,8 @@ import java.util.List;
 
 public record DefaultExerciseTemplate(
     String question,
+    String subtype,
+    String expectedAnswer,
     List<String> keywords
 ) {
 }

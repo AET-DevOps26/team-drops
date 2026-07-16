@@ -11,7 +11,10 @@ import de.tum.aet.devops26.learning_service.model.Exercise;
 import de.tum.aet.devops26.learning_service.model.LearningPlan;
 import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultExerciseTemplate;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLessonTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,6 +37,77 @@ class LearningPlanSeederTests {
 
     @Mock
     private DefaultLearningPlanCatalog defaultLearningPlanCatalog;
+
+    @Test
+    void createDefaultPlanPersistsCatalogExerciseSubtypesAndExpectedAnswers() {
+        LearningPlanSeeder seeder = new LearningPlanSeeder(
+            learningPlanRepository,
+            lessonService,
+            exerciseService,
+            defaultLearningPlanCatalog
+        );
+        CreateDefaultLearningPlanRequest request = new CreateDefaultLearningPlanRequest()
+            .userId(42L)
+            .currentLevel("B1");
+        List<Exercise> savedExercises = new ArrayList<>();
+        DefaultLearningPlanContent template = new DefaultLearningPlanContent(
+            "Software Engineering Interview Track",
+            "Premade lessons for practicing software engineering interview answers.",
+            "3 weeks",
+            "Prepare for software engineering interviews",
+            "English",
+            "Intermediate",
+            "Answer like a software engineering interview candidate.",
+            List.of(new DefaultLessonTemplate(
+                "Listening and Speaking Interview Practice",
+                "Mixed interview modalities.",
+                List.of(
+                    new DefaultExerciseTemplate(
+                        "AI listening exercise 1: software engineering interview self-introduction",
+                        ExerciseSubtype.LISTENING_CHOICE.getValue(),
+                        "Select the most accurate listening response.",
+                        List.of()
+                    ),
+                    new DefaultExerciseTemplate(
+                        "Record a 45-second answer to: Tell me about yourself as a software engineering candidate.",
+                        ExerciseSubtype.SPEAKING_PROMPT.getValue(),
+                        "Mention your background, technical strengths, and one professional goal.",
+                        List.of()
+                    )
+                )
+            ))
+        );
+
+        when(defaultLearningPlanCatalog.findFallbackByKey("software-engineering-interview")).thenReturn(template);
+        when(learningPlanRepository.save(any(LearningPlan.class))).thenAnswer(invocation -> {
+            LearningPlan plan = invocation.getArgument(0);
+            plan.setId(7L);
+            return plan;
+        });
+        when(lessonService.save(any(Lesson.class))).thenAnswer(invocation -> {
+            Lesson lesson = invocation.getArgument(0);
+            lesson.setId(100L);
+            return lesson;
+        });
+        when(exerciseService.save(any(Exercise.class))).thenAnswer(invocation -> {
+            Exercise exercise = invocation.getArgument(0);
+            savedExercises.add(exercise);
+            return exercise;
+        });
+
+        seeder.createDefaultPlan(request, "software-engineering-interview");
+
+        assertThat(savedExercises).extracting(Exercise::getType)
+            .containsExactly(
+                ExerciseSubtype.LISTENING_CHOICE.getValue(),
+                ExerciseSubtype.SPEAKING_PROMPT.getValue()
+            );
+        assertThat(savedExercises).extracting(Exercise::getExpectedAnswer)
+            .containsExactly(
+                "Select the most accurate listening response.",
+                "Mention your background, technical strengths, and one professional goal."
+            );
+    }
 
     @Test
     void createListeningPlanSeedsSoftwareEngineeringInterviewLessonsAndExercises() {
