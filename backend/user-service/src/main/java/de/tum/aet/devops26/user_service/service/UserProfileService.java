@@ -16,6 +16,10 @@ import org.springframework.stereotype.Service;
 public class UserProfileService {
 
     private static final String DEFAULT_COUNTRY = "Unknown";
+    private static final String DEFAULT_TARGET_LANGUAGE = "German";
+    private static final String DEFAULT_LEVEL = "A2";
+    private static final String DEFAULT_LEARNING_GOAL =
+        "Prepare for a software engineering job interview";
 
     private final UserProfileRepository userProfileRepository;
     private final UserService userService;
@@ -72,6 +76,20 @@ public class UserProfileService {
 
     public Optional<UserProfileResponse> findResponseByUserId(Long userId) {
         return findByUserId(userId).map(this::toResponse);
+    }
+
+    public Optional<UserProfileResponse> findOrCreateResponseByUserId(Long userId) {
+        return userService.findById(userId).map(user -> {
+            UserProfile profile = findByUserId(userId).orElseGet(() -> save(UserProfile.builder()
+                .userId(userId)
+                .name(user.getName())
+                .country(DEFAULT_COUNTRY)
+                .targetLanguage(DEFAULT_TARGET_LANGUAGE)
+                .currentLevel(DEFAULT_LEVEL)
+                .learningGoal(DEFAULT_LEARNING_GOAL)
+                .build()));
+            return toResponse(profile);
+        });
     }
 
     private UserProfileResponse toResponse(UserProfile userProfile) {

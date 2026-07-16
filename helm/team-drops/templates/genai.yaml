@@ -64,6 +64,13 @@ spec:
               port: app
             initialDelaySeconds: 20
             periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health
+              port: app
+            failureThreshold: 60
+            periodSeconds: 5
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /health

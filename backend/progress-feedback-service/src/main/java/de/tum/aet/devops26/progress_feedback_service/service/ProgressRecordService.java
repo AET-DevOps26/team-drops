@@ -70,6 +70,11 @@ public class ProgressRecordService {
             .map(this::toResponse);
     }
 
+    public ProgressResponse findResponseOrEmpty(Long userId, Long planId, String targetLanguage) {
+        return findResponseByUserId(userId, planId, targetLanguage)
+            .orElseGet(() -> emptyResponse(userId));
+    }
+
     public ProgressRecord recordSubmittedAnswer(Long userId, Integer score) {
         return recordSubmittedAnswer(userId, null, null, score);
     }
@@ -143,6 +148,18 @@ public class ProgressRecordService {
             completedExercises,
             totalExercises,
             averageScore,
+            List.of(),
+            List.of(),
+            List.of()
+        );
+    }
+
+    private ProgressResponse emptyResponse(Long userId) {
+        return new ProgressResponse(
+            userId,
+            0,
+            0,
+            0,
             List.of(),
             List.of(),
             List.of()

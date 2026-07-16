@@ -51,9 +51,7 @@ public class ProgressFeedbackServiceController implements ProgressFeedbackServic
 
     @Override
     public ResponseEntity<ProgressResponse> getProgressByUserId(Long userId, Long planId, String targetLanguage) {
-        return progressRecordService.findResponseByUserId(userId, planId, targetLanguage)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(progressRecordService.findResponseOrEmpty(userId, planId, targetLanguage));
     }
 
     @Override

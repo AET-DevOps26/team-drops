@@ -81,7 +81,12 @@ public class GenAiSpeakingClient {
                     .join();
 
             if (httpResponse.statusCode() < 200 || httpResponse.statusCode() >= 300) {
-                LOGGER.warn("GenAI speaking evaluation rejected with status {}", httpResponse.statusCode());
+                String downstreamMessage = extractDownstreamMessage(httpResponse.body());
+                LOGGER.warn(
+                    "GenAI speaking evaluation rejected with status {}: {}",
+                    httpResponse.statusCode(),
+                    downstreamMessage
+                );
                 if (httpResponse.statusCode() == HttpStatus.PAYLOAD_TOO_LARGE.value()) {
                     throw new ResponseStatusException(
                             HttpStatus.PAYLOAD_TOO_LARGE,
@@ -89,7 +94,7 @@ public class GenAiSpeakingClient {
                 }
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY,
-                        "GenAI service rejected the speaking evaluation.");
+                        "GenAI speaking evaluation failed: " + downstreamMessage);
             }
 
             return objectMapper.readValue(httpResponse.body(), SpeakingEvaluationResponse.class);
@@ -150,6 +155,23 @@ public class GenAiSpeakingClient {
 
     private String sanitizeHeaderValue(String value) {
         return value.replace("\"", "").replace("\r", "").replace("\n", "");
+    }
+
+    private String extractDownstreamMessage(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return "GenAI service returned an empty error response.";
+        }
+
+        try {
+            var body = objectMapper.readTree(responseBody);
+            String message = body.path("message").asText();
+            if (message.isBlank()) {
+                message = body.path("detail").asText();
+            }
+            return message.isBlank() ? "GenAI service rejected the request." : message;
+        } catch (JsonProcessingException exception) {
+            return "GenAI service rejected the request.";
+        }
     }
 
     public record SpeakingEvaluationRequest(

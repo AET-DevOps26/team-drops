@@ -31,15 +31,20 @@ application_info.labels(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # PREWARM_MODELS=true pre-loads STT/TTS at startup to avoid cold-start latency
-    # on the first request. Disabled by default because the initial model download
-    # (Whisper ~150 MB, kokoro-onnx ~300 MB) would otherwise delay container startup.
+    # Preload speech recognition so readiness means speaking requests can be
+    # transcribed. Only preload TTS when its model files are explicitly provided;
+    # otherwise Kokoro may perform a large runtime download.
     if settings.prewarm_models:
         from app.stt.client import _get_whisper
-        from app.tts.client import _get_kokoro
 
         await asyncio.to_thread(_get_whisper)
-        if settings.tts_enabled:
+        if (
+            settings.tts_enabled
+            and settings.kokoro_model_path
+            and settings.kokoro_voices_path
+        ):
+            from app.tts.client import _get_kokoro
+
             await asyncio.to_thread(_get_kokoro)
     yield
 
