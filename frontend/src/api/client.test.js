@@ -5,7 +5,7 @@ vi.mock('../auth/keycloak', () => ({
 }));
 
 import { getValidAccessToken } from '../auth/keycloak';
-import { getLearningPlans, submitAnswer } from './client';
+import { getLearningPlans, getLesson, submitAnswer, submitSpeakingAnswer } from './client';
 
 function jsonResponse(payload, init = {}) {
   return new Response(JSON.stringify(payload), {
@@ -69,5 +69,49 @@ describe('API client integration behavior', () => {
       message: 'Unable to reach the learning service.',
       code: 'BACKEND_UNAVAILABLE',
     });
+  });
+
+  it('submits speaking metadata with the new target_language multipart field', async () => {
+    getValidAccessToken.mockResolvedValue('fresh-token');
+    fetch.mockResolvedValue(jsonResponse({ transcription: 'Hello' }));
+    const audio = new File(['audio-bytes'], 'answer.webm', { type: 'audio/webm' });
+
+    await submitSpeakingAnswer({
+      audio,
+      user_id: 42,
+      exercise_id: 7,
+      lesson_id: 3,
+      plan_id: 1,
+      target_language: 'English',
+      level: 'A2',
+    }, 'stale-token');
+
+    const [url, options] = fetch.mock.calls[0];
+    expect(url).toBe('/progress-service/api/v1/answers/speaking');
+    expect(options.method).toBe('POST');
+    expect(options.headers).toEqual(expect.objectContaining({
+      Accept: 'application/json',
+      Authorization: 'Bearer fresh-token',
+    }));
+    expect(options.headers).not.toHaveProperty('Content-Type');
+    expect(options.body).toBeInstanceOf(FormData);
+    expect(options.body.get('audio')).toBeInstanceOf(File);
+    expect(options.body.get('user_id')).toBe('42');
+    expect(options.body.get('exercise_id')).toBe('7');
+    expect(options.body.get('lesson_id')).toBe('3');
+    expect(options.body.get('plan_id')).toBe('1');
+    expect(options.body.get('target_language')).toBe('English');
+    expect(options.body.get('level')).toBe('A2');
+  });
+
+  it('preserves the selected language when reloading a lesson', async () => {
+    fetch.mockResolvedValue(jsonResponse({ id: 3 }));
+
+    await getLesson(3, null, 'German');
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/learning-service/api/v1/lessons/3?language=German',
+      expect.objectContaining({ method: 'GET' }),
+    );
   });
 });

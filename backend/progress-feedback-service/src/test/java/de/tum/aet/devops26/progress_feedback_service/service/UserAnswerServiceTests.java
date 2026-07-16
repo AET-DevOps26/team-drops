@@ -17,6 +17,7 @@ import de.tum.aet.devops26.progress_feedback_service.dto.SubmitAnswerResponse;
 import de.tum.aet.devops26.progress_feedback_service.dto.SubmitSpeakingAnswerResponse;
 import de.tum.aet.devops26.progress_feedback_service.dto.UserAnswerResponse;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiSpeakingClient;
+import de.tum.aet.devops26.progress_feedback_service.integration.GenAiSpeakingClient.SpeakingEvaluationRequest;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiSpeakingClient.SpeakingEvaluationResponse;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient;
 import de.tum.aet.devops26.progress_feedback_service.integration.GenAiWritingClient.WritingEvaluationResponse;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -231,8 +233,59 @@ class UserAnswerServiceTests {
         assertThat(response.getFeedback().getCorrectedAnswer()).isEqualTo("Die Katze ist auf dem Tisch");
         assertThat(response.getTranscription()).isEqualTo("Die Katze ist an den Tisch");
         assertThat(response.getFeedbackAudioB64()).isEqualTo("UklGRg==");
-        verify(genAiSpeakingClient).evaluate(any());
+        ArgumentCaptor<SpeakingEvaluationRequest> requestCaptor =
+            ArgumentCaptor.forClass(SpeakingEvaluationRequest.class);
+        verify(genAiSpeakingClient).evaluate(requestCaptor.capture());
+        assertThat(requestCaptor.getValue().targetLanguage()).isEqualTo("German");
+        assertThat(requestCaptor.getValue().question()).isEqualTo("Translate: The cat is on the table");
+        assertThat(requestCaptor.getValue().expectedAnswer()).isEqualTo("Die Katze ist auf dem Tisch");
+        verify(learningServiceClient).getExercise(3L, 7L, "German");
         verify(progressRecordService).recordSubmittedAnswer(42L, 1L, "German", 65);
+    }
+
+    @Test
+    void submitSpeakingAnswerUsesEnglishLocalizedExerciseContext() {
+        UserAnswerService service = newService();
+        when(learningServiceClient.getExercise(3L, 7L, "English")).thenReturn(new ExerciseContext(
+            7L,
+            "speaking",
+            "free_text",
+            "Introduce yourself in English.",
+            "A concise professional introduction.",
+            "A2"
+        ));
+        when(genAiSpeakingClient.evaluate(any())).thenReturn(new SpeakingEvaluationResponse(
+            "I am a software engineering student.",
+            8.0,
+            true,
+            "Clear answer.",
+            "fluency",
+            "I am a software engineering student.",
+            null
+        ));
+        mockAnswerAndFeedbackSaves(27L, 28L, "2026-06-01T11:15:00Z");
+        when(progressRecordService.recordSubmittedAnswer(42L, 1L, "English", 80))
+            .thenReturn(ProgressRecord.builder().averageScore(80.0).build());
+
+        SubmitSpeakingAnswerResponse response = service.submitSpeakingAnswer(
+            42L,
+            7L,
+            3L,
+            1L,
+            " English ",
+            "A2",
+            audio()
+        );
+
+        ArgumentCaptor<SpeakingEvaluationRequest> requestCaptor =
+            ArgumentCaptor.forClass(SpeakingEvaluationRequest.class);
+        verify(genAiSpeakingClient).evaluate(requestCaptor.capture());
+        assertThat(requestCaptor.getValue().targetLanguage()).isEqualTo("English");
+        assertThat(requestCaptor.getValue().question()).isEqualTo("Introduce yourself in English.");
+        assertThat(requestCaptor.getValue().expectedAnswer()).isEqualTo("A concise professional introduction.");
+        assertThat(response.getAnswer().getTargetLanguage()).isEqualTo("English");
+        verify(learningServiceClient).getExercise(3L, 7L, "English");
+        verify(progressRecordService).recordSubmittedAnswer(42L, 1L, "English", 80);
     }
 
     @Test
@@ -334,9 +387,23 @@ class UserAnswerServiceTests {
     }
 
     @Test
+    void submitSpeakingAnswerRejectsMissingTargetLanguage() {
+        UserAnswerService service = newService();
+
+        assertThatThrownBy(() -> service.submitSpeakingAnswer(42L, 7L, 3L, 1L, " ", "A2", audio()))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("target_language is required")
+            .extracting("statusCode")
+            .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verifyNoInteractions(learningServiceClient, genAiSpeakingClient, userAnswerRepository, feedbackRepository);
+        verify(progressRecordService, never()).recordSubmittedAnswer(any(), any(Integer.class));
+    }
+
+    @Test
     void submitSpeakingAnswerRejectsNonSpeakingExercise() {
         UserAnswerService service = newService();
-        when(learningServiceClient.getExercise(3L, 7L)).thenReturn(new ExerciseContext(
+        when(learningServiceClient.getExercise(3L, 7L, "German")).thenReturn(new ExerciseContext(
             7L,
             "writing",
             "translation",
@@ -350,7 +417,7 @@ class UserAnswerServiceTests {
             .extracting("statusCode")
             .isEqualTo(HttpStatus.BAD_REQUEST);
 
-        verify(learningServiceClient).getExercise(3L, 7L);
+        verify(learningServiceClient).getExercise(3L, 7L, "German");
         verifyNoInteractions(genAiSpeakingClient, userAnswerRepository, feedbackRepository);
         verify(progressRecordService, never()).recordSubmittedAnswer(any(), any(Integer.class));
     }
@@ -368,7 +435,7 @@ class UserAnswerServiceTests {
             .extracting("statusCode")
             .isEqualTo(HttpStatus.BAD_GATEWAY);
 
-        verify(learningServiceClient).getExercise(3L, 7L);
+        verify(learningServiceClient).getExercise(3L, 7L, "German");
         verify(genAiSpeakingClient).evaluate(any());
         verifyNoInteractions(userAnswerRepository, feedbackRepository);
         verify(progressRecordService, never()).recordSubmittedAnswer(any(), any(Integer.class));
@@ -377,7 +444,7 @@ class UserAnswerServiceTests {
     @Test
     void submitSpeakingAnswerPropagatesMissingExercise() {
         UserAnswerService service = newService();
-        when(learningServiceClient.getExercise(3L, 7L)).thenThrow(
+        when(learningServiceClient.getExercise(3L, 7L, "German")).thenThrow(
             new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise 7 not found in lesson 3")
         );
 
@@ -386,7 +453,7 @@ class UserAnswerServiceTests {
             .extracting("statusCode")
             .isEqualTo(HttpStatus.NOT_FOUND);
 
-        verify(learningServiceClient).getExercise(3L, 7L);
+        verify(learningServiceClient).getExercise(3L, 7L, "German");
         verifyNoInteractions(genAiSpeakingClient, userAnswerRepository, feedbackRepository);
         verify(progressRecordService, never()).recordSubmittedAnswer(any(), any(Integer.class));
     }
@@ -424,7 +491,7 @@ class UserAnswerServiceTests {
     }
 
     private void whenSpeakingExercise() {
-        when(learningServiceClient.getExercise(3L, 7L)).thenReturn(new ExerciseContext(
+        when(learningServiceClient.getExercise(3L, 7L, "German")).thenReturn(new ExerciseContext(
             7L,
             "speaking",
             "translation",

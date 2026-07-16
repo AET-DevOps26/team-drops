@@ -25,10 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class LearningPlanSeeder {
 
     private static final String DEFAULT_TEMPLATE_KEY = "job-interview";
+    static final String SPEAKING_TEMPLATE_KEY = "software-engineering-speaking";
 
     static final String DEFAULT_TITLE = "Job Interview Preparation";
     static final String LISTENING_TITLE = "Everyday Listening Practice";
-    static final String SPEAKING_TITLE = "Everyday Speaking Practice";
+    static final String SPEAKING_TITLE = "Software Engineering Interview Speaking Practice";
 
     private static final String LISTENING_DESCRIPTION = "Listening comprehension exercises on everyday German topics.";
     private static final String LISTENING_DURATION = "1 week";
@@ -36,13 +37,6 @@ public class LearningPlanSeeder {
     private static final String LISTENING_LANGUAGE = "German";
     private static final String LISTENING_LEVEL = "A2";
     private static final String LISTENING_EXPECTED_ANSWER = "Select the most accurate listening response.";
-
-    private static final String SPEAKING_DESCRIPTION =
-        "Speaking exercises for short German responses in everyday and interview situations.";
-    private static final String SPEAKING_DURATION = "1 week";
-    private static final String SPEAKING_GOAL = "Improve German spoken responses";
-    private static final String SPEAKING_LANGUAGE = "German";
-    private static final String SPEAKING_LEVEL = "A2";
 
     private static final List<FixedLesson> FIXED_LISTENING_LESSONS = List.of(
         new FixedLesson(
@@ -59,33 +53,6 @@ public class LearningPlanSeeder {
             "Shopping",
             "Buying items and asking about prices in a German shop.",
             List.of(new FixedExercise("AI listening exercise 1: shopping", LISTENING_EXPECTED_ANSWER))
-        )
-    );
-
-    private static final List<FixedLesson> FIXED_SPEAKING_LESSONS = List.of(
-        new FixedLesson(
-            "Self Introduction",
-            "Giving a short spoken introduction in German.",
-            List.of(new FixedExercise(
-                "Record a 30-second introduction with your name, studies, and one professional goal.",
-                "Mention your name, studies, and one professional goal in a concise spoken response."
-            ))
-        ),
-        new FixedLesson(
-            "At the Cafe",
-            "Ordering politely in German.",
-            List.of(new FixedExercise(
-                "Record how you would order a coffee and ask for the price.",
-                "Politely order a coffee and ask how much it costs."
-            ))
-        ),
-        new FixedLesson(
-            "Project Pitch",
-            "Explaining a project out loud.",
-            List.of(new FixedExercise(
-                "Record a short explanation of a project you worked on and your role.",
-                "Describe the project, the problem it solved, and your personal role."
-            ))
         )
     );
 
@@ -127,10 +94,13 @@ public class LearningPlanSeeder {
             for (var exerciseTemplate : lessonTemplate.exercises()) {
                 exerciseService.save(Exercise.builder()
                     .lessonId(lesson.getId())
-                    .type("free_text")
+                    .type(valueOrDefault(exerciseTemplate.subtype(), ExerciseSubtype.FREE_TEXT.getValue()))
                     .question(exerciseTemplate.question())
                     .difficulty(plan.getLevel())
-                    .expectedAnswer(template.defaultExpectedAnswer())
+                    .expectedAnswer(valueOrDefault(
+                        exerciseTemplate.expectedAnswer(),
+                        template.defaultExpectedAnswer()
+                    ))
                     .build());
             }
         }
@@ -154,17 +124,11 @@ public class LearningPlanSeeder {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public LearningPlan createSpeakingPlan(CreateDefaultLearningPlanRequest request) {
-        LearningPlan plan = createPlan(
-            request,
-            SPEAKING_TITLE,
-            SPEAKING_DESCRIPTION,
-            SPEAKING_GOAL,
-            valueOrDefault(request.getTargetLanguage(), SPEAKING_LANGUAGE),
-            valueOrDefault(request.getCurrentLevel(), SPEAKING_LEVEL),
-            SPEAKING_DURATION
-        );
-        createLessons(plan, FIXED_SPEAKING_LESSONS, ExerciseSubtype.SPEAKING_PROMPT);
-        return plan;
+        CreateDefaultLearningPlanRequest speakingRequest = new CreateDefaultLearningPlanRequest()
+            .userId(request.getUserId())
+            .targetLanguage(request.getTargetLanguage())
+            .currentLevel(request.getCurrentLevel());
+        return createDefaultPlan(speakingRequest, SPEAKING_TEMPLATE_KEY);
     }
 
     private LearningPlan createPlan(

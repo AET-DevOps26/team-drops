@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -141,7 +142,8 @@ public class LearningPlanService {
 
     private void ensureAdditionalCatalogPlans(CreateDefaultLearningPlanRequest request, String excludedTemplateKey) {
         for (String templateKey : defaultLearningPlanCatalog.templateKeys()) {
-            if (templateKey.equals(excludedTemplateKey)) {
+            if (templateKey.equals(excludedTemplateKey)
+                || templateKey.equals(LearningPlanSeeder.SPEAKING_TEMPLATE_KEY)) {
                 continue;
             }
             ensureCatalogPlan(request, templateKey);
@@ -215,16 +217,21 @@ public class LearningPlanService {
     }
 
     private LearningPlanResponse toResponse(LearningPlan plan, String language) {
-        DefaultLearningPlanContent localizedTemplate = defaultLearningPlanCatalog.findKeyByLocalizedTitle(plan.getTitle())
-                .map(templateKey -> defaultLearningPlanCatalog.findLocalizedByKey(templateKey, language))
-                .orElse(null);
+        Optional<String> templateKey = defaultLearningPlanCatalog.findKeyByLocalizedTitle(plan.getTitle());
+        DefaultLearningPlanContent localizedTemplate = templateKey
+            .map(key -> defaultLearningPlanCatalog.findLocalizedByKey(key, language))
+            .orElse(null);
+        String goal = templateKey
+            .filter(LearningPlanSeeder.SPEAKING_TEMPLATE_KEY::equals)
+            .map(key -> localizedTemplate.defaultGoal())
+            .orElse(plan.getGoal());
 
         return new LearningPlanResponse(
                 plan.getId(),
                 plan.getUserId(),
                 localizedTemplate == null ? plan.getTitle() : localizedTemplate.title(),
                 localizedTemplate == null ? plan.getDescription() : localizedTemplate.description(),
-                plan.getGoal(),
+                goal,
                 localizedTemplate == null ? plan.getLanguage() : localizedTemplate.defaultLanguage(),
                 plan.getLevel(),
                 localizedTemplate == null ? plan.getDuration() : localizedTemplate.duration(),

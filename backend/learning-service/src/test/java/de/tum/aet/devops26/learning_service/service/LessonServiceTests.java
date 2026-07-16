@@ -253,4 +253,70 @@ class LessonServiceTests {
         assertThat(response.getExercises().get(0).getKeywords())
             .containsExactly("Problem", "Datensatz", "Vorverarbeitung");
     }
+
+    @Test
+    void findResponseByIdReturnsLocalizedGermanSpeakingPromptAndExpectedAnswer() {
+        Lesson lesson = Lesson.builder()
+            .id(5L)
+            .planId(9L)
+            .title("Introduction and Motivation")
+            .topic("Present your background.")
+            .orderNumber(1)
+            .build();
+        LearningPlan plan = LearningPlan.builder()
+            .id(9L)
+            .title(LearningPlanSeeder.SPEAKING_TITLE)
+            .build();
+        Exercise exercise = Exercise.builder()
+            .id(31L)
+            .lessonId(5L)
+            .type("speaking_prompt")
+            .question("Tell me about yourself.")
+            .difficulty("A2")
+            .expectedAnswer("Summarize your background.")
+            .build();
+        DefaultLearningPlanContent germanTemplate = new DefaultLearningPlanContent(
+            "Sprechtraining für Software-Engineering-Interviews",
+            "Mündliches Training für typische Interviewfragen.",
+            "1 Woche",
+            "Mündliche Antworten verbessern",
+            "German",
+            "A2",
+            "Gib eine klare mündliche Antwort.",
+            List.of(new DefaultLessonTemplate(
+                "Vorstellung und Motivation",
+                "Präsentiere deinen Hintergrund.",
+                List.of(new DefaultExerciseTemplate(
+                    "Erzählen Sie mir etwas über sich.",
+                    "speaking_prompt",
+                    "Fasse deinen Hintergrund, deine Erfahrung und dein berufliches Ziel zusammen.",
+                    List.of("Hintergrund", "Erfahrung", "berufliches Ziel")
+                ))
+            ))
+        );
+
+        when(lessonRepository.findById(5L)).thenReturn(Optional.of(lesson));
+        when(learningPlanRepository.findById(9L)).thenReturn(Optional.of(plan));
+        when(defaultLearningPlanCatalog.findKeyByLocalizedTitle(LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.of(LearningPlanSeeder.SPEAKING_TEMPLATE_KEY));
+        when(defaultLearningPlanCatalog.findLocalizedByKey(
+            LearningPlanSeeder.SPEAKING_TEMPLATE_KEY,
+            "German"
+        )).thenReturn(germanTemplate);
+        when(exerciseService.findByLessonId(5L)).thenReturn(List.of(exercise));
+        when(exerciseService.toResponse(any(Exercise.class), any(LocalizedExercise.class))).thenCallRealMethod();
+        when(lessonContentBlockRepository.findByLessonIdOrderByOrderNumberAsc(5L)).thenReturn(List.of());
+
+        LessonResponse response = service.findResponseById(5L, "German").orElseThrow();
+
+        assertThat(response.getTitle()).isEqualTo("Vorstellung und Motivation");
+        assertThat(response.getExercises().get(0).getType().getValue()).isEqualTo("speaking");
+        assertThat(response.getExercises().get(0).getSubtype().getValue()).isEqualTo("speaking_prompt");
+        assertThat(response.getExercises().get(0).getQuestion()).isEqualTo("Erzählen Sie mir etwas über sich.");
+        assertThat(response.getExercises().get(0).getExpectedAnswer())
+            .isEqualTo("Fasse deinen Hintergrund, deine Erfahrung und dein berufliches Ziel zusammen.");
+        assertThat(response.getExercises().get(0).getFormat()).isEqualTo("Gesprochene Antwort");
+        assertThat(response.getExercises().get(0).getKeywords())
+            .containsExactly("Hintergrund", "Erfahrung", "berufliches Ziel");
+    }
 }
