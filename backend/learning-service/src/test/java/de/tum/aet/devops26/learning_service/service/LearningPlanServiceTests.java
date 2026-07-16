@@ -152,6 +152,8 @@ class LearningPlanServiceTests {
         assertThat(planCaptor.getValue().getLanguage()).isEqualTo("German");
         assertThat(planCaptor.getValue().getLevel()).isEqualTo("B1");
         assertThat(planCaptor.getValue().getDuration()).isEqualTo("3 weeks");
+        assertThat(planCaptor.getValue().getOrigin()).isEqualTo(LearningPlan.ORIGIN_AI_RAG);
+        assertThat(response.getOrigin()).isEqualTo(LearningPlanResponse.OriginEnum.AI_RAG);
 
         ArgumentCaptor<Lesson> lessonCaptor = ArgumentCaptor.forClass(Lesson.class);
         verify(lessonService).save(lessonCaptor.capture());
@@ -418,6 +420,24 @@ class LearningPlanServiceTests {
             .createDefaultPlan(any(CreateDefaultLearningPlanRequest.class), eq("job-interview"));
         verify(learningPlanSeeder).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
         verify(learningPlanSeeder).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
+    }
+
+    @Test
+    void createAiLearningPlanRejectsThirdGeneratedPlanForUser() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest();
+        when(userServiceClient.resolveSubmittedUserId(42L)).thenReturn(42L);
+        when(learningPlanRepository.countByUserIdAndOrigin(42L, LearningPlan.ORIGIN_AI_RAG))
+            .thenReturn(2L);
+
+        assertThatThrownBy(() -> service.createAiLearningPlan(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .satisfies(exception -> assertThat(((ResponseStatusException) exception).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT))
+            .hasMessageContaining("at most 2 RAG learning plans");
+
+        verify(genAiRagLearningPlanClient, never()).generate(any(CreateAiLearningPlanRequest.class));
+        verify(learningPlanRepository, never()).save(any(LearningPlan.class));
     }
 
     @Test

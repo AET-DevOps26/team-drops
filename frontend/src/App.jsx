@@ -35,6 +35,7 @@ import {
 } from './api/mappers';
 import { IntroOverlay } from './components/IntroOverlay';
 import { LanguageSwitchOverlay } from './components/LanguageSwitchOverlay';
+import { OperationLoadingOverlay } from './components/OperationLoadingOverlay';
 import { SettingsOverlay } from './components/SettingsOverlay';
 import { languages, targetLanguages } from './data/languages';
 import { AuthPage } from './pages/AuthPage';
@@ -44,6 +45,12 @@ import { LearningPage } from './pages/LearningPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { hasReviewedAnswer } from './utils/exercises';
 import { getRecentFinishedLessons, getRecentLessons } from './utils/learning';
+import {
+  beginRegistrationIntro,
+  cancelRegistrationIntro,
+  completeIntro,
+  shouldShowIntro,
+} from './utils/onboarding';
 
 const defaultProfile = {
   name: 'Learner',
@@ -53,11 +60,27 @@ const defaultProfile = {
   learningGoal: 'Prepare for a software engineering job interview',
 };
 
+async function loadFeedbackByAnswerId(savedAnswers, token) {
+  const feedbackEntries = await Promise.all(
+    savedAnswers.map(async (answer) => {
+      try {
+        return [answer.id, await getFeedbackByAnswerId(answer.id, token)];
+      } catch (error) {
+        if (error.status === 404) {
+          return [answer.id, null];
+        }
+
+        throw error;
+      }
+    }),
+  );
+
+  return new Map(feedbackEntries.filter(([, feedback]) => feedback));
+}
+
 function isReviewedListeningExercise(exercise) {
   return exercise?.type === 'listening' && hasReviewedAnswer(exercise);
 }
-
-const introPendingKey = 'teamDropsIntroPending';
 
 const translations = {
   English: {
@@ -102,7 +125,7 @@ const translations = {
     aiTraining: 'AI Training',
     aiTrainingDescription: 'Adaptive interview practice will be available here.',
     ragLearning: 'RAG learning',
-    ragLearningDescription: 'Create from document topics',
+    ragLearningDescription: 'Build personalized plans from curated learning material',
     chooseRagTopic: 'Choose a RAG topic',
     generateLearningPlan: 'Generate learning plan',
     comingLater: 'Coming later',
@@ -112,6 +135,11 @@ const translations = {
     comingSoon: 'Coming soon',
     switchingLanguage: 'Switching learning language',
     loadingLanguageContent: 'Loading your {language} plans, lessons, and progress.',
+    updatingProgress: 'Updating your progress',
+    loadingProgressContent: 'Loading your latest lesson results before continuing.',
+    generatingRagPlan: 'Generating your learning plan',
+    generatingRagPlanContent: 'RAG is creating the lessons and exercises. This may take a moment.',
+    ragPlanLimitReached: 'You have reached the limit of 2 generated RAG plans.',
   },
   German: {
     appLabel: 'Sprachen lernen',
@@ -155,7 +183,7 @@ const translations = {
     aiTraining: 'KI-Training',
     aiTrainingDescription: 'Adaptives Interviewtraining wird hier verfügbar sein.',
     ragLearning: 'RAG-Lernen',
-    ragLearningDescription: 'Aus Dokumentthemen erstellen',
+    ragLearningDescription: 'Personalisierte Pläne aus kuratierten Lerninhalten erstellen',
     chooseRagTopic: 'RAG-Thema wählen',
     generateLearningPlan: 'Lernplan erstellen',
     comingLater: 'Kommt später',
@@ -165,6 +193,11 @@ const translations = {
     comingSoon: 'Kommt bald',
     switchingLanguage: 'Lernsprache wird gewechselt',
     loadingLanguageContent: 'Deine Inhalte, Lektionen und Fortschritte für {language} werden geladen.',
+    updatingProgress: 'Fortschritt wird aktualisiert',
+    loadingProgressContent: 'Deine neuesten Lektionsergebnisse werden geladen.',
+    generatingRagPlan: 'Dein Lernplan wird erstellt',
+    generatingRagPlanContent: 'RAG erstellt die Lektionen und Übungen. Dies kann einen Moment dauern.',
+    ragPlanLimitReached: 'Du hast das Limit von 2 generierten RAG-Lernplänen erreicht.',
   },
   French: {
     appLabel: 'Apprentissage des langues',
@@ -208,7 +241,7 @@ const translations = {
     aiTraining: 'Entrainement IA',
     aiTrainingDescription: 'La pratique adaptive d entretien sera disponible ici.',
     ragLearning: 'Apprentissage RAG',
-    ragLearningDescription: 'Creer depuis les documents',
+    ragLearningDescription: 'Creer des plans personnalises a partir de contenus selectionnes',
     chooseRagTopic: 'Choisir un sujet RAG',
     generateLearningPlan: 'Generer un plan',
     comingLater: 'A venir',
@@ -218,6 +251,11 @@ const translations = {
     comingSoon: 'Bientot disponible',
     switchingLanguage: 'Changement de langue',
     loadingLanguageContent: 'Chargement des plans, lecons et progres en {language}.',
+    updatingProgress: 'Mise a jour de votre progression',
+    loadingProgressContent: 'Chargement de vos derniers resultats avant de continuer.',
+    generatingRagPlan: 'Generation de votre plan',
+    generatingRagPlanContent: 'RAG cree les lecons et exercices. Cela peut prendre un moment.',
+    ragPlanLimitReached: 'Vous avez atteint la limite de 2 plans RAG generes.',
   },
 };
 
@@ -234,6 +272,7 @@ export function App() {
   const [authError, setAuthError] = React.useState('');
   const [loadingInitialData, setLoadingInitialData] = React.useState(false);
   const [switchingTargetLanguage, setSwitchingTargetLanguage] = React.useState('');
+  const [blockingOperation, setBlockingOperation] = React.useState('');
   const [dashboardError, setDashboardError] = React.useState('');
   const [profilePending, setProfilePending] = React.useState(false);
   const [profileError, setProfileError] = React.useState('');
@@ -350,6 +389,7 @@ export function App() {
   };
   const recentLessons = getRecentLessons(learningPlans);
   const recentFinishedLessons = progress.recentFinished.length > 0 ? progress.recentFinished : getRecentFinishedLessons(learningPlans);
+  const ragPlanCount = learningPlans.filter((plan) => plan.origin === 'AI_RAG').length;
   const t = translations[language] ?? translations.English;
 
   const syncLearningData = React.useCallback(async (currentSession, options = {}) => {
@@ -395,6 +435,7 @@ export function App() {
     if (nextLearningPlans.length > 0) {
       try {
         const savedAnswers = await getUserAnswers(userId, token, { targetLanguage: contentLanguage });
+        const feedbackByAnswerId = await loadFeedbackByAnswerId(savedAnswers, token);
         const lessonDetails = await Promise.all(
           nextLearningPlans.flatMap((plan) => plan.lessons.map(async (lesson) => {
             const lessonResponse = await getLesson(lesson.id, token, contentLanguage);
@@ -406,7 +447,7 @@ export function App() {
           lessonDetails.reduce(
             (plans, lessonDetail) => mergeLessonIntoPlans(
               plans,
-              attachSavedAnswersToLesson(lessonDetail, savedAnswers),
+              attachSavedAnswersToLesson(lessonDetail, savedAnswers, feedbackByAnswerId),
             ),
             nextLearningPlans,
           ),
@@ -493,14 +534,14 @@ export function App() {
         };
 
         setSession(nextSession);
+        const showGuidedIntro = shouldShowIntro(window.localStorage, user);
         await syncLearningData(nextSession);
         if (!cancelled && !initialAuthRedirectDoneRef.current && screenRef.current === 'auth') {
           initialAuthRedirectDoneRef.current = true;
           navigateToScreen('main');
           setSettingsOpen(false);
           setSettingsClosing(false);
-          if (window.localStorage.getItem(introPendingKey) === 'true') {
-            window.localStorage.removeItem(introPendingKey);
+          if (showGuidedIntro) {
             introTimeoutId = window.setTimeout(() => {
               if (!cancelled) {
                 setIntroOpen(true);
@@ -548,21 +589,9 @@ export function App() {
       targetLanguage: profile.targetLanguage,
     }))
       .filter((answer) => lessonExerciseIds.has(answer.exercise_id));
-    const feedbackEntries = await Promise.all(
-      savedAnswers.map(async (answer) => {
-        try {
-          return [answer.id, await getFeedbackByAnswerId(answer.id, currentSession.accessToken)];
-        } catch (error) {
-          if (error.status === 404) {
-            return [answer.id, null];
-          }
-
-          throw error;
-        }
-      }),
-    );
-    const feedbackByAnswerId = new Map(
-      feedbackEntries.filter(([, feedback]) => feedback),
+    const feedbackByAnswerId = await loadFeedbackByAnswerId(
+      savedAnswers,
+      currentSession.accessToken,
     );
     const normalizedLesson = attachSavedAnswersToLesson(
       lessonDetail,
@@ -639,6 +668,7 @@ export function App() {
     navigateToScreen('auth');
     setSettingsOpen(false);
     setSettingsClosing(false);
+    setIntroOpen(false);
   };
 
   const logout = () => {
@@ -658,6 +688,7 @@ export function App() {
   const handleLogin = () => {
     setAuthError('');
     setAuthPending(true);
+    cancelRegistrationIntro(window.localStorage);
     loginWithKeycloak().catch((error) => {
       setAuthPending(false);
       setAuthError(error.message || 'Unable to start Keycloak sign in.');
@@ -667,16 +698,16 @@ export function App() {
   const handleRegister = () => {
     setAuthError('');
     setAuthPending(true);
-    window.localStorage.setItem(introPendingKey, 'true');
+    beginRegistrationIntro(window.localStorage);
     registerWithKeycloak().catch((error) => {
       setAuthPending(false);
-      window.localStorage.removeItem(introPendingKey);
+      cancelRegistrationIntro(window.localStorage);
       setAuthError(error.message || 'Unable to start Keycloak registration.');
     });
   };
 
   const finishIntro = () => {
-    window.localStorage.removeItem(introPendingKey);
+    completeIntro(window.localStorage, session?.user?.id);
     setIntroOpen(false);
   };
 
@@ -923,6 +954,7 @@ export function App() {
         toLessonDetail(lessonResponse, activeLesson),
         submission,
       );
+      setLearningPlans((currentPlans) => mergeLessonIntoPlans(currentPlans, normalizedLesson));
       const syncResult = await syncLearningData(session, {
         skipSelectionReset: true,
         progressPlanId: activePlan.id,
@@ -991,31 +1023,67 @@ export function App() {
       throw new Error('Please sign in before generating a learning plan.');
     }
 
-    const createdPlan = await createAiLearningPlan({
-      ...payload,
-      user_id: session.user.id,
-      target_language: profile.targetLanguage,
-      current_level: profile.currentLevel,
-    }, session.accessToken);
+    setBlockingOperation('rag');
+    try {
+      const createdPlan = await createAiLearningPlan({
+        ...payload,
+        user_id: session.user.id,
+        target_language: profile.targetLanguage,
+        current_level: profile.currentLevel,
+      }, session.accessToken);
 
-    const syncResult = await syncLearningData(session, { skipSelectionReset: true });
-    const createdPlanIndex = syncResult.nextLearningPlans.findIndex((plan) => plan.id === createdPlan.id);
-    setSelectedPlan(createdPlanIndex >= 0 ? createdPlanIndex : 0);
-    setSelectedLesson(0);
-    setSelectedExercise(0);
-    setLearningMode('training');
-    setLearningStep('lessons');
+      const syncResult = await syncLearningData(session, { skipSelectionReset: true });
+      const createdPlanIndex = syncResult.nextLearningPlans.findIndex((plan) => plan.id === createdPlan.id);
+      selectPlan(createdPlanIndex >= 0 ? createdPlanIndex : 0);
+      selectLesson(0);
+      selectExercise(0);
+      setLearningMode('training');
+      setLearningStep('lessons');
 
-    return createdPlan;
+      return createdPlan;
+    } finally {
+      setBlockingOperation('');
+    }
   };
 
-  const goBackInLearning = () => {
-    if (learningStep === 'exercise') {
-      setLearningStep('lesson');
+  const refreshProgressBefore = async (continueNavigation) => {
+    if (!session || blockingOperation) {
+      continueNavigation();
       return;
     }
 
-    setLearningStep(learningStep === 'lesson' || learningStep === 'planDetail' ? 'lessons' : 'plans');
+    setBlockingOperation('progress');
+    try {
+      await syncLearningData(session, {
+        skipSelectionReset: true,
+        progressPlanId: activePlan?.id,
+      });
+    } catch (error) {
+      setDashboardError(error.message || 'Unable to refresh progress.');
+    } finally {
+      continueNavigation();
+      setBlockingOperation('');
+    }
+  };
+
+  const goBackInLearning = () => {
+    refreshProgressBefore(() => {
+      if (learningStep === 'exercise') {
+        setLearningStep('lesson');
+        return;
+      }
+
+      setLearningStep(learningStep === 'lesson' || learningStep === 'planDetail' ? 'lessons' : 'plans');
+    });
+  };
+
+  const navigateFromLearning = (nextScreen) => {
+    if (nextScreen !== 'main') {
+      navigateToScreen(nextScreen);
+      return;
+    }
+
+    refreshProgressBefore(() => navigateToScreen('main'));
   };
 
   return (
@@ -1024,11 +1092,6 @@ export function App() {
         <div className="phone-speaker" aria-hidden="true"></div>
 
         <section className={`app-shell ${darkMode ? 'dark-mode' : ''}`} aria-label="InterviewMate">
-          <div className="status-bar" aria-hidden="true">
-            <span>9:41</span>
-            <span>LTE 100%</span>
-          </div>
-
           {screen === 'auth' && (
             <AuthPage
               authEnabled={authEnabled}
@@ -1079,10 +1142,11 @@ export function App() {
               listeningLoading={listeningLoading}
               listeningSelections={listeningSelections}
               profile={profile}
+              ragPlanCount={ragPlanCount}
               t={t}
               onBack={goBackInLearning}
               onLearningMode={changeLearningMode}
-              onNavigate={navigateToScreen}
+              onNavigate={navigateFromLearning}
               onOpenExercise={openExercise}
               onOpenLesson={openLesson}
               onOpenPlan={openPlan}
@@ -1154,6 +1218,22 @@ export function App() {
 
           {switchingTargetLanguage && (
             <LanguageSwitchOverlay targetLanguage={switchingTargetLanguage} t={t} />
+          )}
+
+          {blockingOperation === 'progress' && (
+            <OperationLoadingOverlay
+              description={t.loadingProgressContent}
+              title={t.updatingProgress}
+              variant="progress"
+            />
+          )}
+
+          {blockingOperation === 'rag' && (
+            <OperationLoadingOverlay
+              description={t.generatingRagPlanContent}
+              title={t.generatingRagPlan}
+              variant="rag"
+            />
           )}
 
           <div className="home-indicator" aria-hidden="true"></div>

@@ -44,6 +44,7 @@ class UserServiceTests {
         assertThat(response.getId()).isEqualTo(42L);
         assertThat(response.getName()).isEqualTo("Ada Lovelace");
         assertThat(response.getEmail()).isEqualTo("ada@example.com");
+        assertThat(response.getNewUser()).isTrue();
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(userCaptor.capture());
@@ -66,6 +67,7 @@ class UserServiceTests {
 
         assertThat(response.getId()).isEqualTo(7L);
         assertThat(response.getEmail()).isEqualTo("ada@example.com");
+        assertThat(response.getNewUser()).isFalse();
     }
 
     @Test
@@ -88,6 +90,7 @@ class UserServiceTests {
 
         assertThat(response.getId()).isEqualTo(13L);
         assertThat(response.getName()).isEqualTo("ada");
+        assertThat(response.getNewUser()).isFalse();
         assertThat(existingUser.getKeycloakSubject()).isEqualTo("keycloak-subject");
         verify(userRepository).save(existingUser);
     }
@@ -107,6 +110,7 @@ class UserServiceTests {
         assertThat(response.getId()).isEqualTo(99L);
         assertThat(response.getName()).isEqualTo("Local Dev User");
         assertThat(response.getEmail()).isEqualTo("local-dev@example.com");
+        assertThat(response.getNewUser()).isTrue();
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(userCaptor.capture());
@@ -128,6 +132,7 @@ class UserServiceTests {
 
         assertThat(response.getId()).isEqualTo(100L);
         assertThat(response.getEmail()).isEqualTo("local-dev@example.com");
+        assertThat(response.getNewUser()).isFalse();
     }
 
     private Jwt jwt(String subject, Map<String, Object> claims) {

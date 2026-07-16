@@ -271,6 +271,7 @@ export function toLearningPlans(plans = []) {
     duration: plan.duration,
     status: plan.status,
     progress: plan.progress ?? 0,
+    origin: plan.origin ?? 'FIXED',
     summary: formatPlanSummary(plan),
     accent: pickAccent(planIndex, planAccents),
     lessons: (plan.lessons ?? []).map((lesson, lessonIndex) => ({

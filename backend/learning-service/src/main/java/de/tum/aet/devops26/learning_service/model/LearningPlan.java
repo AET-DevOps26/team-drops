@@ -23,6 +23,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class LearningPlan {
 
+    public static final String ORIGIN_FIXED = "FIXED";
+    public static final String ORIGIN_AI_RAG = "AI_RAG";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -53,4 +56,8 @@ public class LearningPlan {
 
     @Column(nullable = false)
     private Integer progress;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private String origin = ORIGIN_FIXED;
 }

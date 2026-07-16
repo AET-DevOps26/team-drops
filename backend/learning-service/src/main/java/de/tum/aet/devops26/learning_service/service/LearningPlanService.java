@@ -44,6 +44,7 @@ public class LearningPlanService {
     private static final int MAX_STUDY_HOURS_PER_WEEK = 80;
     private static final int MIN_LESSONS = 1;
     private static final int MAX_LESSONS = 24;
+    private static final int MAX_RAG_PLANS_PER_USER = 2;
 
     private final LearningPlanRepository learningPlanRepository;
     private final LessonService lessonService;
@@ -82,6 +83,17 @@ public class LearningPlanService {
     public LearningPlanResponse createAiLearningPlan(CreateAiLearningPlanRequest request) {
         validateAiLearningPlanRequest(request);
         Long resolvedUserId = userServiceClient.resolveSubmittedUserId(request.getUserId());
+        long generatedPlanCount = learningPlanRepository.countByUserIdAndOrigin(
+            resolvedUserId,
+            LearningPlan.ORIGIN_AI_RAG
+        );
+        if (generatedPlanCount >= MAX_RAG_PLANS_PER_USER) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "Each user can generate at most " + MAX_RAG_PLANS_PER_USER + " RAG learning plans."
+            );
+        }
+
         RagLearningPlanResponse generatedPlan = genAiRagLearningPlanClient.generate(request);
         List<ValidatedRagLesson> lessons = validateGeneratedPlan(generatedPlan, request);
 
@@ -95,6 +107,7 @@ public class LearningPlanService {
             .duration(requiredText(generatedPlan.duration(), "duration"))
             .status(LearningStatus.NOT_STARTED.getValue())
             .progress(0)
+            .origin(LearningPlan.ORIGIN_AI_RAG)
             .build());
 
         for (ValidatedRagLesson generatedLesson : lessons) {
@@ -226,7 +239,7 @@ public class LearningPlanService {
             .map(key -> localizedTemplate.defaultGoal())
             .orElse(plan.getGoal());
 
-        return new LearningPlanResponse(
+        LearningPlanResponse response = new LearningPlanResponse(
                 plan.getId(),
                 plan.getUserId(),
                 localizedTemplate == null ? plan.getTitle() : localizedTemplate.title(),
@@ -240,6 +253,10 @@ public class LearningPlanService {
                 lessonService.findByPlanId(plan.getId()).stream()
                         .map(lesson -> lessonService.toSummaryResponse(lesson, language))
                         .toList());
+        response.setOrigin(LearningPlanResponse.OriginEnum.fromValue(
+            plan.getOrigin() == null ? LearningPlan.ORIGIN_FIXED : plan.getOrigin()
+        ));
+        return response;
     }
 
     private LearningStatus toLearningStatus(String value) {

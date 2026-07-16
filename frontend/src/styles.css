@@ -98,15 +98,6 @@ button {
     var(--paper);
 }
 
-.status-bar {
-  display: flex;
-  justify-content: space-between;
-  padding: 2px 8px 24px;
-  color: var(--ink);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
 .app-header {
   display: flex;
   align-items: center;

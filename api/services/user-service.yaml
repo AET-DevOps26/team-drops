@@ -135,6 +135,10 @@ components:
           type: string
           format: email
           example: ada@example.com
+        new_user:
+          type: boolean
+          description: True only when this request created the local application user.
+          default: false
     CreateUserProfileRequest:
       type: object
       required:
