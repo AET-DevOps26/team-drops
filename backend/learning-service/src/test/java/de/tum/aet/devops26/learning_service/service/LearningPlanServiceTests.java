@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +28,7 @@ import de.tum.aet.devops26.learning_service.model.Lesson;
 import de.tum.aet.devops26.learning_service.repository.LearningPlanRepository;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanCatalog;
 import de.tum.aet.devops26.learning_service.service.catalog.DefaultLearningPlanContent;
+import de.tum.aet.devops26.learning_service.service.catalog.DefaultLessonTemplate;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -416,6 +418,76 @@ class LearningPlanServiceTests {
             .createDefaultPlan(any(CreateDefaultLearningPlanRequest.class), eq("job-interview"));
         verify(learningPlanSeeder).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
         verify(learningPlanSeeder).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
+    }
+
+    @Test
+    void existingUserWithLegacySpeakingPlanReceivesNewSpeakingTrackOnlyOnce() {
+        LearningPlanService service = newService();
+        LearningPlan defaultPlan = fixedPlan(7L, LearningPlanSeeder.DEFAULT_TITLE);
+        LearningPlan listeningPlan = fixedPlan(8L, LearningPlanSeeder.LISTENING_TITLE);
+        LearningPlan legacySpeakingPlan = fixedPlan(9L, "Everyday Speaking Practice");
+        LearningPlan newSpeakingPlan = fixedPlan(10L, LearningPlanSeeder.SPEAKING_TITLE);
+
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.DEFAULT_TITLE))
+            .thenReturn(Optional.of(defaultPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
+            .thenReturn(Optional.of(listeningPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.empty(), Optional.of(newSpeakingPlan));
+        when(learningPlanRepository.findByUserId(42L))
+            .thenReturn(List.of(legacySpeakingPlan), List.of(legacySpeakingPlan, newSpeakingPlan));
+        when(lessonService.findByPlanId(any())).thenReturn(List.of());
+
+        service.findResponsesByUserId(42L);
+        List<LearningPlanResponse> secondSync = service.findResponsesByUserId(42L);
+
+        verify(learningPlanSeeder, times(1)).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
+        assertThat(secondSync).extracting(LearningPlanResponse::getTitle)
+            .containsExactly("Everyday Speaking Practice", LearningPlanSeeder.SPEAKING_TITLE);
+    }
+
+    @Test
+    void speakingTrackResponseLocalizesGermanTitleDescriptionAndGoal() {
+        LearningPlanService service = newService();
+        LearningPlan defaultPlan = fixedPlan(7L, LearningPlanSeeder.DEFAULT_TITLE);
+        LearningPlan listeningPlan = fixedPlan(8L, LearningPlanSeeder.LISTENING_TITLE);
+        LearningPlan speakingPlan = fixedPlan(10L, LearningPlanSeeder.SPEAKING_TITLE);
+        speakingPlan.setGoal("Improve spoken answers for software engineering interviews");
+        DefaultLearningPlanContent germanSpeakingTemplate = new DefaultLearningPlanContent(
+            "Sprechtraining für Software-Engineering-Interviews",
+            "Mündliches Training für typische Fragen in Software-Engineering-Interviews.",
+            "1 Woche",
+            "Mündliche Antworten für Software-Engineering-Interviews verbessern",
+            "German",
+            "A2",
+            "Gib eine klare, strukturierte mündliche Antwort mit einem passenden Beispiel.",
+            List.<DefaultLessonTemplate>of()
+        );
+
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.DEFAULT_TITLE))
+            .thenReturn(Optional.of(defaultPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
+            .thenReturn(Optional.of(listeningPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.of(speakingPlan));
+        when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(speakingPlan));
+        when(defaultLearningPlanCatalog.findKeyByLocalizedTitle(LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.of(LearningPlanSeeder.SPEAKING_TEMPLATE_KEY));
+        when(defaultLearningPlanCatalog.findLocalizedByKey(
+            LearningPlanSeeder.SPEAKING_TEMPLATE_KEY,
+            "German"
+        )).thenReturn(germanSpeakingTemplate);
+        when(lessonService.findByPlanId(10L)).thenReturn(List.of());
+
+        LearningPlanResponse response = service.findResponsesByUserId(42L, "German").get(0);
+
+        assertThat(response.getTitle()).isEqualTo("Sprechtraining für Software-Engineering-Interviews");
+        assertThat(response.getDescription())
+            .isEqualTo("Mündliches Training für typische Fragen in Software-Engineering-Interviews.");
+        assertThat(response.getGoal())
+            .isEqualTo("Mündliche Antworten für Software-Engineering-Interviews verbessern");
+        assertThat(response.getLanguage()).isEqualTo("German");
+        assertThat(response.getDuration()).isEqualTo("1 Woche");
     }
 
     private LearningPlanService newService() {

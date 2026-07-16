@@ -4,6 +4,11 @@ import java.util.List;
 
 public record DefaultExerciseTemplate(
     String question,
+    String subtype,
+    String expectedAnswer,
     List<String> keywords
 ) {
+    public DefaultExerciseTemplate(String question, List<String> keywords) {
+        this(question, null, null, keywords);
+    }
 }

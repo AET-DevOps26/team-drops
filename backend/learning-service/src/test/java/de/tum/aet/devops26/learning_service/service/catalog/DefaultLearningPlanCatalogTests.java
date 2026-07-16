@@ -99,4 +99,62 @@ class DefaultLearningPlanCatalogTests {
                 "konkreter Effekt"
             );
     }
+
+    @Test
+    void loadsEnglishSoftwareEngineeringSpeakingTrackWithThreeByThreeStructure() throws Exception {
+        DefaultLearningPlanCatalog catalog = new DefaultLearningPlanCatalog(new ObjectMapper());
+
+        DefaultLearningPlanContent template = catalog.findLocalizedByKey(
+            "software-engineering-speaking",
+            "English"
+        );
+
+        assertThat(template.title()).isEqualTo("Software Engineering Interview Speaking Practice");
+        assertThat(template.lessons()).hasSize(3);
+        assertThat(template.lessons()).allSatisfy(lesson -> assertThat(lesson.exercises()).hasSize(3));
+        assertThat(template.lessons())
+            .extracting("title")
+            .containsExactly(
+                "Introduction and Motivation",
+                "Projects and Problem Solving",
+                "Engineering Practices and Collaboration"
+            );
+        assertThat(template.lessons().stream().flatMap(lesson -> lesson.exercises().stream()))
+            .hasSize(9)
+            .allSatisfy(exercise -> {
+                assertThat(exercise.subtype()).isEqualTo("speaking_prompt");
+                assertThat(exercise.expectedAnswer()).isNotBlank();
+                assertThat(exercise.keywords()).isNotEmpty();
+            });
+    }
+
+    @Test
+    void loadsGermanSoftwareEngineeringSpeakingTrackWithLocalizedExercises() throws Exception {
+        DefaultLearningPlanCatalog catalog = new DefaultLearningPlanCatalog(new ObjectMapper());
+
+        DefaultLearningPlanContent template = catalog.findLocalizedByKey(
+            "software-engineering-speaking",
+            "German"
+        );
+
+        assertThat(template.title()).isEqualTo("Sprechtraining für Software-Engineering-Interviews");
+        assertThat(template.defaultLanguage()).isEqualTo("German");
+        assertThat(template.duration()).isEqualTo("1 Woche");
+        assertThat(template.lessons()).hasSize(3);
+        assertThat(template.lessons())
+            .extracting("title")
+            .containsExactly(
+                "Vorstellung und Motivation",
+                "Projekte und Problemlösung",
+                "Engineering-Praktiken und Zusammenarbeit"
+            );
+        assertThat(template.lessons().stream().flatMap(lesson -> lesson.exercises().stream()))
+            .hasSize(9)
+            .allSatisfy(exercise -> {
+                assertThat(exercise.subtype()).isEqualTo("speaking_prompt");
+                assertThat(exercise.question()).isNotBlank();
+                assertThat(exercise.expectedAnswer()).isNotBlank();
+                assertThat(exercise.keywords()).isNotEmpty();
+            });
+    }
 }

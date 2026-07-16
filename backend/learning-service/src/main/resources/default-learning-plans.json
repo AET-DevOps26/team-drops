@@ -1182,5 +1182,266 @@
         ]
       }
     }
+  },
+  {
+    "key": "software-engineering-speaking",
+    "languages": {
+      "English": {
+        "title": "Software Engineering Interview Speaking Practice",
+        "description": "Spoken practice for common software engineering interview questions.",
+        "duration": "1 week",
+        "defaultGoal": "Improve spoken answers for software engineering interviews",
+        "defaultLanguage": "English",
+        "defaultLevel": "A2",
+        "defaultExpectedAnswer": "Give a clear, structured spoken answer with a relevant example.",
+        "lessons": [
+          {
+            "title": "Introduction and Motivation",
+            "topic": "Present your background, motivation, and strengths as a software engineering candidate.",
+            "exercises": [
+              {
+                "question": "Record a 45-second answer to: Tell me about yourself as a software engineering candidate.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Summarize your background, studies or experience, technical interests, and current professional goal.",
+                "keywords": [
+                  "background",
+                  "experience",
+                  "technical interests",
+                  "professional goal"
+                ]
+              },
+              {
+                "question": "Record your answer to: Why are you interested in this software engineering role?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Connect the role and company to your technical interests, relevant experience, and the contribution you want to make.",
+                "keywords": [
+                  "role motivation",
+                  "company",
+                  "relevant experience",
+                  "contribution"
+                ]
+              },
+              {
+                "question": "Record your answer to: What is one of your strongest qualities as a software engineer?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Name one relevant strength, support it with a specific example, and explain the positive result.",
+                "keywords": [
+                  "strength",
+                  "specific example",
+                  "action",
+                  "result"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Projects and Problem Solving",
+            "topic": "Explain software projects, debugging work, and technical decisions with clear evidence.",
+            "exercises": [
+              {
+                "question": "Record your answer to: Describe a software project you are proud of.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Describe the problem, your role, the technology and decisions you used, and the final result.",
+                "keywords": [
+                  "problem",
+                  "personal role",
+                  "technical decisions",
+                  "result"
+                ]
+              },
+              {
+                "question": "Record your answer to: Tell me about a difficult bug you fixed.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Explain the symptom, investigation, root cause, fix, and how you verified that the solution worked.",
+                "keywords": [
+                  "symptom",
+                  "root cause",
+                  "fix",
+                  "verification"
+                ]
+              },
+              {
+                "question": "Record your answer to: Describe a technical decision where you had to make a tradeoff.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "State the options, constraints, tradeoffs, chosen approach, and the outcome or lesson learned.",
+                "keywords": [
+                  "options",
+                  "constraints",
+                  "tradeoffs",
+                  "outcome"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Engineering Practices and Collaboration",
+            "topic": "Discuss API design, software quality, and collaboration in an engineering team.",
+            "exercises": [
+              {
+                "question": "Record your answer to: What makes a REST API easy for other developers to use?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Mention clear resource naming, appropriate methods and status codes, validation, consistent errors, and documentation.",
+                "keywords": [
+                  "resource naming",
+                  "status codes",
+                  "validation",
+                  "documentation"
+                ]
+              },
+              {
+                "question": "Record your answer to: How do testing and code review improve software quality?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Explain how tests prevent regressions and how code review improves correctness, readability, maintainability, and knowledge sharing.",
+                "keywords": [
+                  "regression prevention",
+                  "correctness",
+                  "maintainability",
+                  "knowledge sharing"
+                ]
+              },
+              {
+                "question": "Record your answer to: Tell me about a technical disagreement with a teammate.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Describe the disagreement, how you listened and used evidence, the team decision, and the final result.",
+                "keywords": [
+                  "different viewpoints",
+                  "evidence",
+                  "team decision",
+                  "result"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "German": {
+        "title": "Sprechtraining für Software-Engineering-Interviews",
+        "description": "Mündliches Training für typische Fragen in Software-Engineering-Interviews.",
+        "duration": "1 Woche",
+        "defaultGoal": "Mündliche Antworten für Software-Engineering-Interviews verbessern",
+        "defaultLanguage": "German",
+        "defaultLevel": "A2",
+        "defaultExpectedAnswer": "Gib eine klare, strukturierte mündliche Antwort mit einem passenden Beispiel.",
+        "lessons": [
+          {
+            "title": "Vorstellung und Motivation",
+            "topic": "Präsentiere deinen Hintergrund, deine Motivation und deine Stärken als Kandidatin oder Kandidat im Software Engineering.",
+            "exercises": [
+              {
+                "question": "Nimm eine 45-sekündige Antwort auf: Erzählen Sie mir etwas über sich als Kandidatin oder Kandidat im Software Engineering.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Fasse deinen Hintergrund, dein Studium oder deine Erfahrung, deine technischen Interessen und dein aktuelles berufliches Ziel zusammen.",
+                "keywords": [
+                  "Hintergrund",
+                  "Erfahrung",
+                  "technische Interessen",
+                  "berufliches Ziel"
+                ]
+              },
+              {
+                "question": "Nimm deine Antwort auf: Warum interessieren Sie sich für diese Stelle im Software Engineering?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Verbinde die Stelle und das Unternehmen mit deinen technischen Interessen, relevanten Erfahrungen und deinem gewünschten Beitrag.",
+                "keywords": [
+                  "Motivation für die Stelle",
+                  "Unternehmen",
+                  "relevante Erfahrung",
+                  "Beitrag"
+                ]
+              },
+              {
+                "question": "Nimm deine Antwort auf: Was ist eine Ihrer größten Stärken als Software Engineer?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Nenne eine relevante Stärke, belege sie mit einem konkreten Beispiel und erkläre das positive Ergebnis.",
+                "keywords": [
+                  "Stärke",
+                  "konkretes Beispiel",
+                  "Handlung",
+                  "Ergebnis"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Projekte und Problemlösung",
+            "topic": "Erkläre Softwareprojekte, Debugging und technische Entscheidungen mit klaren Belegen.",
+            "exercises": [
+              {
+                "question": "Nimm deine Antwort auf: Beschreiben Sie ein Softwareprojekt, auf das Sie stolz sind.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Beschreibe das Problem, deine Rolle, die eingesetzte Technologie und wichtige Entscheidungen sowie das Endergebnis.",
+                "keywords": [
+                  "Problem",
+                  "eigene Rolle",
+                  "technische Entscheidungen",
+                  "Ergebnis"
+                ]
+              },
+              {
+                "question": "Nimm deine Antwort auf: Erzählen Sie mir von einem schwierigen Fehler, den Sie behoben haben.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Erkläre das Symptom, die Untersuchung, die Ursache, die Korrektur und wie du die Lösung überprüft hast.",
+                "keywords": [
+                  "Symptom",
+                  "Ursache",
+                  "Korrektur",
+                  "Überprüfung"
+                ]
+              },
+              {
+                "question": "Nimm deine Antwort auf: Beschreiben Sie eine technische Entscheidung, bei der Sie einen Kompromiss eingehen mussten.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Nenne die Optionen, Einschränkungen, Abwägungen, den gewählten Ansatz und das Ergebnis oder den Lerneffekt.",
+                "keywords": [
+                  "Optionen",
+                  "Einschränkungen",
+                  "Abwägungen",
+                  "Ergebnis"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Engineering-Praktiken und Zusammenarbeit",
+            "topic": "Sprich über API-Design, Softwarequalität und Zusammenarbeit in einem Engineering-Team.",
+            "exercises": [
+              {
+                "question": "Nimm deine Antwort auf: Was macht eine REST-API für andere Entwicklerinnen und Entwickler einfach nutzbar?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Nenne klare Ressourcennamen, passende Methoden und Statuscodes, Validierung, konsistente Fehler und Dokumentation.",
+                "keywords": [
+                  "Ressourcennamen",
+                  "Statuscodes",
+                  "Validierung",
+                  "Dokumentation"
+                ]
+              },
+              {
+                "question": "Nimm deine Antwort auf: Wie verbessern Tests und Code Reviews die Softwarequalität?",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Erkläre, wie Tests Regressionen verhindern und Code Reviews Korrektheit, Lesbarkeit, Wartbarkeit und Wissensaustausch verbessern.",
+                "keywords": [
+                  "Regressionen verhindern",
+                  "Korrektheit",
+                  "Wartbarkeit",
+                  "Wissensaustausch"
+                ]
+              },
+              {
+                "question": "Nimm deine Antwort auf: Erzählen Sie mir von einer technischen Meinungsverschiedenheit mit einem Teammitglied.",
+                "subtype": "speaking_prompt",
+                "expectedAnswer": "Beschreibe die Meinungsverschiedenheit, wie du zugehört und Belege genutzt hast, die Teamentscheidung und das Ergebnis.",
+                "keywords": [
+                  "unterschiedliche Sichtweisen",
+                  "Belege",
+                  "Teamentscheidung",
+                  "Ergebnis"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
   }
 ]

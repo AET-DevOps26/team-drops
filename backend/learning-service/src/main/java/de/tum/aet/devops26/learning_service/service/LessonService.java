@@ -2,6 +2,7 @@ package de.tum.aet.devops26.learning_service.service;
 
 import de.tum.aet.devops26.learning_service.dto.GenerateAiExercisesRequest;
 import de.tum.aet.devops26.learning_service.dto.GenerateAiExercisesResponse;
+import de.tum.aet.devops26.learning_service.dto.ExerciseSubtype;
 import de.tum.aet.devops26.learning_service.dto.LearningStatus;
 import de.tum.aet.devops26.learning_service.dto.LessonSummaryResponse;
 import de.tum.aet.devops26.learning_service.dto.LessonResponse;
@@ -199,16 +200,26 @@ public class LessonService {
         var exerciseTemplate = localizedLesson.lesson().exercises().get(exerciseIndex);
         return new LocalizedExercise(
             exerciseTemplate.question(),
-            localizedLesson.content().defaultExpectedAnswer(),
-            localizedFormatFor(language),
+            exerciseTemplate.expectedAnswer() == null || exerciseTemplate.expectedAnswer().isBlank()
+                ? localizedLesson.content().defaultExpectedAnswer()
+                : exerciseTemplate.expectedAnswer(),
+            localizedFormatFor(language, exerciseTemplate.subtype()),
             exerciseTemplate.keywords()
         );
     }
 
-    private String localizedFormatFor(String language) {
-        return "German".equalsIgnoreCase(language == null ? "" : language.trim())
-            ? "Kurze schriftliche Antwort"
-            : null;
+    private String localizedFormatFor(String language, String subtype) {
+        if (!"German".equalsIgnoreCase(language == null ? "" : language.trim())) {
+            return null;
+        }
+
+        if (ExerciseSubtype.SPEAKING_PROMPT.getValue().equals(subtype)) {
+            return "Gesprochene Antwort";
+        }
+        if (ExerciseSubtype.LISTENING_CHOICE.getValue().equals(subtype)) {
+            return "Hörverständnis";
+        }
+        return "Kurze schriftliche Antwort";
     }
 
     private record LocalizedLessonContext(

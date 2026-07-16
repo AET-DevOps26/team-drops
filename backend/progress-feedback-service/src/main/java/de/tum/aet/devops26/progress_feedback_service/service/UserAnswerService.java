@@ -213,9 +213,13 @@ public class UserAnswerService {
         if (audio == null || audio.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "audio is required.");
         }
+        if (isBlank(targetLanguage)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "target_language is required.");
+        }
 
         Long resolvedUserId = userServiceClient.resolveSubmittedUserId(userId);
-        ExerciseContext exercise = learningServiceClient.getExercise(lessonId, exerciseId);
+        String normalizedLanguage = normalizeLanguage(targetLanguage);
+        ExerciseContext exercise = learningServiceClient.getExercise(lessonId, exerciseId, normalizedLanguage);
         if (!isSpeakingExercise(exercise)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Exercise is not a speaking exercise.");
         }
@@ -229,7 +233,7 @@ public class UserAnswerService {
             valueOrDefault(exercise.subtype(), exercise.type()),
             exercise.question(),
             exercise.expectedAnswer(),
-            valueOrDefault(targetLanguage, "English"),
+            normalizedLanguage,
             valueOrDefault(level, exercise.difficulty())
         ));
         int score = toPercentScore(evaluation.score());
@@ -238,7 +242,7 @@ public class UserAnswerService {
             .userId(resolvedUserId)
             .exerciseId(exerciseId)
             .planId(planId)
-            .targetLanguage(normalizeLanguage(targetLanguage))
+            .targetLanguage(normalizedLanguage)
             .answerText(evaluation.transcription())
             .score((double) score)
             .build());

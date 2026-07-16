@@ -956,7 +956,11 @@ export function App() {
         level: profile.currentLevel || exercise.difficulty,
       }, session.accessToken);
 
-      const lessonResponse = await getLesson(activeLesson.id, session.accessToken);
+      const lessonResponse = await getLesson(
+        activeLesson.id,
+        session.accessToken,
+        profile.targetLanguage,
+      );
       const normalizedLesson = attachSubmissionToLesson(
         toLessonDetail(lessonResponse, activeLesson),
         submission,
