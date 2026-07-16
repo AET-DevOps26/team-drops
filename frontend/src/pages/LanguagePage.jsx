@@ -1,11 +1,25 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
 
-export function LanguagePage({ heading, language, languages, title, onBack, onLanguage }) {
+export function LanguagePage({
+  heading,
+  language,
+  languages,
+  pending = false,
+  title,
+  onBack,
+  onLanguage,
+}) {
   return (
-    <section className="language-page" aria-label="Language selection">
+    <section className="language-page" aria-busy={pending} aria-label="Language selection">
       <header className="page-topbar">
-        <button className="icon-button" type="button" aria-label="Back to main page" onClick={onBack}>
+        <button
+          className="icon-button"
+          disabled={pending}
+          type="button"
+          aria-label="Back to main page"
+          onClick={onBack}
+        >
           <ChevronLeft size={22} aria-hidden="true" />
         </button>
         <h2>{title}</h2>
@@ -18,6 +32,7 @@ export function LanguagePage({ heading, language, languages, title, onBack, onLa
           {languages.map((item) => (
             <button
               className={`language-bubble ${language === item ? 'selected' : ''}`}
+              disabled={pending}
               key={item}
               type="button"
               onClick={() => onLanguage(item)}

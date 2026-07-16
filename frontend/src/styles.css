@@ -2604,6 +2604,81 @@ button.settings-row {
   color: #ffffff;
 }
 
+.language-bubble:disabled,
+.page-topbar .icon-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.language-switch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(37, 99, 235, 0.22), transparent 42%),
+    rgba(16, 32, 51, 0.72);
+  backdrop-filter: blur(8px);
+  animation: backdropIn 180ms ease both;
+}
+
+.language-switch-card {
+  display: grid;
+  justify-items: center;
+  width: min(100%, 300px);
+  gap: 14px;
+  padding: 28px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 24px 60px rgba(16, 32, 51, 0.32);
+  color: #102033;
+  text-align: center;
+  animation: page-appear 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.dark-mode .language-switch-card {
+  border-color: rgba(96, 165, 250, 0.34);
+  background: rgba(15, 29, 51, 0.97);
+  color: #eef6ff;
+}
+
+.language-switch-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--blue);
+}
+
+.language-switch-spinner {
+  color: var(--blue);
+  animation: language-switch-spin 850ms linear infinite;
+}
+
+.language-switch-card h2 {
+  margin: 0 0 7px;
+  font-size: 1.08rem;
+}
+
+.language-switch-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+@keyframes language-switch-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .settings-overlay {
   position: absolute;
   inset: 0;
@@ -2964,6 +3039,9 @@ button.settings-row {
   .feedback-card,
   .profile-page,
   .language-page,
+  .language-switch-overlay,
+  .language-switch-card,
+  .language-switch-spinner,
   .intro-card,
   .intro-spotlight {
     animation: none;

@@ -592,7 +592,9 @@ paths:
                 target_language:
                   type: string
                   minLength: 1
-                  description: Target language for localized exercise lookup and speaking evaluation. Supported values are English and German.
+                  description: >-
+                    Target language for localized exercise lookup and speaking
+                    evaluation. Supported values are English and German.
                   example: German
                 level:
                   type: string

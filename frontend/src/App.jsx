@@ -34,6 +34,7 @@ import {
   toProgressSummary,
 } from './api/mappers';
 import { IntroOverlay } from './components/IntroOverlay';
+import { LanguageSwitchOverlay } from './components/LanguageSwitchOverlay';
 import { SettingsOverlay } from './components/SettingsOverlay';
 import { languages, targetLanguages } from './data/languages';
 import { AuthPage } from './pages/AuthPage';
@@ -109,6 +110,8 @@ const translations = {
     plans: 'plans',
     overall: 'Overall',
     comingSoon: 'Coming soon',
+    switchingLanguage: 'Switching learning language',
+    loadingLanguageContent: 'Loading your {language} plans, lessons, and progress.',
   },
   German: {
     appLabel: 'Sprachen lernen',
@@ -160,6 +163,8 @@ const translations = {
     plans: 'Pläne',
     overall: 'Gesamt',
     comingSoon: 'Kommt bald',
+    switchingLanguage: 'Lernsprache wird gewechselt',
+    loadingLanguageContent: 'Deine Inhalte, Lektionen und Fortschritte für {language} werden geladen.',
   },
   French: {
     appLabel: 'Apprentissage des langues',
@@ -211,6 +216,8 @@ const translations = {
     plans: 'plans',
     overall: 'Total',
     comingSoon: 'Bientot disponible',
+    switchingLanguage: 'Changement de langue',
+    loadingLanguageContent: 'Chargement des plans, lecons et progres en {language}.',
   },
 };
 
@@ -226,6 +233,7 @@ export function App() {
   const [authPending, setAuthPending] = React.useState(false);
   const [authError, setAuthError] = React.useState('');
   const [loadingInitialData, setLoadingInitialData] = React.useState(false);
+  const [switchingTargetLanguage, setSwitchingTargetLanguage] = React.useState('');
   const [dashboardError, setDashboardError] = React.useState('');
   const [profilePending, setProfilePending] = React.useState(false);
   const [profileError, setProfileError] = React.useState('');
@@ -842,19 +850,21 @@ export function App() {
     }
   };
 
-  const handleTargetLanguageChange = (nextTargetLanguage) => {
-    setTargetLanguageValue(nextTargetLanguage);
-    setProfile((currentProfile) => {
-      return {
-        ...currentProfile,
-        targetLanguage: nextTargetLanguage,
-      };
-    });
-
-    if (!session) {
+  const handleTargetLanguageChange = async (nextTargetLanguage) => {
+    if (nextTargetLanguage === targetLanguage || switchingTargetLanguage) {
       return;
     }
 
+    if (!session) {
+      setTargetLanguageValue(nextTargetLanguage);
+      setProfile((currentProfile) => ({
+        ...currentProfile,
+        targetLanguage: nextTargetLanguage,
+      }));
+      return;
+    }
+
+    setSwitchingTargetLanguage(nextTargetLanguage);
     setProfilePending(true);
     setProfileError('');
 
@@ -863,24 +873,23 @@ export function App() {
       targetLanguage: nextTargetLanguage,
     };
 
-    updateUserProfile(session.user.id, {
-      name: resolvedProfile.name,
-      country: resolvedProfile.country,
-      target_language: nextTargetLanguage,
-      current_level: resolvedProfile.currentLevel,
-      learning_goal: resolvedProfile.learningGoal,
-    }, session.accessToken)
-      .then((savedProfile) => {
-        const normalizedProfile = toProfile(savedProfile, session.user);
-        applyProfileState(normalizedProfile);
-        return syncLearningData(session, { skipSelectionReset: true });
-      })
-      .catch((error) => {
-        setProfileError(error.message || 'Unable to save profile.');
-      })
-      .finally(() => {
-        setProfilePending(false);
-      });
+    try {
+      const savedProfile = await updateUserProfile(session.user.id, {
+        name: resolvedProfile.name,
+        country: resolvedProfile.country,
+        target_language: nextTargetLanguage,
+        current_level: resolvedProfile.currentLevel,
+        learning_goal: resolvedProfile.learningGoal,
+      }, session.accessToken);
+      const normalizedProfile = toProfile(savedProfile, session.user);
+      applyProfileState(normalizedProfile);
+      await syncLearningData(session, { skipSelectionReset: true });
+    } catch (error) {
+      setProfileError(error.message || 'Unable to switch learning language.');
+    } finally {
+      setProfilePending(false);
+      setSwitchingTargetLanguage('');
+    }
   };
 
   const handleSubmitAnswer = async (exercise, answerText) => {
@@ -1116,6 +1125,7 @@ export function App() {
               heading={t.targetLanguage}
               language={targetLanguage}
               languages={targetLanguages}
+              pending={Boolean(switchingTargetLanguage)}
               title={t.languageToLearn}
               onBack={goToMain}
               onLanguage={handleTargetLanguageChange}
@@ -1140,6 +1150,10 @@ export function App() {
 
           {introOpen && screen === 'main' && !settingsOpen && (
             <IntroOverlay onFinish={finishIntro} />
+          )}
+
+          {switchingTargetLanguage && (
+            <LanguageSwitchOverlay targetLanguage={switchingTargetLanguage} t={t} />
           )}
 
           <div className="home-indicator" aria-hidden="true"></div>
