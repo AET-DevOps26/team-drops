@@ -214,7 +214,7 @@ function normalizeExercisePrompt(exercise) {
   const question = exercise.question || exercise.title || '';
   const expectedAnswer = exercise.expected_answer ?? '';
   const malformedFillBlank = exercise.subtype === 'fill_in_blank' && !hasBlankMarker(question);
-  const malformedChoice = exercise.subtype === 'multiple_choice' && !hasChoiceMarker(question);
+  const malformedChoice = ['multiple_choice', 'listening_choice'].includes(exercise.subtype) && !hasChoiceMarker(question);
   const subtype = malformedFillBlank || malformedChoice
     ? 'free_text'
     : exercise.subtype;
