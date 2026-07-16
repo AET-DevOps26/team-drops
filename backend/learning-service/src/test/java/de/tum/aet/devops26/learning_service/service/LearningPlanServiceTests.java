@@ -85,9 +85,15 @@ class LearningPlanServiceTests {
         LearningPlanService service = newService();
         CreateDefaultLearningPlanRequest request = request();
         LearningPlan existingPlan = fixedPlan(7L, LearningPlanSeeder.DEFAULT_TITLE);
+        LearningPlan listeningPlan = fixedPlan(8L, LearningPlanSeeder.LISTENING_TITLE);
+        LearningPlan speakingPlan = fixedPlan(9L, LearningPlanSeeder.SPEAKING_TITLE);
 
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.DEFAULT_TITLE))
             .thenReturn(Optional.of(existingPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
+            .thenReturn(Optional.of(listeningPlan));
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
+            .thenReturn(Optional.of(speakingPlan));
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
 
         LearningPlanResponse response = service.createDefaultLearningPlan(request);
@@ -366,12 +372,16 @@ class LearningPlanServiceTests {
     }
 
     @Test
-    void createDefaultLearningPlanReturnsDefaultPlanWithoutSeparateListeningAndSpeakingPlans() {
+    void createDefaultLearningPlanReturnsDefaultPlanAndSeedsMissingListeningAndSpeakingPlans() {
         LearningPlanService service = newService();
         CreateDefaultLearningPlanRequest request = request();
         LearningPlan defaultPlan = fixedPlan(7L, LearningPlanSeeder.DEFAULT_TITLE);
 
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.DEFAULT_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
             .thenReturn(Optional.empty());
         when(learningPlanSeeder.createDefaultPlan(request, "job-interview")).thenReturn(defaultPlan);
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
@@ -381,16 +391,20 @@ class LearningPlanServiceTests {
         assertThat(response.getId()).isEqualTo(7L);
         assertThat(response.getTitle()).isEqualTo(LearningPlanSeeder.DEFAULT_TITLE);
         verify(learningPlanSeeder).createDefaultPlan(request, "job-interview");
-        verify(learningPlanSeeder, never()).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
-        verify(learningPlanSeeder, never()).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanSeeder).createListeningPlan(request);
+        verify(learningPlanSeeder).createSpeakingPlan(request);
     }
 
     @Test
-    void findResponsesByUserIdCreatesMissingCatalogPlansForExistingUserBeforeReadingPlans() {
+    void findResponsesByUserIdCreatesMissingFixedPlansForExistingUserBeforeReadingPlans() {
         LearningPlanService service = newService();
         LearningPlan existingPlan = fixedPlan(7L, "Custom Plan");
 
         when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.DEFAULT_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.LISTENING_TITLE))
+            .thenReturn(Optional.empty());
+        when(learningPlanRepository.findFirstByUserIdAndTitle(42L, LearningPlanSeeder.SPEAKING_TITLE))
             .thenReturn(Optional.empty());
         when(learningPlanRepository.findByUserId(42L)).thenReturn(List.of(existingPlan));
         when(lessonService.findByPlanId(7L)).thenReturn(List.of());
@@ -400,8 +414,8 @@ class LearningPlanServiceTests {
         assertThat(responses).extracting(LearningPlanResponse::getTitle).containsExactly("Custom Plan");
         verify(learningPlanSeeder, atLeastOnce())
             .createDefaultPlan(any(CreateDefaultLearningPlanRequest.class), eq("job-interview"));
-        verify(learningPlanSeeder, never()).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
-        verify(learningPlanSeeder, never()).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanSeeder).createListeningPlan(any(CreateDefaultLearningPlanRequest.class));
+        verify(learningPlanSeeder).createSpeakingPlan(any(CreateDefaultLearningPlanRequest.class));
     }
 
     private LearningPlanService newService() {

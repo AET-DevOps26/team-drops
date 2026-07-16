@@ -158,14 +158,10 @@ class LessonServiceTests {
                 List.of(
                     new DefaultExerciseTemplate(
                         "Erzählen Sie mir etwas über sich.",
-                        null,
-                        null,
                         List.of("background", "motivation")
                     ),
                     new DefaultExerciseTemplate(
                         "Schreibe eine kurze professionelle Selbstvorstellung.",
-                        null,
-                        null,
                         List.of()
                     )
                 )
@@ -232,8 +228,6 @@ class LessonServiceTests {
                 "Übe, ein ML-Projekt klar und überzeugend zu erklären.",
                 List.of(new DefaultExerciseTemplate(
                     "Beschreibe ein Machine-Learning-Projekt, an dem du gearbeitet hast.",
-                    null,
-                    null,
                     List.of("Problem", "Datensatz", "Vorverarbeitung")
                 ))
             ))

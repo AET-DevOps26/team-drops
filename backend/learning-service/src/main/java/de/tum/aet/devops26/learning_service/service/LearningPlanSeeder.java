@@ -27,158 +27,64 @@ public class LearningPlanSeeder {
     private static final String DEFAULT_TEMPLATE_KEY = "job-interview";
 
     static final String DEFAULT_TITLE = "Job Interview Preparation";
-    static final String LISTENING_TITLE = "Software Engineering Interview Listening Practice";
-    static final String SPEAKING_TITLE = "Software Engineering Interview Speaking Practice";
-    static final String LEGACY_LISTENING_TITLE = "Everyday Listening Practice";
-    static final String LEGACY_SPEAKING_TITLE = "Everyday Speaking Practice";
+    static final String LISTENING_TITLE = "Everyday Listening Practice";
+    static final String SPEAKING_TITLE = "Everyday Speaking Practice";
 
-    private static final String LISTENING_DESCRIPTION =
-        "Listening comprehension exercises based on software engineering interview scenarios.";
+    private static final String LISTENING_DESCRIPTION = "Listening comprehension exercises on everyday German topics.";
     private static final String LISTENING_DURATION = "1 week";
-    private static final String LISTENING_GOAL =
-        "Improve listening comprehension for software engineering interviews";
+    private static final String LISTENING_GOAL = "Improve German listening comprehension";
     private static final String LISTENING_LANGUAGE = "German";
     private static final String LISTENING_LEVEL = "A2";
     private static final String LISTENING_EXPECTED_ANSWER = "Select the most accurate listening response.";
 
     private static final String SPEAKING_DESCRIPTION =
-        "Speaking exercises for software engineering interview responses.";
+        "Speaking exercises for short German responses in everyday and interview situations.";
     private static final String SPEAKING_DURATION = "1 week";
-    private static final String SPEAKING_GOAL =
-        "Improve spoken answers for software engineering interviews";
+    private static final String SPEAKING_GOAL = "Improve German spoken responses";
     private static final String SPEAKING_LANGUAGE = "German";
     private static final String SPEAKING_LEVEL = "A2";
 
     private static final List<FixedLesson> FIXED_LISTENING_LESSONS = List.of(
         new FixedLesson(
-            "Interview Self Introduction",
-            "Listen to a candidate introduce their background, studies, and software engineering goals.",
-            List.of(new FixedExercise(
-                "AI listening exercise 1: software engineering interview self-introduction",
-                LISTENING_EXPECTED_ANSWER
-            ))
+            "At the Cafe",
+            "Ordering drinks and food at a German cafe.",
+            List.of(new FixedExercise("AI listening exercise 1: cafe conversation", LISTENING_EXPECTED_ANSWER))
         ),
         new FixedLesson(
-            "Project Deep Dive",
-            "Listen to a candidate explain a software project, their role, and the technical result.",
-            List.of(new FixedExercise(
-                "AI listening exercise 1: software project interview explanation",
-                LISTENING_EXPECTED_ANSWER
-            ))
+            "Public Transport",
+            "Asking for directions and using public transport in Germany.",
+            List.of(new FixedExercise("AI listening exercise 1: public transport", LISTENING_EXPECTED_ANSWER))
         ),
         new FixedLesson(
-            "Debugging Discussion",
-            "Listen to an interview answer about finding a bug, identifying the root cause, and verifying the fix.",
-            List.of(new FixedExercise(
-                "AI listening exercise 1: debugging interview answer",
-                LISTENING_EXPECTED_ANSWER
-            ))
-        ),
-        new FixedLesson(
-            "System Design Conversation",
-            "Listen to a simple system design explanation with requirements, API, database, and tradeoffs.",
-            List.of(new FixedExercise(
-                "AI listening exercise 1: software system design interview",
-                LISTENING_EXPECTED_ANSWER
-            ))
-        ),
-        new FixedLesson(
-            "API and Database Interview",
-            "Listen to an interview answer about API design, database choice, and data consistency.",
-            List.of(new FixedExercise(
-                "AI listening exercise 1: API and database interview tradeoffs",
-                LISTENING_EXPECTED_ANSWER
-            ))
-        ),
-        new FixedLesson(
-            "Testing and Code Review",
-            "Listen to a candidate discuss test strategy, code review, and maintainability.",
-            List.of(new FixedExercise(
-                "AI listening exercise 1: testing and code review interview",
-                LISTENING_EXPECTED_ANSWER
-            ))
-        ),
-        new FixedLesson(
-            "Team Collaboration",
-            "Listen to an answer about resolving a technical disagreement with a teammate.",
-            List.of(new FixedExercise(
-                "AI listening exercise 1: software team collaboration interview",
-                LISTENING_EXPECTED_ANSWER
-            ))
-        ),
-        new FixedLesson(
-            "Prioritization and Ownership",
-            "Listen to a candidate explain how they prioritize engineering work and own mistakes.",
-            List.of(new FixedExercise(
-                "AI listening exercise 1: engineering prioritization and ownership interview",
-                LISTENING_EXPECTED_ANSWER
-            ))
+            "Shopping",
+            "Buying items and asking about prices in a German shop.",
+            List.of(new FixedExercise("AI listening exercise 1: shopping", LISTENING_EXPECTED_ANSWER))
         )
     );
 
     private static final List<FixedLesson> FIXED_SPEAKING_LESSONS = List.of(
         new FixedLesson(
             "Self Introduction",
-            "Giving a short spoken software engineering interview introduction.",
+            "Giving a short spoken introduction in German.",
             List.of(new FixedExercise(
-                "Record a 45-second answer to: Tell me about yourself as a software engineering candidate.",
-                "Mention your background, studies or experience, technical strengths, and one professional goal."
+                "Record a 30-second introduction with your name, studies, and one professional goal.",
+                "Mention your name, studies, and one professional goal in a concise spoken response."
             ))
         ),
         new FixedLesson(
-            "Project Deep Dive",
-            "Explaining a software project clearly out loud.",
+            "At the Cafe",
+            "Ordering politely in German.",
             List.of(new FixedExercise(
-                "Record how you would answer: Describe a software project you are proud of.",
-                "Describe the problem, your role, important technical decisions, and the result."
+                "Record how you would order a coffee and ask for the price.",
+                "Politely order a coffee and ask how much it costs."
             ))
         ),
         new FixedLesson(
-            "Debugging Story",
-            "Explaining debugging and problem-solving in an interview.",
+            "Project Pitch",
+            "Explaining a project out loud.",
             List.of(new FixedExercise(
-                "Record how you would answer: Tell me about a difficult bug you fixed.",
-                "Explain the symptom, investigation, root cause, fix, and how you verified the solution."
-            ))
-        ),
-        new FixedLesson(
-            "System Design Tradeoffs",
-            "Speaking through architecture decisions and tradeoffs.",
-            List.of(new FixedExercise(
-                "Record how you would explain the difference between monoliths and microservices.",
-                "Compare coupling, deployment, team ownership, complexity, and tradeoffs."
-            ))
-        ),
-        new FixedLesson(
-            "API Design",
-            "Speaking about developer-friendly APIs.",
-            List.of(new FixedExercise(
-                "Record how you would answer: What makes a REST API easy for other developers to use?",
-                "Mention resource naming, status codes, validation, error responses, and documentation."
-            ))
-        ),
-        new FixedLesson(
-            "Database Choice",
-            "Explaining persistence tradeoffs out loud.",
-            List.of(new FixedExercise(
-                "Record how you would answer: When would you choose a relational database instead of a document database?",
-                "Compare schema, relationships, transactions, query patterns, and consistency needs."
-            ))
-        ),
-        new FixedLesson(
-            "Testing and Review",
-            "Speaking about quality practices in engineering teams.",
-            List.of(new FixedExercise(
-                "Record how you would answer: What do you look for when reviewing another engineer's pull request?",
-                "Mention correctness, readability, maintainability, tests, and security."
-            ))
-        ),
-        new FixedLesson(
-            "Prioritization",
-            "Explaining engineering judgment under constraints.",
-            List.of(new FixedExercise(
-                "Record how you would answer: How do you prioritize engineering tasks when everything feels important?",
-                "Mention user impact, urgency, dependencies, risk, and communication."
+                "Record a short explanation of a project you worked on and your role.",
+                "Describe the project, the problem it solved, and your personal role."
             ))
         )
     );
@@ -221,10 +127,10 @@ public class LearningPlanSeeder {
             for (var exerciseTemplate : lessonTemplate.exercises()) {
                 exerciseService.save(Exercise.builder()
                     .lessonId(lesson.getId())
-                    .type(valueOrDefault(exerciseTemplate.subtype(), ExerciseSubtype.FREE_TEXT.getValue()))
+                    .type("free_text")
                     .question(exerciseTemplate.question())
                     .difficulty(plan.getLevel())
-                    .expectedAnswer(valueOrDefault(exerciseTemplate.expectedAnswer(), template.defaultExpectedAnswer()))
+                    .expectedAnswer(template.defaultExpectedAnswer())
                     .build());
             }
         }
