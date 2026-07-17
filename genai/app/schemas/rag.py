@@ -145,7 +145,9 @@ class RagLearningPlanRequest(BaseModel):
 
 
 class RagLearningPlanExercise(BaseModel):
-    type: ExerciseTypeValue = Field(..., description="Learning-service ExerciseType enum value")
+    type: ExerciseTypeValue = Field(
+        ..., description="Learning-service ExerciseType enum value"
+    )
     subtype: ExerciseSubtypeValue = Field(
         ...,
         description="Learning-service ExerciseSubtype enum value",
@@ -208,7 +210,9 @@ class RagLearningPlanExercise(BaseModel):
         ):
             normalized["subtype"] = "free_text"
             normalized["type"] = "writing"
-            normalized["question"] = _open_question_prompt(normalized["question"], language)
+            normalized["question"] = _open_question_prompt(
+                normalized["question"], language
+            )
 
         return normalized
 
@@ -248,7 +252,11 @@ class RagLearningPlanLesson(BaseModel):
 
         normalized = dict(data)
         order_number = normalized.get("order_number") or 1
-        topic = normalized.get("topic") or normalized.get("_plan_topic") or RAG_TOPIC_PLACEHOLDER
+        topic = (
+            normalized.get("topic")
+            or normalized.get("_plan_topic")
+            or RAG_TOPIC_PLACEHOLDER
+        )
         language = _first_text(
             normalized.get("_plan_language"),
             normalized.get("target_language"),
@@ -260,16 +268,24 @@ class RagLearningPlanLesson(BaseModel):
 
         normalized["content_blocks"] = content_blocks
         normalized["order_number"] = order_number
-        normalized["title"] = normalized.get("title") or f"Lesson {order_number}: {topic}"
+        normalized["title"] = (
+            normalized.get("title") or f"Lesson {order_number}: {topic}"
+        )
         normalized["topic"] = normalized.get("topic") or topic
-        normalized["summary"] = normalized.get("summary") or first_block or normalized["title"]
+        normalized["summary"] = (
+            normalized.get("summary") or first_block or normalized["title"]
+        )
 
         level = normalized.get("_plan_level")
         exercises = []
         for exercise in normalized.get("exercises") or []:
             if isinstance(exercise, dict) and level and not exercise.get("level"):
                 exercise = {**exercise, "level": level}
-            if isinstance(exercise, dict) and language and not exercise.get("_plan_language"):
+            if (
+                isinstance(exercise, dict)
+                and language
+                and not exercise.get("_plan_language")
+            ):
                 exercise = {**exercise, "_plan_language": language}
             exercises.append(exercise)
         normalized["exercises"] = exercises
@@ -295,7 +311,9 @@ class RagLearningPlanResponse(BaseModel):
 
         normalized = dict(data)
         topic = normalized.get("topic") or RAG_TOPIC_PLACEHOLDER
-        learning_goal = normalized.get("learning_goal") or normalized.get("goal") or topic
+        learning_goal = (
+            normalized.get("learning_goal") or normalized.get("goal") or topic
+        )
         language = (
             normalized.get("target_language")
             or normalized.get("language")
@@ -328,6 +346,24 @@ class RagLearningPlanResponse(BaseModel):
         normalized["lessons"] = lessons
 
         return normalized
+
+
+class RagPlanQualityViolation(BaseModel):
+    lesson_order: int | None = Field(default=None, ge=1)
+    exercise_index: int | None = Field(default=None, ge=0)
+    code: str
+    reason: str
+
+
+class RagLearningPlanQualityReview(BaseModel):
+    accepted: bool
+    violations: list[RagPlanQualityViolation] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def reject_reviews_with_violations(self) -> "RagLearningPlanQualityReview":
+        if self.violations:
+            self.accepted = False
+        return self
 
 
 def _normalize_content_blocks(content_blocks: Any) -> list[str]:

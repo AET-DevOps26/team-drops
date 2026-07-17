@@ -8,9 +8,19 @@ from RAG import CorpusStats, RetrievedChunk
 from app.schemas.rag import (
     RagLearningPlanExercise,
     RagLearningPlanLesson,
+    RagLearningPlanQualityReview,
     RagLearningPlanResponse,
 )
 from tests.conftest import make_mock_structured_llm
+
+
+def _structured_llm_sequence(*responses):
+    response_iterator = iter(responses)
+    return lambda _schema: make_mock_structured_llm(next(response_iterator))
+
+
+def _accepted_review() -> RagLearningPlanQualityReview:
+    return RagLearningPlanQualityReview(accepted=True)
 
 
 def test_list_rag_topics(client, tmp_path):
@@ -74,7 +84,9 @@ def test_query_rag_returns_answer_and_sources(client, tmp_path):
     assert body["sources"][0]["page"] == 3
 
 
-def test_generate_rag_learning_plan_returns_structured_plan_and_sources(client, tmp_path):
+def test_generate_rag_learning_plan_returns_structured_plan_and_sources(
+    client, tmp_path
+):
     chunks = [
         RetrievedChunk(
             text="Practice concise interview answers with examples from your experience.",
@@ -97,7 +109,9 @@ def test_generate_rag_learning_plan_returns_structured_plan_and_sources(client, 
                 topic="STAR interview answers",
                 summary="Use situation, task, action, and result to organise answers.",
                 order_number=1,
-                content_blocks=["Explain STAR answers with examples from the retrieved guide."],
+                content_blocks=[
+                    "Explain STAR answers with examples from the retrieved guide."
+                ],
                 exercises=[
                     RagLearningPlanExercise(
                         type="writing",
@@ -113,9 +127,9 @@ def test_generate_rag_learning_plan_returns_structured_plan_and_sources(client, 
 
     with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
         "app.routers.rag.query_topic", return_value=chunks
-    ), patch(
+    ) as query_mock, patch(
         "app.routers.rag.get_structured_llm",
-        return_value=make_mock_structured_llm(llm_response),
+        side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -139,9 +153,15 @@ def test_generate_rag_learning_plan_returns_structured_plan_and_sources(client, 
     assert body["lessons"][0]["exercises"][0]["type"] == "writing"
     assert body["lessons"][0]["exercises"][0]["subtype"] == "free_text"
     assert body["sources"][0]["source"] == "interview-guide.pdf"
+    retrieval_query = query_mock.call_args.args[2]
+    assert "STAR answers" in retrieval_query
+    assert "technical explanations" in retrieval_query
+    assert "role-play" in retrieval_query
 
 
-def test_generate_rag_learning_plan_adds_missing_requested_exercise_types(client, tmp_path):
+def test_generate_rag_learning_plan_adds_missing_requested_exercise_types(
+    client, tmp_path
+):
     chunks = [
         RetrievedChunk(
             text="Practice concise software engineering interview answers.",
@@ -164,7 +184,9 @@ def test_generate_rag_learning_plan_adds_missing_requested_exercise_types(client
                 topic="STAR interview answers",
                 summary="Use situation, task, action, and result to organise answers.",
                 order_number=1,
-                content_blocks=["Explain STAR answers with examples from the retrieved guide."],
+                content_blocks=[
+                    "Explain STAR answers with examples from the retrieved guide."
+                ],
                 exercises=[
                     RagLearningPlanExercise(
                         type="writing",
@@ -182,7 +204,7 @@ def test_generate_rag_learning_plan_adds_missing_requested_exercise_types(client
         "app.routers.rag.query_topic", return_value=chunks
     ), patch(
         "app.routers.rag.get_structured_llm",
-        return_value=make_mock_structured_llm(llm_response),
+        side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -214,7 +236,9 @@ def test_generate_rag_learning_plan_adds_missing_requested_exercise_types(client
     )
 
 
-def test_generate_rag_learning_plan_removes_unrequested_exercise_types(client, tmp_path):
+def test_generate_rag_learning_plan_removes_unrequested_exercise_types(
+    client, tmp_path
+):
     chunks = [
         RetrievedChunk(
             text="Practice concise answers.",
@@ -278,7 +302,7 @@ def test_generate_rag_learning_plan_removes_unrequested_exercise_types(client, t
         "app.routers.rag.query_topic", return_value=chunks
     ), patch(
         "app.routers.rag.get_structured_llm",
-        return_value=make_mock_structured_llm(llm_response),
+        side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -356,7 +380,7 @@ def test_generate_rag_learning_plan_rejects_wrong_lesson_count(client, tmp_path)
         "app.routers.rag.query_topic", return_value=[]
     ), patch(
         "app.routers.rag.get_structured_llm",
-        return_value=make_mock_structured_llm(llm_response),
+        side_effect=_structured_llm_sequence(llm_response),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -377,7 +401,9 @@ def test_generate_rag_learning_plan_rejects_wrong_lesson_count(client, tmp_path)
     assert "lesson count outside requested range" in response.json()["message"]
 
 
-def test_generate_rag_learning_plan_times_out_llm_generation(client, tmp_path, monkeypatch):
+def test_generate_rag_learning_plan_times_out_llm_generation(
+    client, tmp_path, monkeypatch
+):
     chunks = [
         RetrievedChunk(
             text="Practice concise interview answers.",
@@ -419,7 +445,9 @@ def test_generate_rag_learning_plan_times_out_llm_generation(client, tmp_path, m
     assert "timed out" in response.json()["message"]
 
 
-def test_generate_rag_learning_plan_replaces_generic_normalized_metadata(client, tmp_path):
+def test_generate_rag_learning_plan_replaces_generic_normalized_metadata(
+    client, tmp_path
+):
     chunks = [
         RetrievedChunk(
             text="The Grand Tour has scenic routes through Switzerland.",
@@ -449,9 +477,9 @@ def test_generate_rag_learning_plan_replaces_generic_normalized_metadata(client,
 
     with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
         "app.routers.rag.query_topic", return_value=chunks
-    ), patch(
+    ) as query_mock, patch(
         "app.routers.rag.get_structured_llm",
-        return_value=make_mock_structured_llm(llm_response),
+        side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -475,6 +503,121 @@ def test_generate_rag_learning_plan_replaces_generic_normalized_metadata(client,
     assert body["duration"] == "4 weeks"
     assert body["lessons"][0]["title"] == "Lesson 1: Reisen in der Schweiz"
     assert body["lessons"][0]["topic"] == "Reisen in der Schweiz"
+    assert "STAR answers" not in query_mock.call_args.args[2]
+
+
+def test_job_interview_plan_replaces_attire_speaking_exercise(client, tmp_path):
+    chunks = [
+        RetrievedChunk(
+            text="Use STAR to answer behavioral interview questions with concrete examples.",
+            score=1.0,
+            source="interview-guide.pdf",
+            page=3,
+            chunk_index=1,
+        )
+    ]
+    rejected_plan = _speaking_plan(
+        "Explain what you should wear to an interview.",
+        "Describe suitable professional attire.",
+    )
+    repaired_plan = _speaking_plan(
+        "Tell me about a time you resolved a conflict in your team.",
+        "Use STAR and explain the situation, your action, and the result.",
+    )
+
+    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
+        "app.routers.rag.query_topic", return_value=chunks
+    ), patch(
+        "app.routers.rag.get_structured_llm",
+        side_effect=_structured_llm_sequence(
+            rejected_plan,
+            _accepted_review(),
+            repaired_plan,
+            _accepted_review(),
+        ),
+    ) as structured_llm:
+        response = client.post(
+            "/api/v1/genai/rag/learning-plan",
+            json=_learning_plan_request(),
+        )
+
+    assert response.status_code == 200
+    assert structured_llm.call_count == 4
+    question = response.json()["lessons"][0]["exercises"][0]["question"]
+    assert question == "Tell me about a time you resolved a conflict in your team."
+    assert "wear" not in question.lower()
+
+
+def test_job_interview_plan_fails_after_one_bad_corrective_retry(client, tmp_path):
+    rejected_plan = _speaking_plan(
+        "Explain what you should wear to an interview.",
+        "Describe suitable professional attire.",
+    )
+
+    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
+        "app.routers.rag.query_topic", return_value=[]
+    ), patch(
+        "app.routers.rag.get_structured_llm",
+        side_effect=_structured_llm_sequence(
+            rejected_plan,
+            _accepted_review(),
+            rejected_plan,
+            _accepted_review(),
+        ),
+    ) as structured_llm:
+        response = client.post(
+            "/api/v1/genai/rag/learning-plan",
+            json=_learning_plan_request(),
+        )
+
+    assert response.status_code == 502
+    assert (
+        "quality requirements after one corrective retry" in response.json()["message"]
+    )
+    assert structured_llm.call_count == 4
+
+
+def _learning_plan_request() -> dict:
+    return {
+        "topic": "job interview",
+        "learning_goal": "Prepare for a German software engineering interview",
+        "target_language": "German",
+        "level": "B1",
+        "duration_weeks": 2,
+        "study_hours_per_week": 4,
+        "minimum_lessons": 1,
+        "maximum_lessons": 1,
+        "exercise_types": ["speaking"],
+    }
+
+
+def _speaking_plan(question: str, expected_answer: str) -> RagLearningPlanResponse:
+    return RagLearningPlanResponse(
+        title="Interview Speaking Practice",
+        description="Practice spoken interview responses.",
+        goal="Prepare for a German software engineering interview",
+        language="German",
+        level="B1",
+        duration="2 weeks",
+        lessons=[
+            RagLearningPlanLesson(
+                title="Interview response practice",
+                topic="Interview responses",
+                summary="Practise responding clearly in an interview.",
+                order_number=1,
+                content_blocks=["Structure concise spoken responses."],
+                exercises=[
+                    RagLearningPlanExercise(
+                        type="speaking",
+                        subtype="speaking_prompt",
+                        question=question,
+                        expected_answer=expected_answer,
+                        difficulty="B1",
+                    )
+                ],
+            )
+        ],
+    )
 
 
 def test_rag_learning_plan_schema_normalizes_live_llm_near_miss_shape():
@@ -654,7 +797,10 @@ def test_rag_learning_plan_schema_repairs_partial_multiple_choice_options():
 
     assert exercise.type == "writing"
     assert exercise.subtype == "free_text"
-    assert exercise.question == "Answer this question in German: Choose the best answer.\nA) Only one option"
+    assert (
+        exercise.question
+        == "Answer this question in German: Choose the best answer.\nA) Only one option"
+    )
 
 
 def test_rag_learning_plan_schema_keeps_newline_multiple_choice_options():
@@ -704,4 +850,7 @@ def test_rag_learning_plan_schema_keeps_listening_choice_without_inline_options(
 
     assert exercise.type == "listening"
     assert exercise.subtype == "listening_choice"
-    assert exercise.question == "Generate a listening passage about explaining a backend API trade-off."
+    assert (
+        exercise.question
+        == "Generate a listening passage about explaining a backend API trade-off."
+    )
