@@ -19,6 +19,10 @@ let initialization;
 let loginRedirectStarted = false;
 const pendingRedirect = new Promise(() => {});
 
+function getSilentCheckSsoRedirectUri() {
+  return new URL(`${import.meta.env.BASE_URL}silent-check-sso.html`, window.location.origin).href;
+}
+
 function getKeycloak() {
   if (!keycloak) {
     keycloak = new Keycloak(keycloakConfig);
@@ -44,13 +48,16 @@ export async function initializeAuth() {
       onLoad: 'check-sso',
       pkceMethod: 'S256',
       checkLoginIframe: false,
+      silentCheckSsoRedirectUri: getSilentCheckSsoRedirectUri(),
+      silentCheckSsoFallback: false,
     });
   }
 
   return initialization;
 }
 
-export function loginWithKeycloak() {
+export async function loginWithKeycloak() {
+  await initializeAuth();
   return getKeycloak().login();
 }
 
@@ -75,7 +82,8 @@ export function redirectToLoginForExpiredSession() {
   return pendingRedirect;
 }
 
-export function registerWithKeycloak() {
+export async function registerWithKeycloak() {
+  await initializeAuth();
   return getKeycloak().register();
 }
 

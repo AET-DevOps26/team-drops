@@ -55,6 +55,24 @@ describe('frontend data mapper unit behavior', () => {
     });
   });
 
+  it('hides the fixed listening plan from the frontend plan list', () => {
+    const plans = toLearningPlans([
+      {
+        id: 10,
+        title: 'Everyday Listening Practice',
+        lessons: [],
+      },
+      {
+        id: 11,
+        title: 'Job Interview Preparation',
+        lessons: [],
+      },
+    ]);
+
+    expect(plans).toHaveLength(1);
+    expect(plans[0].title).toBe('Job Interview Preparation');
+  });
+
   it('builds fallback lesson blocks and derives progress from saved answers', () => {
     const lesson = toLessonDetail(
       {

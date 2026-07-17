@@ -14,6 +14,7 @@ import {
 
 const planAccents = ['blue', 'green', 'amber', 'violet', 'rose'];
 const lessonAccents = ['blue', 'green', 'amber', 'violet', 'rose'];
+const hiddenPlanTitles = new Set(['Everyday Listening Practice']);
 const lessonIcons = [
   MessageSquareText,
   GraduationCap,
@@ -264,7 +265,9 @@ export function toProfile(profile, fallbackUser) {
 }
 
 export function toLearningPlans(plans = []) {
-  return plans.map((plan, planIndex) => ({
+  return plans
+    .filter((plan) => !hiddenPlanTitles.has(plan.title))
+    .map((plan, planIndex) => ({
     id: plan.id,
     userId: plan.user_id,
     title: plan.title,
@@ -295,7 +298,7 @@ export function toLearningPlans(plans = []) {
       blocks: [],
       comment: null,
     })),
-  }));
+    }));
 }
 
 export function toLessonDetail(lesson, planSummaryLesson, targetLanguage = planSummaryLesson?.language) {
