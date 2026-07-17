@@ -136,6 +136,7 @@ genai:
   llmApiKey: ""
   llmModel: ""
   llmBaseUrl: ""
+  llmRequestTimeoutSeconds: 90
   ollamaBaseUrl: ""
   ollamaModel: llama3
   sttProvider: local

@@ -27,6 +27,7 @@ public class GenAiRagLearningPlanClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GenAiRagLearningPlanClient.class);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(300);
+    private static final int RAG_CONTEXT_CHUNKS = 2;
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -83,10 +84,21 @@ public class GenAiRagLearningPlanClient {
             payload.put("minimum_lessons", request.getMinimumLessons());
             payload.put("maximum_lessons", request.getMaximumLessons());
             payload.put("exercise_types", exerciseTypeValues(request.getExerciseTypes()));
+            payload.put("top_k", RAG_CONTEXT_CHUNKS);
 
             LOGGER.info("Sending GenAI RAG learning-plan request for topic {}", request.getRagTopic());
 
-            String jsonBody = objectMapper.writeValueAsString(payload);
+            String jsonBody;
+            try {
+                jsonBody = objectMapper.writeValueAsString(payload);
+            } catch (JsonProcessingException exception) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Could not serialize RAG learning-plan request.",
+                    exception
+                );
+            }
+
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(
                     URI.create(baseUrl + "/api/v1/genai/rag/learning-plan"))
                 .timeout(REQUEST_TIMEOUT)
@@ -102,21 +114,27 @@ public class GenAiRagLearningPlanClient {
             );
 
             if (httpResponse.statusCode() < 200 || httpResponse.statusCode() >= 300) {
-                LOGGER.warn("GenAI RAG learning-plan generation rejected: {}", httpResponse.body());
+                String rejectionMessage = genAiErrorMessage(httpResponse.body());
+                LOGGER.warn(
+                    "GenAI RAG learning-plan generation rejected (status {}): {}",
+                    httpResponse.statusCode(),
+                    httpResponse.body()
+                );
                 throw new ResponseStatusException(
                     HttpStatus.BAD_GATEWAY,
-                    "GenAI service rejected RAG learning-plan generation: " + httpResponse.body()
+                    rejectionMessage
                 );
             }
 
-            return objectMapper.readValue(httpResponse.body(), RagLearningPlanResponse.class);
-
-        } catch (JsonProcessingException exception) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Could not serialize or parse GenAI RAG learning-plan request.",
-                exception
-            );
+            try {
+                return objectMapper.readValue(httpResponse.body(), RagLearningPlanResponse.class);
+            } catch (JsonProcessingException exception) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "GenAI service returned an unparseable RAG learning-plan response.",
+                    exception
+                );
+            }
 
         } catch (ResponseStatusException exception) {
             throw exception;
@@ -137,6 +155,25 @@ public class GenAiRagLearningPlanClient {
         return exerciseTypes.stream()
             .map(ExerciseType::getValue)
             .toList();
+    }
+
+    private String genAiErrorMessage(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return "GenAI service rejected RAG learning-plan generation.";
+        }
+        try {
+            Map<?, ?> payload = objectMapper.readValue(responseBody, Map.class);
+            Object message = payload.get("message");
+            if (message == null) {
+                message = payload.get("detail");
+            }
+            if (message instanceof String text && !text.isBlank()) {
+                return "GenAI service rejected RAG learning-plan generation: " + text;
+            }
+        } catch (JsonProcessingException ignored) {
+            // Fall back to the generic message below when GenAI returned non-JSON.
+        }
+        return "GenAI service rejected RAG learning-plan generation.";
     }
 
     public record RagLearningPlanResponse(

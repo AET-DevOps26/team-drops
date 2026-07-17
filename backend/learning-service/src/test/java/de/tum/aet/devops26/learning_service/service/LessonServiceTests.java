@@ -2,6 +2,8 @@ package de.tum.aet.devops26.learning_service.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.tum.aet.devops26.learning_service.dto.LessonResponse;
@@ -58,7 +60,7 @@ class LessonServiceTests {
 
     @Test
     void saveContentBlocksNormalizesGeneratedStrings() {
-        when(lessonContentBlockRepository.findByLessonIdOrderByOrderNumberAsc(7L)).thenReturn(List.of());
+        when(lessonContentBlockRepository.countByLessonId(7L)).thenReturn(0L);
         when(lessonContentBlockRepository.save(any(LessonContentBlock.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -74,6 +76,15 @@ class LessonServiceTests {
         assertThat(blocks).extracting(LessonContentBlock::getType).containsOnly("content");
         assertThat(blocks).extracting(LessonContentBlock::getText)
             .containsExactly("Use situation, task, action, result.", "Keep answers concrete.");
+    }
+
+    @Test
+    void saveContentBlocksReturnsEarlyForBlankContent() {
+        List<LessonContentBlock> blocks = service.saveContentBlocks(7L, List.of(" ", "\n"));
+
+        assertThat(blocks).isEmpty();
+        verify(lessonContentBlockRepository, never()).countByLessonId(any());
+        verify(lessonContentBlockRepository, never()).save(any(LessonContentBlock.class));
     }
 
     @Test

@@ -63,6 +63,22 @@ describe('API client integration behavior', () => {
     );
   });
 
+  it('surfaces application/problem+json error details', async () => {
+    getValidAccessToken.mockResolvedValue(null);
+    fetch.mockResolvedValue(new Response(
+      JSON.stringify({ detail: [{ message: 'Target language is required' }] }),
+      {
+        status: 400,
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    ));
+
+    await expect(submitAnswer({ exercise_id: 7, answer_text: '' }, 'token')).rejects.toMatchObject({
+      message: 'Target language is required',
+      status: 400,
+    });
+  });
+
   it('converts network failures into service-specific availability errors', async () => {
     fetch.mockRejectedValue(new TypeError('failed to fetch'));
 

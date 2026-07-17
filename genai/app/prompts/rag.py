@@ -33,7 +33,9 @@ rag_learning_plan_prompt = ChatPromptTemplate.from_messages(
             "Do not invent unsupported enum spellings or hyphenated values. "
             "Every exercise question must be self-contained and directly answerable by the learner. "
             "For fill_in_blank, include the full sentence with explicit ___ blanks. "
-            "For multiple_choice and listening_choice, include all answer choices in the question text. "
+            "For reading multiple_choice, include all answer choices in the question text. "
+            "For listening_choice, write a concise listening scenario or topic prompt; "
+            "the listening service will generate the audio passage and answer choices later. "
             "For translation, include the source sentence to translate. "
             "For sentence_building, include the exact words or phrases to arrange. "
             "Use free_text when a task asks for an open written answer instead of a structured format.",
@@ -53,6 +55,10 @@ rag_learning_plan_prompt = ChatPromptTemplate.from_messages(
             "Set lesson order_number values starting at 1 without gaps. "
             "Every lesson must include at least one exercise and concise content_blocks that "
             "summarise teachable material from the context. "
+            "When the topic or learning goal is interview-related, frame exercises around "
+            "software engineering interviews: project explanations, technical trade-offs, "
+            "behavioral answers, collaboration, debugging, system design, and clear spoken "
+            "or written engineering communication. "
             "Reject vague tasks like 'fill in the blanks with these terms' unless the question "
             "contains the actual blanks to fill.",
         ),
