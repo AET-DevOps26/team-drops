@@ -158,6 +158,10 @@ uv sync --group dev
 uv run pytest tests/ -v
 ```
 
+See the [testing strategy and coverage matrix](docs/testing-strategy.md) for
+the behaviour covered by every backend service, GenAI, frontend, E2E, and CI
+suite.
+
 ## API-first workflow
 
 `api/openapi.yaml` is the central API contract. Design API changes there first,
@@ -230,9 +234,9 @@ infrastructure dashboards.
 
 | Workflow | Purpose |
 | --- | --- |
-| `backend-ci.yml` | Lints the OpenAPI contract and builds the three Java services and Docker images |
-| `frontend-ci.yml` | Installs dependencies and builds the frontend and its Docker image |
-| `genai-ci.yml` | Runs GenAI tests, verifies exported API contracts, and builds its Docker image |
+| `backend-ci.yml` | Automatically lints/builds backend; manually runs unit/API integration suites and uploads reports on demand |
+| `frontend-ci.yml` | Runs unit/integration and Playwright E2E tests before building the frontend and image |
+| `genai-ci.yml` | Automatically verifies GenAI contracts/builds its image; manually runs tests and uploads a JUnit report on demand |
 | `docker-publish.yml` | Builds and publishes application images to GHCR |
 | `deploy-kubernetes.yml` | Validates both charts, upgrades the application, and deploys monitoring |
 

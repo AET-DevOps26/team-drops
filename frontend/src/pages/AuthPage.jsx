@@ -9,7 +9,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 
-export function AuthPage({ t, authEnabled, authErrorMessage, authPending, onLogin, onRegister, onBypass }) {
+export function AuthPage({ t, authEnabled, authErrorMessage, onLogin, onRegister, onBypass }) {
   const [message, setMessage] = React.useState('');
 
   React.useEffect(() => {
@@ -68,7 +68,7 @@ export function AuthPage({ t, authEnabled, authErrorMessage, authPending, onLogi
 
           <button
             className="auth-button auth-primary-button"
-            disabled={authPending || !authEnabled}
+            disabled={!authEnabled}
             type="button"
             onClick={onLogin}
           >
@@ -79,7 +79,7 @@ export function AuthPage({ t, authEnabled, authErrorMessage, authPending, onLogi
 
           <button
             className="auth-button auth-secondary-button"
-            disabled={authPending || !authEnabled}
+            disabled={!authEnabled}
             type="button"
             onClick={onRegister}
           >

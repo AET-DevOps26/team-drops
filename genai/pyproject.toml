@@ -30,3 +30,8 @@ dev = [
     "pyyaml>=6.0",
     "ruff>=0.4.0",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "e2e: service-level end-to-end tests across the public API and real internal pipeline",
+]

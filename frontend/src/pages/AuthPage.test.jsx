@@ -26,7 +26,6 @@ function renderAuth(overrides = {}) {
     <AuthPage
       authEnabled
       authErrorMessage=""
-      authPending={false}
       t={copy}
       onBypass={vi.fn()}
       onLogin={vi.fn()}
@@ -47,12 +46,12 @@ describe('AuthPage', () => {
     expect(markup).not.toContain(copy.authContinueWithout);
   });
 
-  it('keeps the sign-in page visible while authentication is pending', () => {
-    const markup = renderAuth({ authPending: true });
+  it('keeps authentication actions enabled while Keycloak is initializing', () => {
+    const markup = renderAuth();
 
     expect(markup).toContain(copy.authTitle);
     expect(markup).toContain(copy.authCreateAccount);
-    expect(markup).toContain('disabled=""');
+    expect(markup).not.toContain('disabled=""');
     expect(markup).not.toContain('aria-busy="true"');
   });
 

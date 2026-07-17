@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +36,16 @@ class LearningServiceApplicationTests {
 		assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
 		assertThat(response.getHeaders().getContentType().toString()).startsWith("text/plain");
 		assertThat(response.getBody()).contains("application_info", "service=\"learning-service\"", "version=\"test-version\"");
+	}
+
+	@Test
+	void rejectsUnauthenticatedApiRequestsWhenAuthenticationIsEnabled() {
+		ResponseEntity<String> response = restTemplate.getForEntity(
+			"/api/v1/learning-plans/user/42",
+			String.class
+		);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 	}
 
 }
