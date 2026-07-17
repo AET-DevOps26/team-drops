@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'genai/**'
+      - 'RAG/**'
       - 'api/**'
       - '.github/workflows/genai-ci.yml'
       - '!**/*.md'
@@ -13,6 +14,7 @@ on:
     branches: [main]
     paths:
       - 'genai/**'
+      - 'RAG/**'
       - 'api/**'
       - '.github/workflows/genai-ci.yml'
       - '!**/*.md'
@@ -44,7 +46,15 @@ jobs:
         run: uv sync --group dev
 
       - name: Run tests
-        run: uv run pytest tests/ -v
+        run: uv run pytest tests/ -v --junitxml=test-results/junit.xml
+
+      - name: Upload GenAI test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: genai-test-report
+          path: genai/test-results/junit.xml
+          if-no-files-found: error
 
   sync-openapi:
     runs-on: ubuntu-latest

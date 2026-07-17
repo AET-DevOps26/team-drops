@@ -26,6 +26,12 @@ historical project documents for Team Drops. Start with the repository
 - [Nginx gateway](nginx-gateway.md)
 - [Local Keycloak realm export](../keycloak/realm-export.json)
 
+## Quality assurance
+
+- [Testing strategy and coverage matrix](testing-strategy.md)
+- [Local authentication and AI test plan](local-auth-ai-test-plan.md)
+- [Local authentication and AI test report](local-auth-ai-test-report.md)
+
 ## Deployment and observability
 
 - [Application and monitoring Helm operations](../helm/team-drops/README.md)

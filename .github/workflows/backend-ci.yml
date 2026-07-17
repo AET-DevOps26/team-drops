@@ -44,17 +44,25 @@ jobs:
           chmod +x backend/learning-service/gradlew
           chmod +x backend/progress-feedback-service/gradlew
 
-      - name: Build user-service
+      - name: Test and build user-service
         working-directory: backend/user-service
-        run: ./gradlew build -x test
+        run: ./gradlew build
 
-      - name: Build learning-service
+      - name: Test and build learning-service
         working-directory: backend/learning-service
-        run: ./gradlew build -x test
+        run: ./gradlew build
 
-      - name: Build progress-feedback-service
+      - name: Test and build progress-feedback-service
         working-directory: backend/progress-feedback-service
-        run: ./gradlew build -x test
+        run: ./gradlew build
+
+      - name: Upload backend test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: backend/*-service/build/reports/tests/test/
+          if-no-files-found: error
 
   build-docker-images:
     runs-on: ubuntu-latest
