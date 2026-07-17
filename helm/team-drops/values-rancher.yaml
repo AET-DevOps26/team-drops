@@ -67,11 +67,11 @@ services:
   progress:
     resources:
       requests:
-        cpu: 50m
-        memory: 160Mi
-      limits:
         cpu: 150m
-        memory: 320Mi
+        memory: 256Mi
+      limits:
+        cpu: 350m
+        memory: 512Mi
 
 postgres:
   resources:

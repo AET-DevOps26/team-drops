@@ -29,6 +29,7 @@ historical project documents for Team Drops. Start with the repository
 ## Quality assurance
 
 - [Testing strategy and coverage matrix](testing-strategy.md)
+- [Automated test report — 2026-07-17](automated-test-report-2026-07-17.md)
 - [Local authentication and AI test plan](local-auth-ai-test-plan.md)
 - [Local authentication and AI test report](local-auth-ai-test-report.md)
 

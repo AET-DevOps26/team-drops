@@ -44,13 +44,18 @@ export async function initializeAuth() {
       });
     };
 
-    initialization = instance.init({
-      onLoad: 'check-sso',
-      pkceMethod: 'S256',
-      checkLoginIframe: false,
-      silentCheckSsoRedirectUri: getSilentCheckSsoRedirectUri(),
-      silentCheckSsoFallback: false,
-    });
+    initialization = instance
+      .init({
+        onLoad: 'check-sso',
+        pkceMethod: 'S256',
+        checkLoginIframe: false,
+        silentCheckSsoRedirectUri: getSilentCheckSsoRedirectUri(),
+        silentCheckSsoFallback: false,
+      })
+      .catch((error) => {
+        initialization = undefined;
+        throw error;
+      });
   }
 
   return initialization;

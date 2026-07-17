@@ -149,8 +149,6 @@ const translations = {
     comingSoon: 'Coming soon',
     switchingLanguage: 'Switching learning language',
     loadingLanguageContent: 'Loading your {language} plans, lessons, and progress.',
-    updatingProgress: 'Updating your progress',
-    loadingProgressContent: 'Loading your latest lesson results before continuing.',
     generatingRagPlan: 'Generating your learning plan',
     generatingRagPlanContent: 'RAG is creating the lessons and exercises. This may take a moment.',
     ragPlanLimitReached: 'You have reached the limit of 2 generated RAG plans.',
@@ -221,8 +219,6 @@ const translations = {
     comingSoon: 'Kommt bald',
     switchingLanguage: 'Lernsprache wird gewechselt',
     loadingLanguageContent: 'Deine Inhalte, Lektionen und Fortschritte für {language} werden geladen.',
-    updatingProgress: 'Fortschritt wird aktualisiert',
-    loadingProgressContent: 'Deine neuesten Lektionsergebnisse werden geladen.',
     generatingRagPlan: 'Dein Lernplan wird erstellt',
     generatingRagPlanContent: 'RAG erstellt die Lektionen und Übungen. Dies kann einen Moment dauern.',
     ragPlanLimitReached: 'Du hast das Limit von 2 generierten RAG-Lernplänen erreicht.',
@@ -293,8 +289,6 @@ const translations = {
     comingSoon: 'Bientot disponible',
     switchingLanguage: 'Changement de langue',
     loadingLanguageContent: 'Chargement des plans, lecons et progres en {language}.',
-    updatingProgress: 'Mise a jour de votre progression',
-    loadingProgressContent: 'Chargement de vos derniers resultats avant de continuer.',
     generatingRagPlan: 'Generation de votre plan',
     generatingRagPlanContent: 'RAG cree les lecons et exercices. Cela peut prendre un moment.',
     ragPlanLimitReached: 'Vous avez atteint la limite de 2 plans RAG generes.',
@@ -310,7 +304,6 @@ export function App() {
   const [language, setLanguage] = React.useState('English');
   const [targetLanguage, setTargetLanguage] = React.useState(defaultProfile.targetLanguage);
   const [session, setSession] = React.useState(null);
-  const [authPending, setAuthPending] = React.useState(false);
   const [authError, setAuthError] = React.useState('');
   const [loadingInitialData, setLoadingInitialData] = React.useState(false);
   const [switchingTargetLanguage, setSwitchingTargetLanguage] = React.useState('');
@@ -363,7 +356,6 @@ export function App() {
 
   React.useEffect(() => {
     const restoreAuthControls = () => {
-      setAuthPending(false);
       setLoadingInitialData(false);
     };
 
@@ -605,7 +597,6 @@ export function App() {
         }
       } finally {
         if (!cancelled) {
-          setAuthPending(false);
           setLoadingInitialData(false);
         }
       }
@@ -704,7 +695,6 @@ export function App() {
 
   const resetSessionState = () => {
     setSession(null);
-    setAuthPending(false);
     setLoadingInitialData(false);
     setBlockingOperation('');
     setAuthError('');
@@ -740,24 +730,20 @@ export function App() {
 
   const handleLogin = () => {
     setAuthError('');
-    setAuthPending(true);
     cancelRegistrationIntro(window.localStorage);
     Promise.resolve()
       .then(() => loginWithKeycloak())
       .catch((error) => {
-        setAuthPending(false);
         setAuthError(error.message || 'Unable to start Keycloak sign in.');
       });
   };
 
   const handleRegister = () => {
     setAuthError('');
-    setAuthPending(true);
     beginRegistrationIntro(window.localStorage);
     Promise.resolve()
       .then(() => registerWithKeycloak())
       .catch((error) => {
-        setAuthPending(false);
         cancelRegistrationIntro(window.localStorage);
         setAuthError(error.message || 'Unable to start Keycloak registration.');
       });
@@ -1153,7 +1139,6 @@ export function App() {
             <AuthPage
               authEnabled={authEnabled}
               authErrorMessage={authError}
-              authPending={authPending}
               t={t}
               onLogin={handleLogin}
               onRegister={handleRegister}
@@ -1275,14 +1260,6 @@ export function App() {
 
           {switchingTargetLanguage && (
             <LanguageSwitchOverlay targetLanguage={switchingTargetLanguage} t={t} />
-          )}
-
-          {blockingOperation === 'progress' && (
-            <OperationLoadingOverlay
-              description={t.loadingProgressContent}
-              title={t.updatingProgress}
-              variant="progress"
-            />
           )}
 
           {blockingOperation === 'rag' && (
