@@ -23,7 +23,10 @@ from app.prompts.rag import (
     rag_prompt,
 )
 from app.schemas.rag import (
+    GENERATED_PLAN_PLACEHOLDER,
+    RAG_TOPIC_PLACEHOLDER,
     RagCorpusResponse,
+    RagLearningPlanExercise,
     RagLearningPlanRequest,
     RagLearningPlanQualityReview,
     RagLearningPlanResponse,
@@ -189,7 +192,18 @@ async def generate_rag_learning_plan(
     chain = rag_learning_plan_prompt | get_structured_llm(RagLearningPlanResponse)
 
     try:
-        result: RagLearningPlanResponse = await chain.ainvoke(generation_payload)
+        result: RagLearningPlanResponse = await asyncio.wait_for(
+            chain.ainvoke(generation_payload),
+            timeout=settings.llm_request_timeout_seconds,
+        )
+    except asyncio.TimeoutError as exc:
+        raise HTTPException(
+            status_code=504,
+            detail=(
+                "LLM learning-plan generation timed out after "
+                f"{settings.llm_request_timeout_seconds} seconds"
+            ),
+        ) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=502, detail=f"LLM learning-plan generation failed: {exc}"
@@ -449,38 +463,49 @@ def _complete_learning_plan_defaults(
     *,
     sources: list[RagSource],
 ) -> RagLearningPlanResponse:
+    placeholder_title = f"{RAG_TOPIC_PLACEHOLDER} Learning Plan"
+    placeholder_description = (
+        f"A RAG-grounded learning plan for {RAG_TOPIC_PLACEHOLDER}."
+    )
+    placeholder_lesson_topic_prefix = f"{RAG_TOPIC_PLACEHOLDER} - "
+
     title = (
         f"{body.topic} Learning Plan"
-        if result.title == "RAG topic Learning Plan"
+        if result.title == placeholder_title
         else result.title
     )
     description = (
         f"A RAG-grounded learning plan for {body.learning_goal}."
-        if result.description == "A RAG-grounded learning plan for RAG topic."
+        if result.description == placeholder_description
         else result.description
     )
-    goal = body.learning_goal if result.goal == "RAG topic" else result.goal
+    goal = body.learning_goal if result.goal == RAG_TOPIC_PLACEHOLDER else result.goal
     duration = (
         f"{body.duration_weeks} weeks"
-        if result.duration == "Generated plan"
+        if result.duration == GENERATED_PLAN_PLACEHOLDER
         else result.duration
     )
 
     lessons = []
     for lesson in result.lessons:
         lesson_title = lesson.title
-        if lesson_title == f"Lesson {lesson.order_number}: RAG topic":
+        if lesson_title == f"Lesson {lesson.order_number}: {RAG_TOPIC_PLACEHOLDER}":
             lesson_title = f"Lesson {lesson.order_number}: {body.topic}"
 
         lesson_topic = lesson.topic
-        if lesson_topic == "RAG topic":
+        if lesson_topic == RAG_TOPIC_PLACEHOLDER:
             lesson_topic = body.topic
-        elif lesson_topic.startswith("RAG topic - "):
-            lesson_topic = f"{body.topic}{lesson_topic.removeprefix('RAG topic')}"
+        elif lesson_topic.startswith(placeholder_lesson_topic_prefix):
+            lesson_topic = (
+                f"{body.topic}{lesson_topic.removeprefix(RAG_TOPIC_PLACEHOLDER)}"
+            )
 
         lessons.append(
             lesson.model_copy(update={"title": lesson_title, "topic": lesson_topic})
         )
+
+    lessons = _filter_requested_exercise_types(lessons, body)
+    lessons = _ensure_requested_exercise_types(lessons, body)
 
     return result.model_copy(
         update={
@@ -494,6 +519,128 @@ def _complete_learning_plan_defaults(
             "sources": sources,
         }
     )
+
+
+def _ensure_requested_exercise_types(
+    lessons,
+    body: RagLearningPlanRequest,
+):
+    generated_types = {
+        _type_for_exercise(exercise)
+        for lesson in lessons
+        for exercise in lesson.exercises
+    }
+    missing_types = [
+        exercise_type
+        for exercise_type in body.exercise_types
+        if exercise_type not in generated_types
+    ]
+    if not missing_types or not lessons:
+        return lessons
+
+    first_lesson = lessons[0]
+    fallback_exercises = [
+        _fallback_exercise(exercise_type, body) for exercise_type in missing_types
+    ]
+    return [
+        first_lesson.model_copy(
+            update={"exercises": [*first_lesson.exercises, *fallback_exercises]}
+        ),
+        *lessons[1:],
+    ]
+
+
+def _filter_requested_exercise_types(
+    lessons,
+    body: RagLearningPlanRequest,
+):
+    requested_types = set(body.exercise_types)
+    fallback_type = body.exercise_types[0] if body.exercise_types else "writing"
+    filtered_lessons = []
+    for lesson in lessons:
+        requested_exercises = [
+            exercise
+            for exercise in lesson.exercises
+            if _type_for_exercise(exercise) in requested_types
+        ]
+        if not requested_exercises:
+            requested_exercises = [_fallback_exercise(fallback_type, body)]
+        filtered_lessons.append(
+            lesson.model_copy(update={"exercises": requested_exercises})
+        )
+    return filtered_lessons
+
+
+def _type_for_exercise(exercise: RagLearningPlanExercise) -> str:
+    match exercise.subtype:
+        case "multiple_choice":
+            return "reading"
+        case "listening_choice":
+            return "listening"
+        case "speaking_prompt":
+            return "speaking"
+        case _:
+            return "writing"
+
+
+def _fallback_exercise(
+    exercise_type: str,
+    body: RagLearningPlanRequest,
+) -> RagLearningPlanExercise:
+    topic = body.topic
+    goal = body.learning_goal
+    language = body.target_language
+    level = body.level
+
+    match exercise_type:
+        case "reading":
+            return RagLearningPlanExercise(
+                type="reading",
+                subtype="multiple_choice",
+                question=(
+                    f"Which action best supports this learning goal about {topic}: {goal}?\n"
+                    "A) Give a concise answer with a concrete example from the lesson context.\n"
+                    "B) Ignore the topic and answer with unrelated personal details.\n"
+                    "C) Focus only on memorized grammar rules without answering the question.\n"
+                    "D) Change the subject instead of responding to the task."
+                ),
+                expected_answer=(
+                    "A) Give a concise answer with a concrete example from the lesson context."
+                ),
+                difficulty=level,
+            )
+        case "listening":
+            return RagLearningPlanExercise(
+                type="listening",
+                subtype="listening_choice",
+                question=(
+                    f"Generate a listening passage in {language} about {topic} "
+                    f"for this learning goal: {goal}."
+                ),
+                expected_answer="Select the option that best reflects the speaker's main point.",
+                difficulty=level,
+            )
+        case "speaking":
+            return RagLearningPlanExercise(
+                type="speaking",
+                subtype="speaking_prompt",
+                question=(
+                    f"Answer in {language}: describe a concrete situation related to "
+                    f"{topic}, what you did, and what the result was."
+                ),
+                expected_answer="A clear spoken answer with context, action, and result.",
+                difficulty=level,
+            )
+        case _:
+            return RagLearningPlanExercise(
+                type="writing",
+                subtype="free_text",
+                question=(
+                    f"Write a short {language} answer for this learning goal: {goal}."
+                ),
+                expected_answer="A structured written answer grounded in the lesson context.",
+                difficulty=level,
+            )
 
 
 def _format_context(chunks) -> str:

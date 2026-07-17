@@ -29,17 +29,34 @@ function buildHeaders(token, hasJsonBody) {
 
 async function parseResponse(response) {
   const contentType = response.headers.get('content-type') ?? '';
-  const isJson = contentType.includes('application/json');
+  const isJson = contentType.includes('application/json') || contentType.includes('+json');
   const payload = isJson ? await response.json() : null;
 
   if (response.ok) {
     return payload;
   }
 
-  const error = new Error(payload?.message ?? `Request failed with status ${response.status}`);
+  const errorMessage = readableErrorMessage(payload?.message ?? payload?.detail ?? payload?.error);
+  const error = new Error(errorMessage ?? `Request failed with status ${response.status}`);
   error.status = response.status;
   error.payload = payload;
   throw error;
+}
+
+function readableErrorMessage(value) {
+  if (typeof value === 'string' && value.trim()) {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => readableErrorMessage(item))
+      .filter(Boolean)
+      .join('; ');
+  }
+  if (value && typeof value === 'object') {
+    return value.message ?? value.detail ?? JSON.stringify(value);
+  }
+  return null;
 }
 
 async function request(service, path, { method = 'GET', token, body } = {}) {

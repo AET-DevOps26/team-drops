@@ -61,11 +61,10 @@ public class ProgressFeedbackServiceController implements ProgressFeedbackServic
 
     @Override
     public ResponseEntity<ListeningContentResponse> generateListeningContent(ProgressListeningGenerateRequest request) {
-        LearningServiceClient.ExerciseContext exercise = learningServiceClient.getExercise(
-            request.getLessonId(), request.getExerciseId());
-
         String language = request.getTargetLanguage() != null && !request.getTargetLanguage().isBlank()
             ? request.getTargetLanguage() : "German";
+        LearningServiceClient.ExerciseContext exercise = learningServiceClient.getExercise(
+            request.getLessonId(), request.getExerciseId(), language);
         String level = request.getLevel() != null && !request.getLevel().isBlank()
             ? request.getLevel()
             : (exercise.difficulty() != null ? exercise.difficulty() : "A2");

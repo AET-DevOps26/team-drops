@@ -376,6 +376,19 @@ class LearningPlanServiceTests {
     }
 
     @Test
+    void createAiLearningPlanRejectsMissingRequestedGeneratedExerciseTypeBeforePersisting() {
+        LearningPlanService service = newService();
+        CreateAiLearningPlanRequest request = aiRequest().exerciseTypes(List.of(ExerciseType.READING, ExerciseType.WRITING));
+
+        assertGeneratedPlanRejectedBeforePersisting(
+            service,
+            request,
+            generatedPlan(),
+            "did not return a requested exercise type: reading"
+        );
+    }
+
+    @Test
     void createDefaultLearningPlanReturnsDefaultPlanAndSeedsMissingListeningAndSpeakingPlans() {
         LearningPlanService service = newService();
         CreateDefaultLearningPlanRequest request = request();

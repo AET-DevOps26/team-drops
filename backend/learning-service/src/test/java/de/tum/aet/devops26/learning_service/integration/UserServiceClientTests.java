@@ -11,7 +11,6 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +57,12 @@ class UserServiceClientTests {
     @Test
     void resolveSubmittedUserIdReturnsCurrentUserAndForwardsBearerToken() throws IOException {
         AtomicReference<String> authorizationHeader = new AtomicReference<>();
-        UserServiceClient client = newClient(Optional.of("user-token"), authorizationHeader, 200, "{\"id\":42}");
+        UserServiceClient client = newClient(
+            Optional.of("user-token"),
+            authorizationHeader,
+            200,
+            "{\"id\":42,\"name\":\"QA LocalRag\",\"email\":\"qa+local-rag@example.com\"}"
+        );
 
         assertThat(client.resolveSubmittedUserId(42L)).isEqualTo(42L);
         assertThat(authorizationHeader.get()).isEqualTo("Bearer user-token");
@@ -90,10 +94,8 @@ class UserServiceClientTests {
         int status,
         String responseBody
     ) throws IOException {
-        AtomicInteger requestCount = new AtomicInteger();
         server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/api/v1/users/me", exchange -> {
-            requestCount.incrementAndGet();
             authorizationHeader.set(exchange.getRequestHeaders().getFirst("Authorization"));
             sendJson(exchange, status, responseBody);
         });

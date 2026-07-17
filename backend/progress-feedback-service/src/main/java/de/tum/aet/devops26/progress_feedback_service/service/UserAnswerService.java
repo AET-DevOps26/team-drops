@@ -101,6 +101,7 @@ public class UserAnswerService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "client_context.lesson_id is required.");
         }
 
+        Long resolvedUserId = userServiceClient.resolveSubmittedUserId(request.getUserId());
         ExerciseContext exercise = learningServiceClient.getExercise(
             request.getClientContext().getLessonId(),
             request.getExerciseId(),
@@ -108,15 +109,18 @@ public class UserAnswerService {
         );
 
         if ("LISTENING".equalsIgnoreCase(exercise.type()) || containsListening(exercise.subtype())) {
-            return submitListeningAnswer(request);
+            return submitListeningAnswer(request, resolvedUserId);
         }
 
-        return submitWritingAnswer(request, exercise);
+        return submitWritingAnswer(request, resolvedUserId, exercise);
     }
 
-    private SubmitAnswerResponse submitWritingAnswer(SubmitAnswerRequest request, ExerciseContext exercise) {
+    private SubmitAnswerResponse submitWritingAnswer(
+            SubmitAnswerRequest request,
+            Long resolvedUserId,
+            ExerciseContext exercise) {
         WritingEvaluationResponse evaluation = genAiWritingClient.evaluate(new WritingEvaluationRequest(
-            request.getUserId(),
+            resolvedUserId,
             request.getExerciseId(),
             exercise.subtype() == null ? exercise.type() : exercise.subtype(),
             exercise.question(),
@@ -128,7 +132,7 @@ public class UserAnswerService {
         int score = toPercentScore(evaluation.score());
 
         UserAnswer savedAnswer = save(UserAnswer.builder()
-            .userId(request.getUserId())
+            .userId(resolvedUserId)
             .exerciseId(request.getExerciseId())
             .planId(request.getClientContext().getPlanId())
             .targetLanguage(normalizeLanguage(request.getClientContext().getTargetLanguage()))
@@ -155,7 +159,7 @@ public class UserAnswerService {
         return response;
     }
 
-    private SubmitAnswerResponse submitListeningAnswer(SubmitAnswerRequest request) {
+    private SubmitAnswerResponse submitListeningAnswer(SubmitAnswerRequest request, Long resolvedUserId) {
         Map<Integer, String> selections;
         try {
             selections = objectMapper.readValue(request.getAnswerText(), new TypeReference<>() {});
@@ -173,7 +177,7 @@ public class UserAnswerService {
             : String.format("You got %d out of %d correct (%d%%).", scoreResult.correct(), scoreResult.total(), scoreResult.score());
 
         UserAnswer savedAnswer = save(UserAnswer.builder()
-            .userId(request.getUserId())
+            .userId(resolvedUserId)
             .exerciseId(request.getExerciseId())
             .planId(request.getClientContext().getPlanId())
             .targetLanguage(normalizeLanguage(request.getClientContext().getTargetLanguage()))
@@ -236,6 +240,9 @@ public class UserAnswerService {
             normalizedLanguage,
             valueOrDefault(level, exercise.difficulty())
         ));
+        if (isBlank(evaluation.transcription())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No speech was detected in the uploaded audio.");
+        }
         int score = toPercentScore(evaluation.score());
 
         UserAnswer savedAnswer = save(UserAnswer.builder()

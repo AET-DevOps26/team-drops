@@ -154,6 +154,62 @@ class UserAnswerServiceTests {
     }
 
     @Test
+    void submitWritingAnswerRejectsMismatchedAuthenticatedUser() {
+        UserAnswerService service = newService();
+        SubmitAnswerRequest request = new SubmitAnswerRequest(
+            99L,
+            7L,
+            "Je voudrai un cafe",
+            new AnswerClientContext()
+                .lessonId(3L)
+                .planId(1L)
+                .targetLanguage("French")
+                .level("A2")
+        );
+
+        when(userServiceClient.resolveSubmittedUserId(99L)).thenThrow(
+            new ResponseStatusException(HttpStatus.FORBIDDEN, "Submitted user_id does not match the authenticated user.")
+        );
+
+        assertThatThrownBy(() -> service.submitAnswer(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .extracting("statusCode")
+            .isEqualTo(HttpStatus.FORBIDDEN);
+
+        verifyNoInteractions(learningServiceClient);
+        verifyNoInteractions(genAiWritingClient, userAnswerRepository, feedbackRepository);
+        verify(progressRecordService, never()).recordSubmittedAnswer(any(), any(Integer.class));
+    }
+
+    @Test
+    void submitListeningAnswerRejectsMismatchedAuthenticatedUser() {
+        UserAnswerService service = newService();
+        SubmitAnswerRequest request = new SubmitAnswerRequest(
+            99L,
+            7L,
+            "{\"0\":\"Im Cafe\"}",
+            new AnswerClientContext()
+                .lessonId(3L)
+                .planId(1L)
+                .targetLanguage("German")
+                .level("A2")
+        );
+
+        when(userServiceClient.resolveSubmittedUserId(99L)).thenThrow(
+            new ResponseStatusException(HttpStatus.FORBIDDEN, "Submitted user_id does not match the authenticated user.")
+        );
+
+        assertThatThrownBy(() -> service.submitAnswer(request))
+            .isInstanceOf(ResponseStatusException.class)
+            .extracting("statusCode")
+            .isEqualTo(HttpStatus.FORBIDDEN);
+
+        verifyNoInteractions(learningServiceClient);
+        verifyNoInteractions(listeningContentService, userAnswerRepository, feedbackRepository);
+        verify(progressRecordService, never()).recordSubmittedAnswer(any(), any(Integer.class));
+    }
+
+    @Test
     void findResponsesByUserIdFiltersByPlanAndLanguageWithLegacyFallback() {
         UserAnswerService service = newService();
         UserAnswer germanAnswer = UserAnswer.builder()
@@ -419,6 +475,31 @@ class UserAnswerServiceTests {
 
         verify(learningServiceClient).getExercise(3L, 7L, "German");
         verifyNoInteractions(genAiSpeakingClient, userAnswerRepository, feedbackRepository);
+        verify(progressRecordService, never()).recordSubmittedAnswer(any(), any(Integer.class));
+    }
+
+    @Test
+    void submitSpeakingAnswerRejectsBlankTranscriptionWithoutPersistence() {
+        UserAnswerService service = newService();
+        whenSpeakingExercise();
+        when(genAiSpeakingClient.evaluate(any())).thenReturn(new SpeakingEvaluationResponse(
+            " ",
+            10.0,
+            true,
+            "Great answer.",
+            "none",
+            "Die Katze ist auf dem Tisch",
+            null
+        ));
+
+        assertThatThrownBy(() -> service.submitSpeakingAnswer(42L, 7L, 3L, 1L, "German", "A2", audio()))
+            .isInstanceOf(ResponseStatusException.class)
+            .extracting("statusCode")
+            .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(learningServiceClient).getExercise(3L, 7L, "German");
+        verify(genAiSpeakingClient).evaluate(any());
+        verifyNoInteractions(userAnswerRepository, feedbackRepository);
         verify(progressRecordService, never()).recordSubmittedAnswer(any(), any(Integer.class));
     }
 

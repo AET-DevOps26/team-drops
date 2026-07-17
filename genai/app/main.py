@@ -2,12 +2,11 @@ import asyncio
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import FastAPI, APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from prometheus_client import Gauge
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.config import settings
 from app.llm import llm_configuration_status
 from app.middleware.auth import add_auth_middleware
 from app.middleware.error_handler import add_error_handlers
@@ -34,6 +33,8 @@ async def lifespan(app: FastAPI):
     # Preload speech recognition so readiness means speaking requests can be
     # transcribed. Only preload TTS when its model files are explicitly provided;
     # otherwise Kokoro may perform a large runtime download.
+    from app.config import settings
+
     if settings.prewarm_models:
         from app.stt.client import _get_whisper
 
@@ -78,11 +79,24 @@ api_v1.include_router(rag_router)
 app.include_router(api_v1)
 
 
-@app.get("/health", tags=["ops"])
-async def health():
+@app.get(
+    "/health",
+    tags=["ops"],
+    responses={
+        503: {
+            "description": "LLM provider is not configured",
+            "content": {"application/json": {"schema": {}}},
+        }
+    },
+)
+async def health(response: Response):
     llm_status = llm_configuration_status()
-    return {
-        "status": "ok" if llm_status["configured"] else "degraded",
-        "provider": settings.llm_provider,
-        "llm_configured": llm_status["configured"],
-    }
+    if not llm_status["configured"]:
+        response.status_code = 503
+        return {"status": "degraded"}
+    return {"status": "ok"}
+
+
+@app.get("/live", tags=["ops"], include_in_schema=False)
+async def live():
+    return {"status": "ok"}

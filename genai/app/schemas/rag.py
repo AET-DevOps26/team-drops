@@ -1,8 +1,60 @@
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
+
+RAG_TOPIC_PLACEHOLDER = "RAG topic"
+GENERATED_PLAN_PLACEHOLDER = "Generated plan"
+DEFAULT_LANGUAGE = "German"
+DEFAULT_LEVEL = "A2"
+
+ExerciseTypeValue = Literal["reading", "listening", "writing", "speaking"]
+ExerciseSubtypeValue = Literal[
+    "multiple_choice",
+    "listening_choice",
+    "speaking_prompt",
+    "translation",
+    "fill_in_blank",
+    "sentence_building",
+    "free_text",
+]
+
+EXERCISE_TYPE_VALUES = {"reading", "listening", "writing", "speaking"}
+EXERCISE_SUBTYPE_VALUES = {
+    "multiple_choice",
+    "listening_choice",
+    "speaking_prompt",
+    "translation",
+    "fill_in_blank",
+    "sentence_building",
+    "free_text",
+}
+TYPE_FOR_SUBTYPE = {
+    "multiple_choice": "reading",
+    "listening_choice": "listening",
+    "speaking_prompt": "speaking",
+    "translation": "writing",
+    "fill_in_blank": "writing",
+    "sentence_building": "writing",
+    "free_text": "writing",
+}
+SUBTYPE_ALIASES = {
+    "multiple-choice": "multiple_choice",
+    "multiple choice": "multiple_choice",
+    "listening-choice": "listening_choice",
+    "listening choice": "listening_choice",
+    "speaking-prompt": "speaking_prompt",
+    "speaking prompt": "speaking_prompt",
+    "fill-in-blank": "fill_in_blank",
+    "fill in blank": "fill_in_blank",
+    "fill in the blank": "fill_in_blank",
+    "sentence-building": "sentence_building",
+    "sentence building": "sentence_building",
+    "free-text": "free_text",
+    "free text": "free_text",
+}
 
 
 class RagQueryRequest(BaseModel):
@@ -82,7 +134,7 @@ class RagLearningPlanRequest(BaseModel):
     study_hours_per_week: int = Field(..., ge=1, le=80)
     minimum_lessons: int = Field(..., ge=1, le=24)
     maximum_lessons: int = Field(..., ge=1, le=24)
-    exercise_types: list[str] = Field(
+    exercise_types: list[ExerciseTypeValue] = Field(
         ...,
         min_length=1,
         description="Learning-service-compatible exercise type names to include",
@@ -93,8 +145,13 @@ class RagLearningPlanRequest(BaseModel):
 
 
 class RagLearningPlanExercise(BaseModel):
-    type: str = Field(..., description="Learning-service ExerciseType enum value")
-    subtype: str = Field(..., description="Learning-service ExerciseSubtype enum value")
+    type: ExerciseTypeValue = Field(
+        ..., description="Learning-service ExerciseType enum value"
+    )
+    subtype: ExerciseSubtypeValue = Field(
+        ...,
+        description="Learning-service ExerciseSubtype enum value",
+    )
     question: str
     expected_answer: str
     difficulty: str
@@ -106,9 +163,17 @@ class RagLearningPlanExercise(BaseModel):
             return data
 
         normalized = dict(data)
+        language = _first_text(
+            normalized.get("_plan_language"),
+            normalized.get("target_language"),
+            normalized.get("language"),
+            DEFAULT_LANGUAGE,
+        )
         if not normalized.get("question"):
-            normalized["question"] = normalized.get("prompt") or normalized.get(
-                "description"
+            normalized["question"] = (
+                normalized.get("prompt")
+                or normalized.get("description")
+                or f"Write a short {language} answer grounded in the lesson content."
             )
         if not normalized.get("expected_answer"):
             normalized["expected_answer"] = (
@@ -117,36 +182,57 @@ class RagLearningPlanExercise(BaseModel):
                 or "Open-ended answer grounded in the lesson content."
             )
         if not normalized.get("difficulty"):
-            normalized["difficulty"] = normalized.get("level") or "A2"
+            normalized["difficulty"] = normalized.get("level") or DEFAULT_LEVEL
 
-        subtype = normalized.get("subtype")
-        type_for_subtype = {
-            "multiple_choice": "reading",
-            "listening_choice": "listening",
-            "speaking_prompt": "speaking",
-            "translation": "writing",
-            "fill_in_blank": "writing",
-            "sentence_building": "writing",
-            "free_text": "writing",
-        }
-        if subtype in type_for_subtype:
-            normalized["type"] = type_for_subtype[subtype]
+        subtype = _normalize_subtype(normalized.get("subtype"))
+        normalized["subtype"] = subtype
+        if subtype in TYPE_FOR_SUBTYPE:
+            normalized["type"] = TYPE_FOR_SUBTYPE[subtype]
+        elif normalized.get("type") not in EXERCISE_TYPE_VALUES:
+            normalized["subtype"] = "free_text"
+            normalized["type"] = "writing"
+        elif subtype not in EXERCISE_SUBTYPE_VALUES:
+            normalized["subtype"] = "free_text"
+            normalized["type"] = "writing"
+
+        if normalized["subtype"] == "fill_in_blank" and not _has_blank_marker(
+            normalized["question"]
+        ):
+            normalized["subtype"] = "free_text"
+            normalized["type"] = "writing"
+            normalized["question"] = _open_answer_question(
+                normalized["question"],
+                normalized["expected_answer"],
+                language,
+            )
+        if normalized["subtype"] == "multiple_choice" and not _has_choice_marker(
+            normalized["question"]
+        ):
+            normalized["subtype"] = "free_text"
+            normalized["type"] = "writing"
+            normalized["question"] = _open_question_prompt(
+                normalized["question"], language
+            )
 
         return normalized
 
     @model_validator(mode="after")
     def ensure_self_contained_question(self) -> "RagLearningPlanExercise":
+        expected_type = TYPE_FOR_SUBTYPE.get(self.subtype)
+        if expected_type and self.type != expected_type:
+            self.type = expected_type
         if self.subtype == "fill_in_blank" and not _has_blank_marker(self.question):
             self.subtype = "free_text"
             self.type = "writing"
-            self.question = _open_answer_question(self.question, self.expected_answer)
-        if self.subtype in {
-            "multiple_choice",
-            "listening_choice",
-        } and not _has_choice_marker(self.question):
+            self.question = _open_answer_question(
+                self.question,
+                self.expected_answer,
+                DEFAULT_LANGUAGE,
+            )
+        if self.subtype == "multiple_choice" and not _has_choice_marker(self.question):
             self.subtype = "free_text"
             self.type = "writing"
-            self.question = _open_question_prompt(self.question)
+            self.question = _open_question_prompt(self.question, DEFAULT_LANGUAGE)
         return self
 
 
@@ -166,20 +252,41 @@ class RagLearningPlanLesson(BaseModel):
 
         normalized = dict(data)
         order_number = normalized.get("order_number") or 1
-        topic = normalized.get("topic") or normalized.get("_plan_topic") or "RAG topic"
+        topic = (
+            normalized.get("topic")
+            or normalized.get("_plan_topic")
+            or RAG_TOPIC_PLACEHOLDER
+        )
+        language = _first_text(
+            normalized.get("_plan_language"),
+            normalized.get("target_language"),
+            normalized.get("language"),
+            DEFAULT_LANGUAGE,
+        )
         content_blocks = _normalize_content_blocks(normalized.get("content_blocks"))
         first_block = content_blocks[0] if content_blocks else ""
 
         normalized["content_blocks"] = content_blocks
-        normalized.setdefault("title", f"Lesson {order_number}: {topic}")
-        normalized.setdefault("topic", topic)
-        normalized.setdefault("summary", first_block or normalized["title"])
+        normalized["order_number"] = order_number
+        normalized["title"] = (
+            normalized.get("title") or f"Lesson {order_number}: {topic}"
+        )
+        normalized["topic"] = normalized.get("topic") or topic
+        normalized["summary"] = (
+            normalized.get("summary") or first_block or normalized["title"]
+        )
 
         level = normalized.get("_plan_level")
         exercises = []
         for exercise in normalized.get("exercises") or []:
             if isinstance(exercise, dict) and level and not exercise.get("level"):
                 exercise = {**exercise, "level": level}
+            if (
+                isinstance(exercise, dict)
+                and language
+                and not exercise.get("_plan_language")
+            ):
+                exercise = {**exercise, "_plan_language": language}
             exercises.append(exercise)
         normalized["exercises"] = exercises
 
@@ -203,33 +310,38 @@ class RagLearningPlanResponse(BaseModel):
             return data
 
         normalized = dict(data)
-        topic = normalized.get("topic") or "RAG topic"
+        topic = normalized.get("topic") or RAG_TOPIC_PLACEHOLDER
         learning_goal = (
             normalized.get("learning_goal") or normalized.get("goal") or topic
         )
         language = (
-            normalized.get("target_language") or normalized.get("language") or "German"
+            normalized.get("target_language")
+            or normalized.get("language")
+            or DEFAULT_LANGUAGE
         )
-        level = normalized.get("level") or "A2"
+        level = normalized.get("level") or DEFAULT_LEVEL
         duration_weeks = normalized.get("duration_weeks")
 
-        normalized.setdefault("title", f"{topic} Learning Plan")
-        normalized.setdefault(
-            "description",
-            f"A RAG-grounded learning plan for {learning_goal}.",
+        normalized["title"] = normalized.get("title") or f"{topic} Learning Plan"
+        normalized["description"] = normalized.get("description") or (
+            f"A RAG-grounded learning plan for {learning_goal}."
         )
-        normalized.setdefault("goal", learning_goal)
-        normalized.setdefault("language", language)
-        normalized.setdefault("level", level)
-        normalized.setdefault(
-            "duration",
-            f"{duration_weeks} weeks" if duration_weeks else "Generated plan",
+        normalized["goal"] = normalized.get("goal") or learning_goal
+        normalized["language"] = normalized.get("language") or language
+        normalized["level"] = normalized.get("level") or level
+        normalized["duration"] = normalized.get("duration") or (
+            f"{duration_weeks} weeks" if duration_weeks else GENERATED_PLAN_PLACEHOLDER
         )
 
         lessons = []
         for lesson in normalized.get("lessons") or []:
             if isinstance(lesson, dict):
-                lesson = {**lesson, "_plan_topic": topic, "_plan_level": level}
+                lesson = {
+                    **lesson,
+                    "_plan_topic": topic,
+                    "_plan_level": level,
+                    "_plan_language": language,
+                }
             lessons.append(lesson)
         normalized["lessons"] = lessons
 
@@ -279,25 +391,37 @@ def _normalize_content_blocks(content_blocks: Any) -> list[str]:
     return normalized
 
 
+def _first_text(*values: Any) -> str:
+    for value in values:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
+def _normalize_subtype(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    normalized = value.strip()
+    return SUBTYPE_ALIASES.get(normalized.lower(), normalized)
+
+
 def _has_blank_marker(value: str) -> bool:
     return "___" in value or "____" in value or "[blank]" in value.lower()
 
 
 def _has_choice_marker(value: str) -> bool:
-    normalized = f" {value.lower()} "
-    return any(
-        marker in normalized
-        for marker in (" a)", " b)", " c)", " d)", " a.", " b.", " c.", " d.")
-    )
+    labels = {
+        match.group(1).upper()
+        for match in re.finditer(r"(?:^|\s)([a-d])[).]", value, re.IGNORECASE)
+    }
+    return {"A", "B", "C", "D"}.issubset(labels)
 
 
-def _open_answer_question(question: str, expected_answer: str) -> str:
+def _open_answer_question(question: str, expected_answer: str, language: str) -> str:
     if expected_answer.strip():
-        return (
-            f"Write a short German answer using these terms: {expected_answer.strip()}."
-        )
+        return f"Write a short {language} answer using these terms: {expected_answer.strip()}."
     return question
 
 
-def _open_question_prompt(question: str) -> str:
-    return f"Answer this question in German: {question.strip()}"
+def _open_question_prompt(question: str, language: str) -> str:
+    return f"Answer this question in {language}: {question.strip()}"

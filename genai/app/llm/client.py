@@ -14,17 +14,30 @@ class LLMConfigurationError(Exception):
 def llm_configuration_status() -> dict:
     provider = settings.llm_provider.lower()
     configured = provider != "openai" or bool(settings.llm_api_key.strip())
+    model = settings.llm_model or (
+        "gpt-4o-mini" if provider == "openai" else settings.ollama_model
+    )
 
     return {
         "provider": provider,
         "configured": configured,
+        "model": model,
+        "base_url_configured": bool(
+            settings.llm_base_url.strip()
+            if provider == "openai"
+            else settings.ollama_base_url.strip()
+        ),
+        "api_key_present": bool(settings.llm_api_key.strip()),
+        "request_timeout_seconds": settings.llm_request_timeout_seconds,
     }
 
 
 def get_structured_llm(schema):
     llm = get_llm()
     if settings.llm_provider.lower() == "openai":
-        return llm.with_structured_output(schema, method="json_schema", strict=True)
+        if not settings.llm_base_url.strip():
+            return llm.with_structured_output(schema, method="json_schema", strict=True)
+        return llm.with_structured_output(schema, method="json_schema")
     return llm.with_structured_output(schema, method="json_schema")
 
 
@@ -43,6 +56,7 @@ def get_llm() -> BaseChatModel:
             api_key=settings.llm_api_key,
             base_url=settings.llm_base_url or None,
             temperature=0,
+            timeout=settings.llm_request_timeout_seconds,
         )
 
     from langchain_ollama import ChatOllama

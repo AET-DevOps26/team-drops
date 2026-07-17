@@ -1,6 +1,7 @@
 {
   "realm": "team-drops",
   "enabled": true,
+  "sslRequired": "none",
   "loginTheme": "interviewmate",
   "registrationAllowed": true,
   "clients": [

@@ -152,13 +152,15 @@ Docker Compose mounts this theme into Keycloak for local development, and Helm
 packages the same files into a `keycloak-theme` ConfigMap for cluster
 deployments.
 
-Local development can still run with authentication disabled:
+Local development can still run with authentication disabled. If you copied
+`.env.example`, override its auth setting before starting Compose:
 
 ```powershell
+$env:AUTH_ENABLED="false"
 docker compose up --build
 ```
 
-To test local authentication, enable auth before starting Docker Compose:
+To test local authentication, keep or set auth enabled before starting Docker Compose:
 
 ```powershell
 $env:AUTH_ENABLED="true"

@@ -170,6 +170,68 @@ describe('frontend data mapper unit behavior', () => {
     });
   });
 
+  it('keeps listening choice prompts in the listening workflow without inline options', () => {
+    const lesson = toLessonDetail(
+      {
+        id: 20,
+        plan_id: 10,
+        title: 'Listening practice',
+        topic: 'Video interview setup.',
+        order_number: 1,
+        exercises: [
+          {
+            id: 102,
+            lesson_id: 20,
+            type: 'listening',
+            subtype: 'listening_choice',
+            question: 'Generate a listening passage about preparing for a video interview.',
+            expected_answer: 'Select the best listening response.',
+            difficulty: 'B1',
+          },
+        ],
+      },
+      { planId: 10, language: 'German', accent: 'blue' },
+    );
+
+    expect(lesson.exercises[0]).toMatchObject({
+      type: 'listening',
+      subtype: 'listening_choice',
+      format: 'Listening choice',
+      prompt: 'Generate a listening passage about preparing for a video interview.',
+    });
+  });
+
+  it('downgrades partial multiple-choice exercises to written prompts', () => {
+    const lesson = toLessonDetail(
+      {
+        id: 20,
+        plan_id: 10,
+        title: 'Reading practice',
+        topic: 'Interview setup.',
+        order_number: 1,
+        exercises: [
+          {
+            id: 103,
+            lesson_id: 20,
+            type: 'reading',
+            subtype: 'multiple_choice',
+            question: 'Choose the best answer.\nA) Only one option',
+            expected_answer: 'A',
+            difficulty: 'B1',
+          },
+        ],
+      },
+      { planId: 10, language: 'German', accent: 'blue' },
+    );
+
+    expect(lesson.exercises[0]).toMatchObject({
+      type: 'writing',
+      subtype: 'free_text',
+      format: 'Short written answer',
+      prompt: 'Answer this question in German: Choose the best answer.\nA) Only one option',
+    });
+  });
+
   it('derives plan and progress summaries used by the dashboard', () => {
     const plans = derivePlanProgress([
       {

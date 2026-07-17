@@ -186,7 +186,10 @@ function hasBlankMarker(value = '') {
 }
 
 function hasChoiceMarker(value = '') {
-  return /(^|\s|\n)[a-d][).]/i.test(value);
+  const labels = new Set(
+    [...value.matchAll(/(?:^|\s)([a-d])[).]/gi)].map((match) => match[1].toUpperCase()),
+  );
+  return ['A', 'B', 'C', 'D'].every((label) => labels.has(label));
 }
 
 function formatExercise(subtype, fallbackFormat) {
@@ -210,19 +213,20 @@ function formatExercise(subtype, fallbackFormat) {
   }
 }
 
-function normalizeExercisePrompt(exercise) {
+function normalizeExercisePrompt(exercise, targetLanguage = 'German') {
   const question = exercise.question || exercise.title || '';
   const expectedAnswer = exercise.expected_answer ?? '';
+  const language = targetLanguage || 'German';
   const malformedFillBlank = exercise.subtype === 'fill_in_blank' && !hasBlankMarker(question);
-  const malformedChoice = ['multiple_choice', 'listening_choice'].includes(exercise.subtype) && !hasChoiceMarker(question);
+  const malformedChoice = exercise.subtype === 'multiple_choice' && !hasChoiceMarker(question);
   const subtype = malformedFillBlank || malformedChoice
     ? 'free_text'
     : exercise.subtype;
   let normalizedQuestion = question;
   if (malformedFillBlank && expectedAnswer) {
-    normalizedQuestion = `Write a short German answer using these terms: ${expectedAnswer}.`;
+    normalizedQuestion = `Write a short ${language} answer using these terms: ${expectedAnswer}.`;
   } else if (malformedChoice) {
-    normalizedQuestion = `Answer this question in German: ${question}`;
+    normalizedQuestion = `Answer this question in ${language}: ${question}`;
   }
 
   return {
@@ -294,9 +298,9 @@ export function toLearningPlans(plans = []) {
   }));
 }
 
-export function toLessonDetail(lesson, planSummaryLesson) {
+export function toLessonDetail(lesson, planSummaryLesson, targetLanguage = planSummaryLesson?.language) {
   const exercises = (lesson.exercises ?? []).map((exercise) => {
-    const normalizedExercise = normalizeExercisePrompt(exercise);
+    const normalizedExercise = normalizeExercisePrompt(exercise, targetLanguage);
 
     return {
       id: exercise.id,
