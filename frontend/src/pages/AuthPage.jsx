@@ -20,20 +20,9 @@ export function AuthPage({ t, authEnabled, authErrorMessage, authPending, onLogi
   return (
     <div className="auth-page">
       <header className="app-header auth-brand-header">
-        {authEnabled ? (
-          <div className="logo-placeholder auth-logo" aria-hidden="true">
-            <BrainCircuit size={29} />
-          </div>
-        ) : (
-          <button
-            className="logo-placeholder logo-bypass-button auth-logo"
-            type="button"
-            aria-label="Continue without authentication"
-            onClick={onBypass}
-          >
-            <BrainCircuit size={29} aria-hidden="true" />
-          </button>
-        )}
+        <div className="logo-placeholder auth-logo" aria-hidden="true">
+          <BrainCircuit size={29} />
+        </div>
         <div>
           <p className="app-label">{t.appLabel}</p>
           <h1>InterviewMate</h1>

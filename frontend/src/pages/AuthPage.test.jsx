@@ -60,6 +60,7 @@ describe('AuthPage', () => {
     const markup = renderAuth({ authEnabled: false });
 
     expect(markup).toContain(copy.authContinueWithout);
+    expect(markup.match(/Continue without authentication/g)).toHaveLength(1);
     expect(markup).toContain('disabled=""');
   });
 });

@@ -121,28 +121,6 @@ button {
   font-weight: 850;
 }
 
-.logo-bypass-button {
-  cursor: pointer;
-  transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    background-color 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.logo-bypass-button:hover,
-.logo-bypass-button:focus-visible {
-  transform: translateY(-1px);
-  border-color: var(--blue);
-  background: #eef6ff;
-  box-shadow: 0 12px 24px rgba(25, 103, 210, 0.16);
-}
-
-.dark-mode .logo-bypass-button:hover,
-.dark-mode .logo-bypass-button:focus-visible {
-  background: #1d3354;
-}
-
 .app-label,
 .eyebrow {
   margin: 0 0 4px;
