@@ -7,8 +7,8 @@ image:
 imagePullSecrets: []
 
 rollout:
-  maxSurge: 0
-  maxUnavailable: 1
+  maxSurge: 1
+  maxUnavailable: 0
 
 monitoring:
   applicationVersionFallback: unknown
