@@ -107,7 +107,9 @@ class RagLearningPlanExercise(BaseModel):
 
         normalized = dict(data)
         if not normalized.get("question"):
-            normalized["question"] = normalized.get("prompt") or normalized.get("description")
+            normalized["question"] = normalized.get("prompt") or normalized.get(
+                "description"
+            )
         if not normalized.get("expected_answer"):
             normalized["expected_answer"] = (
                 normalized.get("answer")
@@ -138,7 +140,10 @@ class RagLearningPlanExercise(BaseModel):
             self.subtype = "free_text"
             self.type = "writing"
             self.question = _open_answer_question(self.question, self.expected_answer)
-        if self.subtype in {"multiple_choice", "listening_choice"} and not _has_choice_marker(self.question):
+        if self.subtype in {
+            "multiple_choice",
+            "listening_choice",
+        } and not _has_choice_marker(self.question):
             self.subtype = "free_text"
             self.type = "writing"
             self.question = _open_question_prompt(self.question)
@@ -199,8 +204,12 @@ class RagLearningPlanResponse(BaseModel):
 
         normalized = dict(data)
         topic = normalized.get("topic") or "RAG topic"
-        learning_goal = normalized.get("learning_goal") or normalized.get("goal") or topic
-        language = normalized.get("target_language") or normalized.get("language") or "German"
+        learning_goal = (
+            normalized.get("learning_goal") or normalized.get("goal") or topic
+        )
+        language = (
+            normalized.get("target_language") or normalized.get("language") or "German"
+        )
         level = normalized.get("level") or "A2"
         duration_weeks = normalized.get("duration_weeks")
 
@@ -225,6 +234,24 @@ class RagLearningPlanResponse(BaseModel):
         normalized["lessons"] = lessons
 
         return normalized
+
+
+class RagPlanQualityViolation(BaseModel):
+    lesson_order: int | None = Field(default=None, ge=1)
+    exercise_index: int | None = Field(default=None, ge=0)
+    code: str
+    reason: str
+
+
+class RagLearningPlanQualityReview(BaseModel):
+    accepted: bool
+    violations: list[RagPlanQualityViolation] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def reject_reviews_with_violations(self) -> "RagLearningPlanQualityReview":
+        if self.violations:
+            self.accepted = False
+        return self
 
 
 def _normalize_content_blocks(content_blocks: Any) -> list[str]:
@@ -258,12 +285,17 @@ def _has_blank_marker(value: str) -> bool:
 
 def _has_choice_marker(value: str) -> bool:
     normalized = f" {value.lower()} "
-    return any(marker in normalized for marker in (" a)", " b)", " c)", " d)", " a.", " b.", " c.", " d."))
+    return any(
+        marker in normalized
+        for marker in (" a)", " b)", " c)", " d)", " a.", " b.", " c.", " d.")
+    )
 
 
 def _open_answer_question(question: str, expected_answer: str) -> str:
     if expected_answer.strip():
-        return f"Write a short German answer using these terms: {expected_answer.strip()}."
+        return (
+            f"Write a short German answer using these terms: {expected_answer.strip()}."
+        )
     return question
 
 
