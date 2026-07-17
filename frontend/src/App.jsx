@@ -361,6 +361,16 @@ export function App() {
     targetLanguageRef.current = targetLanguage;
   }, [targetLanguage]);
 
+  React.useEffect(() => {
+    const restoreAuthControls = () => {
+      setAuthPending(false);
+      setLoadingInitialData(false);
+    };
+
+    window.addEventListener('pageshow', restoreAuthControls);
+    return () => window.removeEventListener('pageshow', restoreAuthControls);
+  }, []);
+
   const navigateToScreen = React.useCallback((nextScreen) => {
     screenRef.current = nextScreen;
     setScreen(nextScreen);
@@ -549,9 +559,7 @@ export function App() {
     let introTimeoutId = 0;
 
     async function bootstrapOidcSession() {
-      setAuthPending(true);
       setAuthError('');
-      setLoadingInitialData(true);
 
       try {
         const authenticated = await initializeAuth();
@@ -696,6 +704,9 @@ export function App() {
 
   const resetSessionState = () => {
     setSession(null);
+    setAuthPending(false);
+    setLoadingInitialData(false);
+    setBlockingOperation('');
     setAuthError('');
     setDashboardError('');
     setProfileError('');
@@ -731,21 +742,25 @@ export function App() {
     setAuthError('');
     setAuthPending(true);
     cancelRegistrationIntro(window.localStorage);
-    loginWithKeycloak().catch((error) => {
-      setAuthPending(false);
-      setAuthError(error.message || 'Unable to start Keycloak sign in.');
-    });
+    Promise.resolve()
+      .then(() => loginWithKeycloak())
+      .catch((error) => {
+        setAuthPending(false);
+        setAuthError(error.message || 'Unable to start Keycloak sign in.');
+      });
   };
 
   const handleRegister = () => {
     setAuthError('');
     setAuthPending(true);
     beginRegistrationIntro(window.localStorage);
-    registerWithKeycloak().catch((error) => {
-      setAuthPending(false);
-      cancelRegistrationIntro(window.localStorage);
-      setAuthError(error.message || 'Unable to start Keycloak registration.');
-    });
+    Promise.resolve()
+      .then(() => registerWithKeycloak())
+      .catch((error) => {
+        setAuthPending(false);
+        cancelRegistrationIntro(window.localStorage);
+        setAuthError(error.message || 'Unable to start Keycloak registration.');
+      });
   };
 
   const finishIntro = () => {

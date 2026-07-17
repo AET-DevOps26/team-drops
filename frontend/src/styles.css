@@ -170,13 +170,6 @@ h1 {
   min-height: 58px;
 }
 
-.auth-logo {
-  border: 0;
-  background: linear-gradient(145deg, #e7f2ff, #cce3ff);
-  color: var(--blue);
-  box-shadow: inset 0 0 0 1px rgba(25, 103, 210, 0.12);
-}
-
 .auth-trust-badge {
   display: inline-flex;
   align-items: center;
@@ -430,12 +423,6 @@ h1 {
   font-weight: 750;
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-.dark-mode .auth-logo {
-  background: linear-gradient(145deg, #1d3d69, #172e50);
-  color: #8ec1ff;
-  box-shadow: inset 0 0 0 1px rgba(142, 193, 255, 0.16);
 }
 
 .dark-mode .auth-hero-visual {
