@@ -340,6 +340,11 @@ paths:
           content:
             application/json:
               schema: {}
+        '503':
+          description: LLM provider is not configured
+          content:
+            application/json:
+              schema: {}
   /api/v1/learning-plans/default:
     post:
       tags:
@@ -1274,10 +1279,23 @@ components:
       properties:
         type:
           type: string
+          enum:
+            - reading
+            - listening
+            - writing
+            - speaking
           title: Type
           description: Learning-service ExerciseType enum value
         subtype:
           type: string
+          enum:
+            - multiple_choice
+            - listening_choice
+            - speaking_prompt
+            - translation
+            - fill_in_blank
+            - sentence_building
+            - free_text
           title: Subtype
           description: Learning-service ExerciseSubtype enum value
         question:

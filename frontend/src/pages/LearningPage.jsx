@@ -191,8 +191,8 @@ const exerciseTypeOptions = [
 const ragTopics = [
   {
     id: 'job interview',
-    title: 'Job interview',
-    description: 'Practice answers, interview etiquette, follow-up, and preparation.',
+    title: 'Software engineering interviews',
+    description: 'Practice project explanations, technical trade-offs, debugging, and behavioral answers.',
   },
 ];
 
@@ -283,7 +283,7 @@ function AiLearningPlanForm({
 }) {
   const generationLimitReached = ragPlanCount >= 2;
   const [selectedExerciseTypes, setSelectedExerciseTypes] = React.useState(
-    exerciseTypeOptions.filter((type) => !isComingSoonType(type.id)).map((type) => type.id),
+    exerciseTypeOptions.map((type) => type.id),
   );
   const [formValues, setFormValues] = React.useState({
     learningGoal: profile?.learningGoal || '',
@@ -304,11 +304,6 @@ function AiLearningPlanForm({
   };
 
   const toggleExerciseType = (exerciseType) => {
-    if (isComingSoonType(exerciseType)) {
-      window.alert(t.comingSoon);
-      return;
-    }
-
     setSelectedExerciseTypes((currentTypes) =>
       currentTypes.includes(exerciseType)
         ? currentTypes.filter((type) => type !== exerciseType)
@@ -328,7 +323,6 @@ function AiLearningPlanForm({
 
     const minimumLessons = Number.parseInt(formValues.minimumLessons, 10);
     const maximumLessons = Number.parseInt(formValues.maximumLessons, 10);
-
     if (selectedExerciseTypes.length === 0) {
       setError('Choose at least one exercise type.');
       return;
@@ -468,7 +462,7 @@ function AiLearningPlanForm({
         <legend>Exercise types</legend>
         <div className="ai-checkbox-grid">
           {exerciseTypeOptions.map((type) => (
-            <label className={`ai-checkbox-option ${isComingSoonType(type.id) ? 'is-disabled' : ''}`} key={type.id}>
+            <label className="ai-checkbox-option" key={type.id}>
               <input
                 checked={selectedExerciseTypes.includes(type.id)}
                 name="exerciseTypes"
@@ -741,14 +735,13 @@ function LessonBlock({ block, exercises, t, onOpenExercise }) {
 }
 
 function ExerciseCard({ exercise, index, t, onOpenExercise }) {
-  const comingSoon = isComingSoonType(exercise.type);
   const statusClass = exercise.status === 'finished' ? 'status-pill-finished' : '';
 
   return (
     <button
-      className={`exercise-card lesson-progress-link exercise-type-${exercise.type} ${comingSoon ? 'is-disabled' : ''}`}
+      className={`exercise-card lesson-progress-link exercise-type-${exercise.type}`}
       type="button"
-      onClick={() => (comingSoon ? window.alert(t.comingSoon) : onOpenExercise(index))}
+      onClick={() => onOpenExercise(index)}
     >
       <span className={`exercise-type-icon ${exercise.type}`}>
         <ExerciseTypeIcon type={exercise.type} />
@@ -761,10 +754,6 @@ function ExerciseCard({ exercise, index, t, onOpenExercise }) {
       <small className="lesson-percent">{exercise.grade ? `${exercise.grade}` : '--'}</small>
     </button>
   );
-}
-
-function isComingSoonType() {
-  return false;
 }
 
 function isSpeakingExercise(exercise) {
@@ -917,6 +906,12 @@ function ListeningExerciseView({
     setRetryActive(false);
     setRetryPending(false);
   }, [activeExercise.id]);
+
+  React.useEffect(() => {
+    if (reviewed && !answerPending && !answerError) {
+      setRetryActive(false);
+    }
+  }, [reviewed, answerPending, answerError]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -1075,6 +1070,7 @@ function SpeakingExerciseView({ activeExercise, answerError, answerPending, onSu
   const recorderRef = React.useRef(null);
   const streamRef = React.useRef(null);
   const chunksRef = React.useRef([]);
+  const submitAttemptRef = React.useRef(false);
   const reviewed = hasReviewedAnswer(activeExercise);
   const recorderSupported = typeof navigator !== 'undefined'
     && Boolean(navigator.mediaDevices?.getUserMedia)
@@ -1086,7 +1082,25 @@ function SpeakingExerciseView({ activeExercise, answerError, answerPending, onSu
     setAudioPreviewUrl('');
     setLocalError('');
     setReanswerActive(false);
+    submitAttemptRef.current = false;
   }, [activeExercise.id]);
+
+  React.useEffect(() => {
+    if (!submitAttemptRef.current || answerPending) {
+      return;
+    }
+
+    submitAttemptRef.current = false;
+
+    if (reviewed && !answerError) {
+      if (audioPreviewUrl) {
+        URL.revokeObjectURL(audioPreviewUrl);
+      }
+      setSelectedAudio(null);
+      setAudioPreviewUrl('');
+      setReanswerActive(false);
+    }
+  }, [reviewed, answerPending, answerError, audioPreviewUrl]);
 
   React.useEffect(() => {
     return () => {
@@ -1177,6 +1191,7 @@ function SpeakingExerciseView({ activeExercise, answerError, answerPending, onSu
     }
 
     setLocalError('');
+    submitAttemptRef.current = true;
     await onSubmitSpeakingAnswer(activeExercise, selectedAudio);
   };
 

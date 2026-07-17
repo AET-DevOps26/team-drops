@@ -7,7 +7,7 @@ from jwt.exceptions import InvalidTokenError, PyJWKClientError
 from app.config import settings
 
 
-_PUBLIC_PATHS = ("/health", "/metrics", "/docs", "/redoc", "/openapi.json")
+_PUBLIC_PATHS = ("/health", "/live", "/metrics", "/docs", "/redoc", "/openapi.json")
 _jwk_client: PyJWKClient | None = None
 
 

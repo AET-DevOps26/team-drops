@@ -64,6 +64,7 @@ class GenAiRagLearningPlanClientTests {
         assertThat(body.get("study_hours_per_week").asInt()).isEqualTo(4);
         assertThat(body.get("minimum_lessons").asInt()).isEqualTo(2);
         assertThat(body.get("maximum_lessons").asInt()).isEqualTo(4);
+        assertThat(body.get("top_k").asInt()).isEqualTo(2);
         assertThat(body.get("exercise_types").get(0).asText()).isEqualTo("writing");
         assertThat(body.get("exercise_types").get(1).asText()).isEqualTo("speaking");
         assertThat(authorizationHeader.get()).isNull();
@@ -116,7 +117,26 @@ class GenAiRagLearningPlanClientTests {
 
         assertThatThrownBy(() -> client.generate(request()))
             .isInstanceOf(ResponseStatusException.class)
-            .hasMessageContaining("GenAI service rejected RAG learning-plan generation");
+            .hasMessageContaining("GenAI service rejected RAG learning-plan generation")
+            .hasMessageContaining("LLM unavailable");
+    }
+
+    @Test
+    void generateMapsMalformedDownstreamJsonToBadGateway() throws Exception {
+        AtomicReference<JsonNode> requestBody = new AtomicReference<>();
+        AtomicReference<String> authorizationHeader = new AtomicReference<>();
+        GenAiRagLearningPlanClient client = newClient(
+            false,
+            Optional.empty(),
+            authorizationHeader,
+            requestBody,
+            200,
+            "{\"title\":"
+        );
+
+        assertThatThrownBy(() -> client.generate(request()))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("GenAI service returned an unparseable RAG learning-plan response");
     }
 
     @Test

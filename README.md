@@ -38,7 +38,7 @@ older proposal and diagram files are retained as historical design material.
 | Keycloak | Identity and access management | Keycloak 26 | 8090 | Imported `team-drops` realm |
 | PostgreSQL | Relational application data | PostgreSQL 16 | 5433 | Backend services |
 | MongoDB | GenAI and retrieval data | MongoDB 7 | 27017 | GenAI service |
-| Ollama | Local language-model runtime | Ollama | 11434 | GenAI service |
+| Ollama | Optional local language-model runtime | Ollama | 11434 | GenAI service when `local-ollama` profile is enabled |
 
 Browser requests use relative paths such as `/user-service`,
 `/learning-service`, and `/progress-service`. Vite proxies these paths during
@@ -70,8 +70,7 @@ team-drops/
 Requirements:
 
 - Docker with Docker Compose v2
-- Enough memory and disk space to run the services and download the configured
-  Ollama model
+- An OpenAI-compatible external LLM API key in `LLM_API_KEY`.
 
 Create your local configuration and start the stack:
 
@@ -81,8 +80,21 @@ docker compose up --build
 ```
 
 On Windows PowerShell, use `Copy-Item .env.example .env` for the first command.
-The initial start may take longer while Ollama downloads
-`OLLAMA_MODEL` (`llama3.2:1b` by default).
+The default example connects GenAI to an OpenAI-compatible external API using
+`LLM_PROVIDER=openai`, `LLM_API_KEY`, and `LLM_MODEL`.
+
+For a local Ollama fallback, set `LLM_PROVIDER=ollama` and
+`OLLAMA_BASE_URL=http://ollama:11434` in `.env`, then start Compose with the
+opt-in profile:
+
+```bash
+docker compose --profile local-ollama up --build
+```
+
+When using the `local-ollama` profile for AI QA, wait for the one-shot
+`ollama-pull` service to finish downloading `OLLAMA_MODEL` before generating
+RAG plans. Otherwise the first GenAI request can fail or time out while the
+model is still being pulled.
 
 Useful local endpoints:
 
@@ -93,7 +105,7 @@ Useful local endpoints:
 | User health | <http://localhost:8081/actuator/health> |
 | Learning health | <http://localhost:8082/actuator/health> |
 | Progress health | <http://localhost:8083/actuator/health> |
-| GenAI health | <http://localhost:8084/health> |
+| GenAI readiness | <http://localhost:8084/health> |
 
 Stop the stack with `docker compose down`. Add `--volumes` only when you
 intentionally want to remove the local PostgreSQL, MongoDB, and Ollama data.
@@ -101,9 +113,9 @@ intentionally want to remove the local PostgreSQL, MongoDB, and Ollama data.
 ## Configuration and authentication
 
 `.env.example` documents the supported local LLM and authentication settings.
-The default example uses Ollama. To use an OpenAI-compatible provider, set
-`LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, and, when required,
-`LLM_BASE_URL`. Never commit real credentials or add them to Helm values.
+The default example uses an OpenAI-compatible provider. Set `LLM_API_KEY`,
+`LLM_MODEL`, and, when required, `LLM_BASE_URL`. Never commit real credentials
+or add them to Helm values.
 
 Authentication is controlled by `AUTH_ENABLED`. When enabled, the frontend and
 APIs use the `team-drops` Keycloak realm and client. The local realm is imported

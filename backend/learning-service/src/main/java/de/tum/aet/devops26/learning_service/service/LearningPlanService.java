@@ -332,7 +332,29 @@ public class LearningPlanService {
             .sorted(Comparator.comparing(ValidatedRagLesson::orderNumber))
             .toList();
         validateContiguousLessonOrder(lessons);
+        validateRequestedExerciseTypesPresent(lessons, requestedExerciseTypes);
         return lessons;
+    }
+
+    private void validateRequestedExerciseTypesPresent(
+        List<ValidatedRagLesson> lessons,
+        Set<ExerciseType> requestedExerciseTypes
+    ) {
+        Set<ExerciseType> generatedExerciseTypes = EnumSet.noneOf(ExerciseType.class);
+        for (ValidatedRagLesson lesson : lessons) {
+            for (ValidatedRagExercise exercise : lesson.exercises()) {
+                generatedExerciseTypes.add(typeForSubtype(exercise.subtype()));
+            }
+        }
+
+        for (ExerciseType requestedExerciseType : requestedExerciseTypes) {
+            if (!generatedExerciseTypes.contains(requestedExerciseType)) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "GenAI did not return a requested exercise type: " + requestedExerciseType.getValue()
+                );
+            }
+        }
     }
 
     private void validateContiguousLessonOrder(List<ValidatedRagLesson> lessons) {

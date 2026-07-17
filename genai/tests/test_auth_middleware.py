@@ -10,6 +10,14 @@ def test_auth_middleware_allows_public_health_when_enabled(client, monkeypatch):
 
     response = client.get("/health")
 
+    assert response.status_code != 401
+
+
+def test_auth_middleware_allows_public_liveness_when_enabled(client, monkeypatch):
+    monkeypatch.setattr(settings, "auth_enabled", True)
+
+    response = client.get("/live")
+
     assert response.status_code == 200
 
 

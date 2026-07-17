@@ -45,12 +45,16 @@ public class LessonService {
             .map(contentBlock -> contentBlock == null ? "" : contentBlock.trim())
             .filter(text -> !text.isBlank())
             .toList();
-        int existingBlockCount = lessonContentBlockRepository.findByLessonIdOrderByOrderNumberAsc(lessonId).size();
+        if (normalizedBlocks.isEmpty()) {
+            return List.of();
+        }
+
+        long existingBlockCount = lessonContentBlockRepository.countByLessonId(lessonId);
 
         return IntStream.range(0, normalizedBlocks.size())
             .mapToObj(index -> lessonContentBlockRepository.save(LessonContentBlock.builder()
                 .lessonId(lessonId)
-                .orderNumber(existingBlockCount + index + 1)
+                .orderNumber((int) existingBlockCount + index + 1)
                 .type("content")
                 .title("Lesson content")
                 .text(normalizedBlocks.get(index))
