@@ -79,7 +79,16 @@ api_v1.include_router(rag_router)
 app.include_router(api_v1)
 
 
-@app.get("/health", tags=["ops"])
+@app.get(
+    "/health",
+    tags=["ops"],
+    responses={
+        503: {
+            "description": "LLM provider is not configured",
+            "content": {"application/json": {"schema": {}}},
+        }
+    },
+)
 async def health(response: Response):
     llm_status = llm_configuration_status()
     if not llm_status["configured"]:
