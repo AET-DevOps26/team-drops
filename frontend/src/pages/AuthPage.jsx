@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ArrowRight,
   Check,
+  LoaderCircle,
   LogIn,
   MessageCircle,
   ShieldCheck,
@@ -9,12 +10,26 @@ import {
   UserPlus,
 } from 'lucide-react';
 
-export function AuthPage({ t, authEnabled, authErrorMessage, onLogin, onRegister, onBypass }) {
+export function AuthPage({ t, authEnabled, authErrorMessage, authPending, onLogin, onRegister, onBypass }) {
   const [message, setMessage] = React.useState('');
 
   React.useEffect(() => {
     setMessage(authErrorMessage ?? '');
   }, [authErrorMessage]);
+
+  if (authPending) {
+    return (
+      <section className="auth-processing" aria-live="polite" aria-busy="true">
+        <div className="auth-processing-mark" aria-hidden="true">
+          <LoaderCircle size={34} />
+        </div>
+        <div className="auth-processing-copy">
+          <p className="eyebrow">{t.welcomeBack}</p>
+          <h2>{t.authSigningIn}</h2>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <div className="auth-page">
@@ -68,7 +83,7 @@ export function AuthPage({ t, authEnabled, authErrorMessage, onLogin, onRegister
 
           <button
             className="auth-button auth-primary-button"
-            disabled={!authEnabled}
+            disabled={authPending || !authEnabled}
             type="button"
             onClick={onLogin}
           >
@@ -79,7 +94,7 @@ export function AuthPage({ t, authEnabled, authErrorMessage, onLogin, onRegister
 
           <button
             className="auth-button auth-secondary-button"
-            disabled={!authEnabled}
+            disabled={authPending || !authEnabled}
             type="button"
             onClick={onRegister}
           >

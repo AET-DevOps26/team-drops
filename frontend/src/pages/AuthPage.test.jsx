@@ -15,6 +15,7 @@ const copy = {
   authBenefitPractice: 'Real interview practice',
   authBenefitFeedback: 'Instant feedback',
   authSignIn: 'Sign in',
+  authSigningIn: 'Signing you in...',
   authCreateAccount: 'Create account',
   authContinueWithout: 'Continue without authentication',
   authSecure: 'Secure authentication with Keycloak',
@@ -46,13 +47,12 @@ describe('AuthPage', () => {
     expect(markup).not.toContain(copy.authContinueWithout);
   });
 
-  it('keeps authentication actions enabled while Keycloak is initializing', () => {
-    const markup = renderAuth();
+  it('shows the authentication loading screen while sign-in is pending', () => {
+    const markup = renderAuth({ authPending: true });
 
-    expect(markup).toContain(copy.authTitle);
-    expect(markup).toContain(copy.authCreateAccount);
-    expect(markup).not.toContain('disabled=""');
-    expect(markup).not.toContain('aria-busy="true"');
+    expect(markup).toContain(copy.authSigningIn);
+    expect(markup).toContain('aria-busy="true"');
+    expect(markup).not.toContain(copy.authCreateAccount);
   });
 
   it('only exposes the development bypass when authentication is disabled', () => {

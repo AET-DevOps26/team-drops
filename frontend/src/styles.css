@@ -166,6 +166,48 @@ h1 {
   flex-direction: column;
 }
 
+.auth-processing {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  place-items: center;
+  align-content: center;
+  gap: 18px;
+  text-align: center;
+  transform-origin: center 58%;
+  animation: page-appear 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.auth-processing-mark {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border: 1px solid rgba(25, 103, 210, 0.2);
+  border-radius: 24px;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.auth-processing-mark svg {
+  animation: language-switch-spin 850ms linear infinite;
+}
+
+.auth-processing-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.auth-processing-copy .eyebrow {
+  color: var(--blue);
+}
+
+.auth-processing-copy h2 {
+  color: var(--ink);
+  font-size: 1.52rem;
+  line-height: 1.08;
+}
+
 .auth-brand-header {
   min-height: 58px;
 }

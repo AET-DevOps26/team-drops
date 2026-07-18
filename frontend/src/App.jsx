@@ -96,6 +96,7 @@ const translations = {
     authBenefitPractice: 'Real interview practice',
     authBenefitFeedback: 'Instant feedback',
     authSignIn: 'Sign in',
+    authSigningIn: 'Signing you in...',
     authCreateAccount: 'Create account',
     authContinueWithout: 'Continue without authentication',
     authSecure: 'Secure authentication with Keycloak',
@@ -166,6 +167,7 @@ const translations = {
     authBenefitPractice: 'Realistische Übungen',
     authBenefitFeedback: 'Direktes Feedback',
     authSignIn: 'Anmelden',
+    authSigningIn: 'Anmeldung läuft...',
     authCreateAccount: 'Konto erstellen',
     authContinueWithout: 'Ohne Anmeldung fortfahren',
     authSecure: 'Sichere Anmeldung mit Keycloak',
@@ -236,6 +238,7 @@ const translations = {
     authBenefitPractice: 'Entretiens réalistes',
     authBenefitFeedback: 'Retour immédiat',
     authSignIn: 'Se connecter',
+    authSigningIn: 'Connexion en cours...',
     authCreateAccount: 'Créer un compte',
     authContinueWithout: 'Continuer sans authentification',
     authSecure: 'Authentification sécurisée avec Keycloak',
@@ -317,6 +320,8 @@ export function App() {
   const [profile, setProfile] = React.useState(defaultProfile);
   const [progress, setProgress] = React.useState(createEmptyProgress());
   const [learningPlans, setLearningPlans] = React.useState([]);
+  const learningPlansRef = React.useRef([]);
+  const learningPlansLanguageRef = React.useRef(null);
   const [selectedPlan, setSelectedPlan] = React.useState(0);
   const [selectedLesson, setSelectedLesson] = React.useState(0);
   const [selectedExercise, setSelectedExercise] = React.useState(0);
@@ -353,6 +358,10 @@ export function App() {
   React.useEffect(() => {
     targetLanguageRef.current = targetLanguage;
   }, [targetLanguage]);
+
+  React.useEffect(() => {
+    learningPlansRef.current = learningPlans;
+  }, [learningPlans]);
 
   React.useEffect(() => {
     const restoreAuthControls = () => {
@@ -476,6 +485,15 @@ export function App() {
         learningPlansError = error;
       }
     }
+
+    if (
+      learningPlansError
+      && learningPlansLanguageRef.current === contentLanguage
+      && learningPlansRef.current.length > 0
+    ) {
+      nextLearningPlans = learningPlansRef.current;
+    }
+
     if (nextLearningPlans.length > 0) {
       try {
         const savedAnswers = await getUserAnswers(userId, token, { targetLanguage: contentLanguage });
@@ -520,6 +538,10 @@ export function App() {
 
     setProfile(nextProfile);
     setTargetLanguageValue(nextProfile.targetLanguage || targetLanguageRef.current);
+    if (!learningPlansError) {
+      learningPlansLanguageRef.current = contentLanguage;
+    }
+    learningPlansRef.current = nextLearningPlans;
     setLearningPlans(nextLearningPlans);
     setProgress(nextProgress);
 
@@ -552,6 +574,7 @@ export function App() {
 
     async function bootstrapOidcSession() {
       setAuthError('');
+      setLoadingInitialData(true);
 
       try {
         const authenticated = await initializeAuth();
@@ -704,6 +727,8 @@ export function App() {
     setLearningError('');
     setProfile(defaultProfile);
     setTargetLanguageValue(defaultProfile.targetLanguage);
+    learningPlansRef.current = [];
+    learningPlansLanguageRef.current = null;
     setLearningPlans([]);
     setProgress(createEmptyProgress());
     resetLearningSelection();
@@ -730,20 +755,24 @@ export function App() {
 
   const handleLogin = () => {
     setAuthError('');
+    setLoadingInitialData(true);
     cancelRegistrationIntro(window.localStorage);
     Promise.resolve()
       .then(() => loginWithKeycloak())
       .catch((error) => {
+        setLoadingInitialData(false);
         setAuthError(error.message || 'Unable to start Keycloak sign in.');
       });
   };
 
   const handleRegister = () => {
     setAuthError('');
+    setLoadingInitialData(true);
     beginRegistrationIntro(window.localStorage);
     Promise.resolve()
       .then(() => registerWithKeycloak())
       .catch((error) => {
+        setLoadingInitialData(false);
         cancelRegistrationIntro(window.localStorage);
         setAuthError(error.message || 'Unable to start Keycloak registration.');
       });
@@ -1139,6 +1168,7 @@ export function App() {
             <AuthPage
               authEnabled={authEnabled}
               authErrorMessage={authError}
+              authPending={loadingInitialData}
               t={t}
               onLogin={handleLogin}
               onRegister={handleRegister}
