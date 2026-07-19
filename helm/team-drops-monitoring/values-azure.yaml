@@ -1,0 +1,29 @@
+# Azure AKS deployment profile. Monitoring remains internal to the cluster.
+application:
+  namespace: team-drops
+
+monitoring:
+  alertmanager:
+    slack:
+      enabled: false
+    email:
+      enabled: false
+    pagerduty:
+      enabled: false
+
+prometheus:
+  alertmanager:
+    persistence:
+      storageClass: managed-csi
+  server:
+    persistentVolume:
+      storageClass: managed-csi
+
+grafana:
+  persistence:
+    storageClassName: managed-csi
+
+loki:
+  singleBinary:
+    persistence:
+      storageClass: managed-csi

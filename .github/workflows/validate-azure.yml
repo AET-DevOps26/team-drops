@@ -1,0 +1,117 @@
+name: Validate Azure deployment files
+
+on:
+  pull_request:
+    paths:
+      - "infra/azure/**"
+      - "scripts/azure/**"
+      - "helm/team-drops/values-azure.yaml"
+      - "helm/team-drops-monitoring/values-azure.yaml"
+      - "helm/team-drops/templates/postgres.yaml"
+      - "helm/team-drops/templates/mongo.yaml"
+      - "helm/team-drops/values.yaml"
+      - "docs/azure-deployment.md"
+      - ".github/workflows/validate-azure.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/azure/**"
+      - "scripts/azure/**"
+      - "helm/team-drops/values-azure.yaml"
+      - "helm/team-drops-monitoring/values-azure.yaml"
+      - "helm/team-drops/templates/postgres.yaml"
+      - "helm/team-drops/templates/mongo.yaml"
+      - "helm/team-drops/values.yaml"
+      - "docs/azure-deployment.md"
+      - ".github/workflows/validate-azure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Terraform and Helm validation only
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.5
+
+      - name: Validate Terraform formatting
+        run: terraform fmt -check -recursive infra/azure
+
+      - name: Validate Terraform modules without a backend
+        run: |
+          terraform -chdir=infra/azure/bootstrap init -backend=false
+          terraform -chdir=infra/azure/bootstrap validate
+          terraform -chdir=infra/azure init -backend=false
+          terraform -chdir=infra/azure validate
+
+      - name: Validate Azure shell scripts
+        run: bash -n scripts/azure/*.sh
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v4.2.0
+
+      - name: Build monitoring dependencies
+        run: helm dependency build helm/team-drops-monitoring
+
+      - name: Lint Azure and Rancher profiles
+        run: |
+          helm lint helm/team-drops -n team-drops \
+            -f helm/team-drops/values-azure.yaml \
+            --set genai.llmApiKey=dummy
+          helm lint helm/team-drops-monitoring -n team-drops \
+            -f helm/team-drops-monitoring/values-azure.yaml
+          helm lint helm/team-drops -n team-drops \
+            -f helm/team-drops/values-rancher.yaml \
+            --set genai.llmApiKey=dummy
+          helm lint helm/team-drops-monitoring -n team-drops \
+            -f helm/team-drops-monitoring/values-rancher.yaml
+
+      - name: Render and inspect Azure profiles
+        run: |
+          helm template team-drops helm/team-drops -n team-drops \
+            -f helm/team-drops/values-azure.yaml \
+            --set image.registry=example.azurecr.io \
+            --set image.tag=sha-validation \
+            --set genai.llmApiKey=dummy \
+            > /tmp/team-drops-azure.yaml
+          helm template team-drops-monitoring helm/team-drops-monitoring -n team-drops \
+            -f helm/team-drops-monitoring/values-azure.yaml \
+            > /tmp/team-drops-monitoring-azure.yaml
+          ruby -ryaml -e '
+            documents = YAML.load_stream(File.read("/tmp/team-drops-azure.yaml")).compact
+            monitoring = YAML.load_stream(File.read("/tmp/team-drops-monitoring-azure.yaml")).compact
+            rendered = File.read("/tmp/team-drops-azure.yaml") + File.read("/tmp/team-drops-monitoring-azure.yaml")
+            abort("Rancher hostname leaked into Azure manifests") if rendered.include?("stud.k8s.aet.cit.tum.de")
+            images = documents.select { |doc| %w[Deployment StatefulSet].include?(doc["kind"]) }
+              .flat_map { |doc| doc.dig("spec", "template", "spec", "containers") || [] }
+              .map { |container| container["image"] }
+              .compact
+              .select { |image| image.include?("team-drops-") }
+            abort("Application images do not use ACR") unless images.all? { |image| image.start_with?("example.azurecr.io/team-drops/") }
+            app_statefulsets = documents.select { |doc| doc["kind"] == "StatefulSet" && %w[postgres mongo].include?(doc.dig("metadata", "name")) }
+            abort("Missing Azure database StatefulSets") unless app_statefulsets.length == 2
+            abort("Database PVCs do not use managed-csi") unless app_statefulsets.all? { |doc| doc.dig("spec", "volumeClaimTemplates", 0, "spec", "storageClassName") == "managed-csi" }
+            monitoring_pvcs = monitoring.select { |doc| doc["kind"] == "PersistentVolumeClaim" }
+            monitoring_claims = monitoring_pvcs + monitoring.select { |doc| doc["kind"] == "StatefulSet" }.flat_map { |doc| doc.dig("spec", "volumeClaimTemplates") || [] }
+            abort("Monitoring PVCs do not use managed-csi") unless monitoring_claims.all? { |claim| claim.dig("spec", "storageClassName") == "managed-csi" }
+          '
+
+      - name: Render Rancher regression profiles
+        run: |
+          helm template team-drops helm/team-drops -n team-drops \
+            -f helm/team-drops/values-rancher.yaml \
+            --set genai.llmApiKey=dummy \
+            > /tmp/team-drops-rancher.yaml
+          helm template team-drops-monitoring helm/team-drops-monitoring -n team-drops \
+            -f helm/team-drops-monitoring/values-rancher.yaml \
+            > /tmp/team-drops-monitoring-rancher.yaml

@@ -163,6 +163,7 @@ postgres:
   port: 5432
   storage:
     size: 1Gi
+    storageClassName: ""
   resources:
     requests:
       cpu: 100m
@@ -176,6 +177,7 @@ mongo:
   port: 27017
   storage:
     size: 1Gi
+    storageClassName: ""
   resources:
     requests:
       cpu: 100m

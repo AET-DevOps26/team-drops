@@ -45,6 +45,19 @@ lerna-debug.log*
 # Local planning artifacts
 .planning/
 
+# Terraform local state, plans, and provider downloads
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+terraform.tfvars
+backend.hcl
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
 # Java / Gradle
 HELP.md
 .gradle/
