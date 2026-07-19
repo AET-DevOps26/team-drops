@@ -39,11 +39,7 @@ async def lifespan(app: FastAPI):
         from app.stt.client import _get_whisper
 
         await asyncio.to_thread(_get_whisper)
-        if (
-            settings.tts_enabled
-            and settings.kokoro_model_path
-            and settings.kokoro_voices_path
-        ):
+        if settings.kokoro_model_path and settings.kokoro_voices_path:
             from app.tts.client import _get_kokoro
 
             await asyncio.to_thread(_get_kokoro)
