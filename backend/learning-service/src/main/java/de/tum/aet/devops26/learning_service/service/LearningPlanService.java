@@ -23,6 +23,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,10 @@ public class LearningPlanService {
     private static final int MIN_LESSONS = 1;
     private static final int MAX_LESSONS = 24;
     private static final int MAX_RAG_PLANS_PER_USER = 2;
+    private static final Pattern TRAILING_CEFR_LEVEL = Pattern.compile(
+        "\\s*\\((?:A1|A2|B1|B2|C1|C2)\\)\\s*$",
+        Pattern.CASE_INSENSITIVE
+    );
 
     private final LearningPlanRepository learningPlanRepository;
     private final LessonService lessonService;
@@ -96,10 +101,16 @@ public class LearningPlanService {
 
         RagLearningPlanResponse generatedPlan = genAiRagLearningPlanClient.generate(request);
         List<ValidatedRagLesson> lessons = validateGeneratedPlan(generatedPlan, request);
+        String generatedTitle = requiredText(generatedPlan.title(), "title");
+        String uniqueTitle = resolveUniqueGeneratedPlanTitle(
+            resolvedUserId,
+            removeTrailingCefrLevel(generatedTitle),
+            generatedTitle
+        );
 
         LearningPlan plan = learningPlanRepository.save(LearningPlan.builder()
             .userId(resolvedUserId)
-            .title(requiredText(generatedPlan.title(), "title"))
+            .title(uniqueTitle)
             .description(requiredText(generatedPlan.description(), "description"))
             .goal(requiredText(generatedPlan.goal(), "goal"))
             .language(requiredText(generatedPlan.language(), "language"))
@@ -468,6 +479,29 @@ public class LearningPlanService {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "GenAI returned blank " + field);
         }
         return value;
+    }
+
+    private String removeTrailingCefrLevel(String generatedTitle) {
+        String normalizedTitle = TRAILING_CEFR_LEVEL.matcher(generatedTitle).replaceFirst("").strip();
+        return normalizedTitle.isEmpty() ? generatedTitle : normalizedTitle;
+    }
+
+    private String resolveUniqueGeneratedPlanTitle(Long userId, String normalizedTitle, String originalTitle) {
+        boolean titleExists = learningPlanRepository.findFirstByUserIdAndTitle(userId, normalizedTitle).isPresent()
+            || (!normalizedTitle.equals(originalTitle)
+                && learningPlanRepository.findFirstByUserIdAndTitle(userId, originalTitle).isPresent());
+        if (!titleExists) {
+            return normalizedTitle;
+        }
+
+        int suffix = 2;
+        String candidate;
+        do {
+            candidate = normalizedTitle + " (" + suffix + ")";
+            suffix++;
+        } while (learningPlanRepository.findFirstByUserIdAndTitle(userId, candidate).isPresent());
+
+        return candidate;
     }
 
     private record ValidatedRagLesson(

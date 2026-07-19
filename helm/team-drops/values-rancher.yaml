@@ -6,8 +6,9 @@ genai:
   sttProvider: local
   whisperModel: /opt/models/faster-whisper-tiny
   prewarmModels: true
-  # Spoken feedback is optional. Keep it disabled until Kokoro model files are
-  # bundled or mounted; otherwise the first evaluation downloads ~300 MB.
+  kokoroModelPath: /opt/models/kokoro/kokoro-v1.0.onnx
+  kokoroVoicesPath: /opt/models/kokoro/voices-v1.0.bin
+  # Spoken feedback is optional; listening audio still uses bundled Kokoro.
   ttsEnabled: false
   resources:
     requests:
