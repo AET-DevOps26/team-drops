@@ -45,6 +45,7 @@ import { LearningPage } from './pages/LearningPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { hasReviewedAnswer } from './utils/exercises';
 import { getRecentFinishedLessons, getRecentLessons } from './utils/learning';
+import { shouldReloadForAuthRestore } from './utils/authLifecycle';
 import {
   beginRegistrationIntro,
   cancelRegistrationIntro,
@@ -308,7 +309,7 @@ export function App() {
   const [targetLanguage, setTargetLanguage] = React.useState(defaultProfile.targetLanguage);
   const [session, setSession] = React.useState(null);
   const [authError, setAuthError] = React.useState('');
-  const [loadingInitialData, setLoadingInitialData] = React.useState(false);
+  const [loadingInitialData, setLoadingInitialData] = React.useState(authEnabled);
   const [switchingTargetLanguage, setSwitchingTargetLanguage] = React.useState('');
   const [blockingOperation, setBlockingOperation] = React.useState('');
   const [dashboardError, setDashboardError] = React.useState('');
@@ -332,6 +333,7 @@ export function App() {
   const [listeningLoading, setListeningLoading] = React.useState(false);
   const [listeningError, setListeningError] = React.useState('');
   const listeningRequestIdRef = React.useRef(0);
+  const sessionRef = React.useRef(session);
   const screenRef = React.useRef(screen);
   const selectedPlanRef = React.useRef(selectedPlan);
   const selectedLessonRef = React.useRef(selectedLesson);
@@ -342,6 +344,10 @@ export function App() {
   React.useEffect(() => {
     screenRef.current = screen;
   }, [screen]);
+
+  React.useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   React.useEffect(() => {
     selectedPlanRef.current = selectedPlan;
@@ -364,12 +370,20 @@ export function App() {
   }, [learningPlans]);
 
   React.useEffect(() => {
-    const restoreAuthControls = () => {
-      setLoadingInitialData(false);
+    const restoreAuthSession = (event) => {
+      if (!authEnabled) {
+        setLoadingInitialData(false);
+        return;
+      }
+
+      if (shouldReloadForAuthRestore(event, sessionRef.current)) {
+        setLoadingInitialData(true);
+        window.location.reload();
+      }
     };
 
-    window.addEventListener('pageshow', restoreAuthControls);
-    return () => window.removeEventListener('pageshow', restoreAuthControls);
+    window.addEventListener('pageshow', restoreAuthSession);
+    return () => window.removeEventListener('pageshow', restoreAuthSession);
   }, []);
 
   const navigateToScreen = React.useCallback((nextScreen) => {
@@ -598,6 +612,7 @@ export function App() {
           tokenType: 'Bearer',
         };
 
+        sessionRef.current = nextSession;
         setSession(nextSession);
         const showGuidedIntro = shouldShowIntro(window.localStorage, user);
         await syncLearningData(nextSession);
@@ -705,6 +720,7 @@ export function App() {
         tokenType: 'None',
       };
 
+      sessionRef.current = nextSession;
       setSession(nextSession);
       await syncLearningData(nextSession);
       initialAuthRedirectDoneRef.current = true;
@@ -717,6 +733,7 @@ export function App() {
   };
 
   const resetSessionState = () => {
+    sessionRef.current = null;
     setSession(null);
     setLoadingInitialData(false);
     setBlockingOperation('');

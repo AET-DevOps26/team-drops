@@ -2,7 +2,7 @@ genai:
   llmProvider: openai
   llmModel: openai/gpt-oss-120b
   llmBaseUrl: https://logos.aet.cit.tum.de/v1
-  ragLearningPlanMaxRepairAttempts: 2
+  ragLearningPlanMaxRepairAttempts: 3
   sttProvider: local
   whisperModel: /opt/models/faster-whisper-tiny
   prewarmModels: true
@@ -35,7 +35,7 @@ keycloak:
       cpu: 100m
       memory: 384Mi
     limits:
-      cpu: 300m
+      cpu: 500m
       memory: 768Mi
 
 frontend:
@@ -55,7 +55,7 @@ services:
         cpu: 50m
         memory: 160Mi
       limits:
-        cpu: 150m
+        cpu: 300m
         memory: 320Mi
   learning:
     resources:
@@ -63,7 +63,7 @@ services:
         cpu: 50m
         memory: 256Mi
       limits:
-        cpu: 150m
+        cpu: 300m
         memory: 512Mi
   progress:
     resources:
@@ -71,7 +71,7 @@ services:
         cpu: 50m
         memory: 160Mi
       limits:
-        cpu: 150m
+        cpu: 300m
         memory: 320Mi
 
 postgres:
