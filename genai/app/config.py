@@ -25,7 +25,7 @@ class Settings(BaseSettings):
         default=90, ge=1, alias="LLM_REQUEST_TIMEOUT_SECONDS"
     )
     rag_learning_plan_max_repair_attempts: int = Field(
-        default=2,
+        default=3,
         ge=0,
         le=5,
         alias="RAG_LEARNING_PLAN_MAX_REPAIR_ATTEMPTS",
