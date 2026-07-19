@@ -399,4 +399,31 @@ a:hover {
     max-width: 190px;
     font-size: 0.82rem;
   }
+
+  /* Registration is taller than the other authentication screens. On phones,
+     present it as a full page instead of placing it inside the phone frame. */
+  body:has(#kc-register-form) .pf-v5-c-login {
+    place-items: start center;
+  }
+
+  body:has(#kc-register-form) .pf-v5-c-login__container {
+    padding: 0;
+    min-height: 100dvh;
+    align-items: flex-start;
+  }
+
+  body:has(#kc-register-form) .pf-v5-c-login__main {
+    width: 100%;
+    height: auto;
+    min-height: 100dvh;
+    padding: 32px 20px 24px;
+    border: 0;
+    border-radius: 0;
+    overflow-y: visible;
+    box-shadow: none;
+  }
+
+  body:has(#kc-register-form) .pf-v5-c-login__main::before {
+    display: none;
+  }
 }
