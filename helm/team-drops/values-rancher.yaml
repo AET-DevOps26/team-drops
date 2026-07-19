@@ -16,7 +16,7 @@ genai:
       memory: 512Mi
     limits:
       cpu: 500m
-      memory: 1280Mi
+      memory: 1536Mi
 
 monitoring:
   rancherServiceMonitors:

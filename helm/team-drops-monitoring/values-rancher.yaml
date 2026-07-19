@@ -31,7 +31,7 @@ prometheus:
     resources:
       limits:
         cpu: 300m
-        memory: 320Mi
+        memory: 192Mi
 
 grafana:
   resources:
@@ -44,7 +44,7 @@ loki:
     resources:
       limits:
         cpu: 300m
-        memory: 320Mi
+        memory: 192Mi
 
 alloy:
   alloy:
