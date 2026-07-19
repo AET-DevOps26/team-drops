@@ -137,6 +137,7 @@ genai:
   llmModel: ""
   llmBaseUrl: ""
   llmRequestTimeoutSeconds: 90
+  ragLearningPlanMaxRepairAttempts: 2
   ollamaBaseUrl: ""
   ollamaModel: llama3
   sttProvider: local

@@ -210,69 +210,85 @@ async def generate_rag_learning_plan(
         ) from exc
 
     _ensure_lesson_count(result, body)
-    review = await _review_learning_plan(result, body, context, quality_policy)
+    candidate = result
+    review = await _review_learning_plan(candidate, body, context, quality_policy)
     if review.accepted:
         logger.info(
             "Accepted RAG learning plan topic=%s lessons=%s retry=false",
             body.topic,
-            len(result.lessons),
+            len(candidate.lessons),
         )
         return _complete_learning_plan_defaults(
-            result,
+            candidate,
             body,
             sources=[_source_from_chunk(chunk) for chunk in chunks],
         )
 
+    max_attempts = settings.rag_learning_plan_max_repair_attempts
+    for attempt in range(1, max_attempts + 1):
+        logger.warning(
+            "Rejected RAG learning plan topic=%s violations=%s; corrective_attempt=%s/%s",
+            body.topic,
+            _violation_log_values(review),
+            attempt,
+            max_attempts,
+        )
+        repair_payload = {
+            **generation_payload,
+            "plan_json": candidate.model_dump_json(),
+            "violations_json": json.dumps(
+                [violation.model_dump() for violation in review.violations],
+                ensure_ascii=False,
+            ),
+        }
+        repair_chain = rag_learning_plan_repair_prompt | get_structured_llm(
+            RagLearningPlanResponse
+        )
+        try:
+            candidate = await asyncio.wait_for(
+                repair_chain.ainvoke(repair_payload),
+                timeout=settings.llm_request_timeout_seconds,
+            )
+        except asyncio.TimeoutError as exc:
+            raise HTTPException(
+                status_code=504,
+                detail=(
+                    "LLM learning-plan corrective regeneration timed out after "
+                    f"{settings.llm_request_timeout_seconds} seconds"
+                ),
+            ) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"LLM learning-plan corrective regeneration failed: {exc}",
+            ) from exc
+
+        _ensure_lesson_count(candidate, body)
+        review = await _review_learning_plan(candidate, body, context, quality_policy)
+        if review.accepted:
+            logger.info(
+                "Accepted corrected RAG learning plan topic=%s lessons=%s "
+                "corrective_attempt=%s/%s",
+                body.topic,
+                len(candidate.lessons),
+                attempt,
+                max_attempts,
+            )
+            return _complete_learning_plan_defaults(
+                candidate,
+                body,
+                sources=[_source_from_chunk(chunk) for chunk in chunks],
+            )
+
     logger.warning(
-        "Rejected RAG learning plan topic=%s violations=%s; retrying once",
+        "Returning last RAG learning plan after quality review failed "
+        "topic=%s attempts=%s violations=%s",
         body.topic,
+        max_attempts,
         _violation_log_values(review),
     )
-    repair_payload = {
-        **generation_payload,
-        "plan_json": result.model_dump_json(),
-        "violations_json": json.dumps(
-            [violation.model_dump() for violation in review.violations],
-            ensure_ascii=False,
-        ),
-    }
-    repair_chain = rag_learning_plan_repair_prompt | get_structured_llm(
-        RagLearningPlanResponse
-    )
-    try:
-        repaired: RagLearningPlanResponse = await repair_chain.ainvoke(repair_payload)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"LLM learning-plan corrective regeneration failed: {exc}",
-        ) from exc
-
-    _ensure_lesson_count(repaired, body)
-    repaired_review = await _review_learning_plan(
-        repaired, body, context, quality_policy
-    )
-    if not repaired_review.accepted:
-        logger.error(
-            "RAG learning-plan quality failed after retry topic=%s violations=%s",
-            body.topic,
-            _violation_log_values(repaired_review),
-        )
-        raise HTTPException(
-            status_code=502,
-            detail=(
-                "Generated RAG learning plan did not meet exercise quality requirements "
-                "after one corrective retry"
-            ),
-        )
-
-    logger.info(
-        "Accepted corrected RAG learning plan topic=%s lessons=%s retry=true",
-        body.topic,
-        len(repaired.lessons),
-    )
-
     return _complete_learning_plan_defaults(
-        repaired,
+        candidate,
         body,
         sources=[_source_from_chunk(chunk) for chunk in chunks],
     )

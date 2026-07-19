@@ -43,8 +43,9 @@ def test_build_rag_corpus_returns_stats(client, tmp_path):
         chunk_count=333,
     )
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.build_corpus", return_value=stats
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.build_corpus", return_value=stats),
     ):
         response = client.post("/api/v1/genai/rag/topics/job interview/corpus")
 
@@ -65,9 +66,11 @@ def test_query_rag_returns_answer_and_sources(client, tmp_path):
     ]
     llm = RunnableLambda(lambda _: AIMessage(content="Use STAR and cite examples."))
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.query_topic", return_value=chunks
-    ), patch("app.routers.rag.get_llm", return_value=llm):
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=chunks),
+        patch("app.routers.rag.get_llm", return_value=llm),
+    ):
         response = client.post(
             "/api/v1/genai/rag/query",
             json={
@@ -125,11 +128,13 @@ def test_generate_rag_learning_plan_returns_structured_plan_and_sources(
         ],
     )
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.query_topic", return_value=chunks
-    ) as query_mock, patch(
-        "app.routers.rag.get_structured_llm",
-        side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=chunks) as query_mock,
+        patch(
+            "app.routers.rag.get_structured_llm",
+            side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
+        ),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -200,11 +205,13 @@ def test_generate_rag_learning_plan_adds_missing_requested_exercise_types(
         ],
     )
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.query_topic", return_value=chunks
-    ), patch(
-        "app.routers.rag.get_structured_llm",
-        side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=chunks),
+        patch(
+            "app.routers.rag.get_structured_llm",
+            side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
+        ),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -298,11 +305,13 @@ def test_generate_rag_learning_plan_removes_unrequested_exercise_types(
         ],
     )
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.query_topic", return_value=chunks
-    ), patch(
-        "app.routers.rag.get_structured_llm",
-        side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=chunks),
+        patch(
+            "app.routers.rag.get_structured_llm",
+            side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
+        ),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -376,11 +385,13 @@ def test_generate_rag_learning_plan_rejects_wrong_lesson_count(client, tmp_path)
         ],
     )
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.query_topic", return_value=[]
-    ), patch(
-        "app.routers.rag.get_structured_llm",
-        side_effect=_structured_llm_sequence(llm_response),
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=[]),
+        patch(
+            "app.routers.rag.get_structured_llm",
+            side_effect=_structured_llm_sequence(llm_response),
+        ),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -420,11 +431,13 @@ def test_generate_rag_learning_plan_times_out_llm_generation(
 
     monkeypatch.setattr("app.config.settings.llm_request_timeout_seconds", 0.01)
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.query_topic", return_value=chunks
-    ), patch(
-        "app.routers.rag.get_structured_llm",
-        return_value=RunnableLambda(slow_response),
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=chunks),
+        patch(
+            "app.routers.rag.get_structured_llm",
+            return_value=RunnableLambda(slow_response),
+        ),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -475,11 +488,13 @@ def test_generate_rag_learning_plan_replaces_generic_normalized_metadata(
         }
     )
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.query_topic", return_value=chunks
-    ) as query_mock, patch(
-        "app.routers.rag.get_structured_llm",
-        side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=chunks) as query_mock,
+        patch(
+            "app.routers.rag.get_structured_llm",
+            side_effect=_structured_llm_sequence(llm_response, _accepted_review()),
+        ),
     ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
@@ -525,17 +540,19 @@ def test_job_interview_plan_replaces_attire_speaking_exercise(client, tmp_path):
         "Use STAR and explain the situation, your action, and the result.",
     )
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.query_topic", return_value=chunks
-    ), patch(
-        "app.routers.rag.get_structured_llm",
-        side_effect=_structured_llm_sequence(
-            rejected_plan,
-            _accepted_review(),
-            repaired_plan,
-            _accepted_review(),
-        ),
-    ) as structured_llm:
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=chunks),
+        patch(
+            "app.routers.rag.get_structured_llm",
+            side_effect=_structured_llm_sequence(
+                rejected_plan,
+                _accepted_review(),
+                repaired_plan,
+                _accepted_review(),
+            ),
+        ) as structured_llm,
+    ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
             json=_learning_plan_request(),
@@ -548,33 +565,78 @@ def test_job_interview_plan_replaces_attire_speaking_exercise(client, tmp_path):
     assert "wear" not in question.lower()
 
 
-def test_job_interview_plan_fails_after_one_bad_corrective_retry(client, tmp_path):
+def test_job_interview_plan_returns_last_plan_after_configured_corrective_attempts(
+    client, tmp_path
+):
     rejected_plan = _speaking_plan(
         "Explain what you should wear to an interview.",
         "Describe suitable professional attire.",
     )
+    last_rejected_plan = _speaking_plan(
+        "Explain why you should arrive early for an interview.",
+        "Describe an appropriate arrival time.",
+    )
 
-    with patch("app.routers.rag._rag_doc_db", return_value=tmp_path), patch(
-        "app.routers.rag.query_topic", return_value=[]
-    ), patch(
-        "app.routers.rag.get_structured_llm",
-        side_effect=_structured_llm_sequence(
-            rejected_plan,
-            _accepted_review(),
-            rejected_plan,
-            _accepted_review(),
-        ),
-    ) as structured_llm:
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=[]),
+        patch("app.routers.rag.settings.rag_learning_plan_max_repair_attempts", 1),
+        patch(
+            "app.routers.rag.get_structured_llm",
+            side_effect=_structured_llm_sequence(
+                rejected_plan,
+                _accepted_review(),
+                last_rejected_plan,
+                _accepted_review(),
+            ),
+        ) as structured_llm,
+    ):
         response = client.post(
             "/api/v1/genai/rag/learning-plan",
             json=_learning_plan_request(),
         )
 
-    assert response.status_code == 502
-    assert (
-        "quality requirements after one corrective retry" in response.json()["message"]
-    )
+    assert response.status_code == 200
     assert structured_llm.call_count == 4
+    question = response.json()["lessons"][0]["exercises"][0]["question"]
+    assert question == "Explain why you should arrive early for an interview."
+
+
+def test_job_interview_plan_can_succeed_on_second_corrective_attempt(client, tmp_path):
+    rejected_plan = _speaking_plan(
+        "Explain what you should wear to an interview.",
+        "Describe suitable professional attire.",
+    )
+    repaired_plan = _speaking_plan(
+        "Tell me about a time you resolved a conflict in your team.",
+        "Use STAR and explain the situation, your action, and the result.",
+    )
+
+    with (
+        patch("app.routers.rag._rag_doc_db", return_value=tmp_path),
+        patch("app.routers.rag.query_topic", return_value=[]),
+        patch("app.routers.rag.settings.rag_learning_plan_max_repair_attempts", 2),
+        patch(
+            "app.routers.rag.get_structured_llm",
+            side_effect=_structured_llm_sequence(
+                rejected_plan,
+                _accepted_review(),
+                rejected_plan,
+                _accepted_review(),
+                repaired_plan,
+                _accepted_review(),
+            ),
+        ) as structured_llm,
+    ):
+        response = client.post(
+            "/api/v1/genai/rag/learning-plan",
+            json=_learning_plan_request(),
+        )
+
+    assert response.status_code == 200
+    assert structured_llm.call_count == 6
+    question = response.json()["lessons"][0]["exercises"][0]["question"]
+    assert question == "Tell me about a time you resolved a conflict in your team."
 
 
 def _learning_plan_request() -> dict:

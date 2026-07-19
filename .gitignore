@@ -37,6 +37,11 @@ lerna-debug.log*
 .env
 .env.*
 
+# Local secrets (keep documentation and empty templates tracked)
+.secrets/*
+!.secrets/README.md
+!.secrets/api-key.env.example
+
 # Local planning artifacts
 .planning/
 
