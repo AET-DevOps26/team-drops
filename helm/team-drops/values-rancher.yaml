@@ -63,7 +63,7 @@ services:
         cpu: 50m
         memory: 256Mi
       limits:
-        cpu: 150m
+        cpu: 300m
         memory: 512Mi
   progress:
     resources:
@@ -71,7 +71,7 @@ services:
         cpu: 50m
         memory: 160Mi
       limits:
-        cpu: 150m
+        cpu: 300m
         memory: 320Mi
 
 postgres:
