@@ -399,4 +399,22 @@ a:hover {
     max-width: 190px;
     font-size: 0.82rem;
   }
+
+  /* Registration is taller than the other authentication screens. Let its
+     phone frame grow with the form so the document scrolls and the frame's
+     lower border is not clipped by a viewport-height scroll container. */
+  body:has(#kc-register-form) .pf-v5-c-login {
+    place-items: start center;
+  }
+
+  body:has(#kc-register-form) .pf-v5-c-login__container {
+    min-height: 100dvh;
+    align-items: flex-start;
+  }
+
+  body:has(#kc-register-form) .pf-v5-c-login__main {
+    height: auto;
+    min-height: calc(100dvh - 32px);
+    overflow-y: visible;
+  }
 }
