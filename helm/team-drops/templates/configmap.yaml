@@ -28,6 +28,7 @@ data:
   LLM_MODEL: {{ .Values.genai.llmModel | quote }}
   LLM_BASE_URL: {{ .Values.genai.llmBaseUrl | quote }}
   LLM_REQUEST_TIMEOUT_SECONDS: {{ .Values.genai.llmRequestTimeoutSeconds | quote }}
+  RAG_LEARNING_PLAN_MAX_REPAIR_ATTEMPTS: {{ .Values.genai.ragLearningPlanMaxRepairAttempts | quote }}
   OLLAMA_BASE_URL: {{ ternary (printf "http://ollama:%v" .Values.ollama.port) .Values.genai.ollamaBaseUrl .Values.ollama.enabled | quote }}
   OLLAMA_MODEL: {{ .Values.genai.ollamaModel | quote }}
   STT_PROVIDER: {{ .Values.genai.sttProvider | quote }}
