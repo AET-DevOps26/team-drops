@@ -299,6 +299,12 @@ const translations = {
   },
 };
 
+function afterNextPaint(callback) {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(callback);
+  });
+}
+
 export function App() {
   const [screen, setScreen] = React.useState('auth');
   const [settingsOpen, setSettingsOpen] = React.useState(false);
@@ -774,25 +780,25 @@ export function App() {
     setAuthError('');
     setLoadingInitialData(true);
     cancelRegistrationIntro(window.localStorage);
-    Promise.resolve()
-      .then(() => loginWithKeycloak())
-      .catch((error) => {
+    afterNextPaint(() => {
+      loginWithKeycloak().catch((error) => {
         setLoadingInitialData(false);
         setAuthError(error.message || 'Unable to start Keycloak sign in.');
       });
+    });
   };
 
   const handleRegister = () => {
     setAuthError('');
     setLoadingInitialData(true);
     beginRegistrationIntro(window.localStorage);
-    Promise.resolve()
-      .then(() => registerWithKeycloak())
-      .catch((error) => {
+    afterNextPaint(() => {
+      registerWithKeycloak().catch((error) => {
         setLoadingInitialData(false);
         cancelRegistrationIntro(window.localStorage);
         setAuthError(error.message || 'Unable to start Keycloak registration.');
       });
+    });
   };
 
   const finishIntro = () => {
