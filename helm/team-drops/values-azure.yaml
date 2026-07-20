@@ -1,0 +1,117 @@
+# Azure AKS deployment profile. Runtime secrets and generated infrastructure
+# outputs are supplied by scripts/azure/deploy.sh and are not committed here.
+image:
+  registry: replace-with-acr.azurecr.io
+  owner: team-drops
+  tag: replace-with-immutable-tag
+  pullPolicy: IfNotPresent
+
+monitoring:
+  rancherServiceMonitors:
+    enabled: false
+
+auth:
+  enabled: true
+  issuerUri: https://team-drops-change123.westeurope.cloudapp.azure.com/realms/team-drops
+  jwksUri: http://keycloak:8080/realms/team-drops/protocol/openid-connect/certs
+
+keycloak:
+  redirectUris:
+    - https://team-drops-change123.westeurope.cloudapp.azure.com/*
+  webOrigins:
+    - https://team-drops-change123.westeurope.cloudapp.azure.com
+  resources:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+
+frontend:
+  keycloakUrl: https://team-drops-change123.westeurope.cloudapp.azure.com
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+services:
+  user:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 160Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+  learning:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+  progress:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 160Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+genai:
+  llmProvider: openai
+  llmModel: openai/gpt-oss-120b
+  llmBaseUrl: https://logos.aet.cit.tum.de/v1
+  ragLearningPlanMaxRepairAttempts: 3
+  sttProvider: local
+  whisperModel: /opt/models/faster-whisper-tiny
+  prewarmModels: true
+  kokoroModelPath: /opt/models/kokoro/kokoro-v1.0.onnx
+  kokoroVoicesPath: /opt/models/kokoro/voices-v1.0.bin
+  ttsEnabled: false
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 1536Mi
+
+postgres:
+  storage:
+    size: 8Gi
+    storageClassName: managed-csi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+mongo:
+  storage:
+    size: 8Gi
+    storageClassName: managed-csi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+ingress:
+  enabled: true
+  host: team-drops-change123.westeurope.cloudapp.azure.com
+  className: nginx
+  tls:
+    enabled: true
+    secretName: team-drops-azure-tls
+    clusterIssuer: letsencrypt-prod

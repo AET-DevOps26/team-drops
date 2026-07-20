@@ -73,6 +73,9 @@ spec:
           {{- include "team-drops.legacyVolumeClaimLabels" . | nindent 10 }}
       spec:
         accessModes: ["ReadWriteOnce"]
+        {{- if .Values.postgres.storage.storageClassName }}
+        storageClassName: {{ .Values.postgres.storage.storageClassName | quote }}
+        {{- end }}
         resources:
           requests:
             storage: {{ .Values.postgres.storage.size | quote }}

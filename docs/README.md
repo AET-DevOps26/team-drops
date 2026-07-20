@@ -36,6 +36,7 @@ historical project documents for Team Drops. Start with the repository
 ## Deployment and observability
 
 - [Application and monitoring Helm operations](../helm/team-drops/README.md)
+- [Future Azure AKS deployment with Terraform](azure-deployment.md)
 - [Application Helm chart](../helm/team-drops/)
 - [Monitoring Helm chart](../helm/team-drops-monitoring/)
 - [Grafana dashboards as code](../helm/team-drops-monitoring/dashboards/)

@@ -1,0 +1,5 @@
+resource_group_name  = "team-drops-tfstate-rg"
+storage_account_name = "replacewithbootstrapoutput"
+container_name       = "tfstate"
+key                  = "team-drops/azure.tfstate"
+use_azuread_auth     = true

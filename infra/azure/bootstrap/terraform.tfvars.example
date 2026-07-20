@@ -1,0 +1,4 @@
+subscription_id = "00000000-0000-0000-0000-000000000000"
+state_admin_user_object_id = "00000000-0000-0000-0000-000000000000"
+location        = "westeurope"
+name_prefix     = "team-drops"

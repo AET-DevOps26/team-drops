@@ -1,0 +1,23 @@
+subscription_id = "00000000-0000-0000-0000-000000000000"
+tenant_id       = "00000000-0000-0000-0000-000000000000"
+location        = "westeurope"
+name_prefix     = "team-drops"
+unique_suffix   = "change123"
+
+aks_admin_user_object_ids = [
+  "00000000-0000-0000-0000-000000000000",
+]
+
+api_server_authorized_ip_ranges = [
+  "203.0.113.10/32",
+]
+
+node_vm_size   = "Standard_D4s_v5"
+node_min_count = 2
+node_max_count = 4
+
+tags = {
+  application = "team-drops"
+  environment = "azure"
+  managed-by  = "terraform"
+}

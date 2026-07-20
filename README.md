@@ -239,6 +239,7 @@ infrastructure dashboards.
 | `genai-ci.yml` | Automatically verifies GenAI contracts/builds its image; manually runs tests and uploads a JUnit report on demand |
 | `docker-publish.yml` | Builds and publishes application images to GHCR |
 | `deploy-kubernetes.yml` | Validates both charts, upgrades the application, and deploys monitoring |
+| `validate-azure.yml` | Validates the future Azure Terraform, Helm, and script files without deploying |
 
 The CI workflows run on relevant pull requests and pushes. Kubernetes
 deployment runs after a successful main-branch image publication and can also
@@ -254,6 +255,7 @@ authentication, deployment, and historical project material. Key references:
 - [Nginx gateway](docs/nginx-gateway.md)
 - [Microservice best practices](docs/microservice-best-practices.md)
 - [Helm deployment and operations](helm/team-drops/README.md)
+- [Future Azure AKS deployment](docs/azure-deployment.md)
 
 Historical planning material, including the proposal, diagrams, and
 [product backlog](https://github.com/AET-DevOps26/team-drops/wiki/Product-Backlog),
