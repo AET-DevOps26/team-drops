@@ -57,9 +57,15 @@ team-drops/
 |-- frontend/                    # React browser application
 |-- genai/                       # FastAPI GenAI service
 |-- helm/
-|   |-- team-drops/              # Application Helm chart and operations guide
-|   `-- team-drops-monitoring/   # Prometheus, Grafana, Alertmanager, Loki, Alloy
+|   |-- team-drops/              # Application chart with Rancher and Azure values
+|   |-- team-drops-monitoring/   # Monitoring chart with Rancher and Azure values
+|   `-- ingress-nginx-values-azure.yaml # Azure ingress load-balancer settings
+|-- infra/
+|   `-- azure/                   # Future/manual AKS, ACR, network and state Terraform
+|       `-- bootstrap/           # Remote Terraform-state storage bootstrap
 |-- keycloak/                    # Local realm export
+|-- scripts/
+|   `-- azure/                   # Manual image publishing and AKS deployment scripts
 |-- docs/                        # Architecture and project documentation
 |-- .env.example                 # Local configuration example
 `-- docker-compose.yml           # Complete local stack
