@@ -7,6 +7,7 @@ on:
       - "scripts/azure/**"
       - "helm/team-drops/values-azure.yaml"
       - "helm/team-drops-monitoring/values-azure.yaml"
+      - "helm/ingress-nginx-values-azure.yaml"
       - "helm/team-drops/templates/postgres.yaml"
       - "helm/team-drops/templates/mongo.yaml"
       - "helm/team-drops/values.yaml"
@@ -19,6 +20,7 @@ on:
       - "scripts/azure/**"
       - "helm/team-drops/values-azure.yaml"
       - "helm/team-drops-monitoring/values-azure.yaml"
+      - "helm/ingress-nginx-values-azure.yaml"
       - "helm/team-drops/templates/postgres.yaml"
       - "helm/team-drops/templates/mongo.yaml"
       - "helm/team-drops/values.yaml"
@@ -60,6 +62,13 @@ jobs:
         with:
           version: v4.2.0
 
+      - name: Add Helm repositories
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add grafana-community https://grafana-community.github.io/helm-charts
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
       - name: Build monitoring dependencies
         run: helm dependency build helm/team-drops-monitoring
 
@@ -87,9 +96,14 @@ jobs:
           helm template team-drops-monitoring helm/team-drops-monitoring -n team-drops \
             -f helm/team-drops-monitoring/values-azure.yaml \
             > /tmp/team-drops-monitoring-azure.yaml
+          helm template ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx \
+            -f helm/ingress-nginx-values-azure.yaml \
+            --set controller.service.loadBalancerIP=203.0.113.10 \
+            > /tmp/ingress-nginx-azure.yaml
           ruby -ryaml -e '
             documents = YAML.load_stream(File.read("/tmp/team-drops-azure.yaml")).compact
             monitoring = YAML.load_stream(File.read("/tmp/team-drops-monitoring-azure.yaml")).compact
+            ingress = YAML.load_stream(File.read("/tmp/ingress-nginx-azure.yaml")).compact
             rendered = File.read("/tmp/team-drops-azure.yaml") + File.read("/tmp/team-drops-monitoring-azure.yaml")
             abort("Rancher hostname leaked into Azure manifests") if rendered.include?("stud.k8s.aet.cit.tum.de")
             images = documents.select { |doc| %w[Deployment StatefulSet].include?(doc["kind"]) }
@@ -104,6 +118,10 @@ jobs:
             monitoring_pvcs = monitoring.select { |doc| doc["kind"] == "PersistentVolumeClaim" }
             monitoring_claims = monitoring_pvcs + monitoring.select { |doc| doc["kind"] == "StatefulSet" }.flat_map { |doc| doc.dig("spec", "volumeClaimTemplates") || [] }
             abort("Monitoring PVCs do not use managed-csi") unless monitoring_claims.all? { |claim| claim.dig("spec", "storageClassName") == "managed-csi" }
+            ingress_service = ingress.find { |doc| doc["kind"] == "Service" && doc.dig("metadata", "name") == "ingress-nginx-controller" }
+            abort("Missing ingress-nginx controller Service") unless ingress_service
+            probe_path = ingress_service.dig("metadata", "annotations", "service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path")
+            abort("Azure ingress health probe is not /healthz") unless probe_path == "/healthz"
           '
 
       - name: Render Rancher regression profiles
