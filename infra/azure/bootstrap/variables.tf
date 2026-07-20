@@ -3,6 +3,11 @@ variable "subscription_id" {
   type        = string
 }
 
+variable "state_admin_user_object_id" {
+  description = "Microsoft Entra user object ID allowed to read and write Terraform state blobs."
+  type        = string
+}
+
 variable "location" {
   description = "Azure region for Terraform state storage."
   type        = string

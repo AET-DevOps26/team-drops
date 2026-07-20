@@ -3,6 +3,11 @@ variable "subscription_id" {
   type        = string
 }
 
+variable "tenant_id" {
+  description = "Microsoft Entra tenant used by AKS authentication."
+  type        = string
+}
+
 variable "location" {
   description = "Azure region for the deployment."
   type        = string
@@ -30,13 +35,13 @@ variable "unique_suffix" {
   }
 }
 
-variable "aks_admin_group_object_ids" {
-  description = "Microsoft Entra group object IDs that receive AKS administrator access."
+variable "aks_admin_user_object_ids" {
+  description = "Microsoft Entra user object IDs that receive the Azure Kubernetes Service RBAC Cluster Admin role."
   type        = list(string)
 
   validation {
-    condition     = length(var.aks_admin_group_object_ids) > 0
-    error_message = "Provide at least one Microsoft Entra administrator group object ID."
+    condition     = length(var.aks_admin_user_object_ids) > 0
+    error_message = "Provide at least one Microsoft Entra administrator user object ID."
   }
 }
 

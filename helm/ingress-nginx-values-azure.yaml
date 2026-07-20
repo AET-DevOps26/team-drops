@@ -1,0 +1,6 @@
+# Azure-specific ingress-nginx settings. The load balancer IP is supplied by
+# scripts/azure/deploy.sh from Terraform output.
+controller:
+  service:
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz

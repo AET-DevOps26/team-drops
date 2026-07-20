@@ -6,8 +6,8 @@ usage() {
 Usage: deploy.sh --confirm
 
 Required environment variables:
-  ACR_LOGIN_SERVER IMAGE_TAG APP_HOSTNAME AZURE_NODE_RESOURCE_GROUP
-  INGRESS_PUBLIC_IP LETSENCRYPT_EMAIL LLM_API_KEY POSTGRES_PASSWORD
+  ACR_LOGIN_SERVER IMAGE_TAG APP_HOSTNAME INGRESS_PUBLIC_IP
+  LETSENCRYPT_EMAIL LLM_API_KEY POSTGRES_PASSWORD
   KEYCLOAK_ADMIN_PASSWORD KEYCLOAK_CLIENT_SECRET GRAFANA_ADMIN_PASSWORD
 
 The current kubectl context must be the intended AKS cluster. This script
@@ -21,8 +21,8 @@ if [[ "${1:-}" != "--confirm" ]]; then
 fi
 
 required_variables=(
-  ACR_LOGIN_SERVER IMAGE_TAG APP_HOSTNAME AZURE_NODE_RESOURCE_GROUP
-  INGRESS_PUBLIC_IP LETSENCRYPT_EMAIL LLM_API_KEY POSTGRES_PASSWORD
+  ACR_LOGIN_SERVER IMAGE_TAG APP_HOSTNAME INGRESS_PUBLIC_IP
+  LETSENCRYPT_EMAIL LLM_API_KEY POSTGRES_PASSWORD
   KEYCLOAK_ADMIN_PASSWORD KEYCLOAK_CLIENT_SECRET GRAFANA_ADMIN_PASSWORD
 )
 
@@ -66,8 +66,8 @@ kubectl create namespace "${namespace}" --dry-run=client -o yaml | kubectl apply
 helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
   --namespace ingress-nginx \
   --create-namespace \
+  --values "${repo_root}/helm/ingress-nginx-values-azure.yaml" \
   --set controller.service.loadBalancerIP="${INGRESS_PUBLIC_IP}" \
-  --set-string controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-resource-group"="${AZURE_NODE_RESOURCE_GROUP}" \
   --wait \
   --timeout 10m
 

@@ -21,6 +21,11 @@ and Loki use AKS's built-in `managed-csi` Azure Disk storage class. ingress-ngin
 serves the application, and cert-manager obtains its TLS certificate through an
 HTTP-01 challenge.
 
+For quota-constrained subscriptions, set the node maximum to the number the
+regional vCPU quota can actually support. AKS system pools require surge
+capacity during upgrades, so keep enough additional family and regional vCPU
+quota for at least one temporary node before starting an upgrade.
+
 Reference documentation:
 
 - [Deploy AKS with Terraform](https://learn.microsoft.com/azure/aks/learn/quick-kubernetes-deploy-terraform)
@@ -51,7 +56,9 @@ plans, applies, or deploys Azure resources.
 - An Azure subscription and permission to create resource groups, AKS, ACR,
   role assignments, networking, and public IP resources.
 - Azure CLI, Terraform 1.8 or newer, Helm, kubectl, Docker Buildx, and Bash.
-- A Microsoft Entra group object ID for AKS administrators.
+- A Microsoft Entra user object ID for an AKS administrator. Terraform assigns
+  only that identity the Azure Kubernetes Service RBAC Cluster Admin role; do
+  not use a broad organization-wide group as a shortcut.
 - A trusted public IPv4 CIDR for the AKS API allowlist.
 - Sufficient Azure quota for two `Standard_D4s_v5` nodes and a possible scale-out
   to four nodes.
@@ -75,9 +82,10 @@ terraform -chdir=infra/azure/bootstrap output -raw backend_config \
   > infra/azure/backend.hcl
 ```
 
-Grant the deploying identity `Storage Blob Data Contributor` on the generated
-state storage account when organizational policy does not grant it already.
-The bootstrap state remains local and must be protected.
+The bootstrap module grants the configured administrator user `Storage Blob
+Data Contributor` on only the generated state storage account. This data-plane
+role is required by the Microsoft Entra-authenticated backend. The bootstrap
+state remains local and must be protected.
 
 ## 2. Review and provision Azure infrastructure
 
@@ -124,6 +132,11 @@ scripts/azure/get-credentials.sh
 Azure RBAC still determines whether the signed-in identity may access the
 cluster. Retrieving credentials does not bypass authorization.
 
+The Terraform configuration records AKS's 10% system-pool surge setting. With
+two nodes this requires one temporary node, so obtain quota for at least six
+vCPUs in the selected two-vCPU VM family before a cluster or node-image upgrade.
+AKS does not allow `maxUnavailable` above zero on a system pool.
+
 ## 5. Configure secrets and deploy manually
 
 Set the non-secret infrastructure outputs:
@@ -131,7 +144,6 @@ Set the non-secret infrastructure outputs:
 ```bash
 export ACR_LOGIN_SERVER="$(terraform -chdir=infra/azure output -raw acr_login_server)"
 export APP_HOSTNAME="$(terraform -chdir=infra/azure output -raw application_hostname)"
-export AZURE_NODE_RESOURCE_GROUP="$(terraform -chdir=infra/azure output -raw aks_node_resource_group)"
 export INGRESS_PUBLIC_IP="$(terraform -chdir=infra/azure output -raw ingress_public_ip)"
 export IMAGE_TAG="sha-<full-git-commit>"
 export LETSENCRYPT_EMAIL="operator@example.com"

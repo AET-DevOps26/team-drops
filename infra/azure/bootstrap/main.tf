@@ -41,3 +41,10 @@ resource "azurerm_storage_container" "state" {
   storage_account_id    = azurerm_storage_account.state.id
   container_access_type = "private"
 }
+
+resource "azurerm_role_assignment" "state_blob_admin" {
+  scope                = azurerm_storage_account.state.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = var.state_admin_user_object_id
+  principal_type       = "User"
+}

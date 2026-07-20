@@ -57,8 +57,8 @@ resource "azurerm_kubernetes_cluster" "main" {
   }
 
   azure_active_directory_role_based_access_control {
-    azure_rbac_enabled     = true
-    admin_group_object_ids = var.aks_admin_group_object_ids
+    azure_rbac_enabled = true
+    tenant_id          = var.tenant_id
   }
 
   api_server_access_profile {
@@ -77,8 +77,10 @@ resource "azurerm_kubernetes_cluster" "main" {
     type                 = "VirtualMachineScaleSets"
 
     upgrade_settings {
-      max_surge = "33%"
+      # AKS system pools require maxUnavailable=0, so retain the Azure default.
+      max_surge = "10%"
     }
+
   }
 
   network_profile {
@@ -101,6 +103,15 @@ resource "azurerm_kubernetes_cluster" "main" {
       error_message = "node_min_count must be at least 2 and node_max_count must be greater than or equal to it."
     }
   }
+}
+
+resource "azurerm_role_assignment" "aks_admin" {
+  for_each = toset(var.aks_admin_user_object_ids)
+
+  scope                = azurerm_kubernetes_cluster.main.id
+  role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
+  principal_id         = each.value
+  principal_type       = "User"
 }
 
 resource "azurerm_role_assignment" "acr_pull" {
